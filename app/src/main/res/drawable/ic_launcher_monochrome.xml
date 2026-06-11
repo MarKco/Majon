@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Yarn ball outline + strands, single color for themed icons -->
+    <path
+        android:pathData="M26,54 a28,28 0 1,0 56,0 a28,28 0 1,0 -56,0"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5" />
+    <path
+        android:pathData="M28,47 Q54,63 80,47"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M29.5,62 Q54,76 78.5,62"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M39,33 Q65,50 69,79"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M69,33 Q43,50 39,79"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round" />
+</vector>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Majon</string>
+
+    <!-- Common -->
+    <string name="back">Back</string>
+    <string name="menu">Menu</string>
+    <string name="edit">Edit</string>
+    <string name="delete">Delete</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirm">Confirm</string>
+
+    <!-- Home -->
+    <string name="home_title">My projects</string>
+    <string name="home_empty_title">No projects yet</string>
+    <string name="home_empty_subtitle">Create your first knitting project with the + button</string>
+    <string name="add_project">New project</string>
+    <string name="percent_complete">%1$d%% complete</string>
+    <string name="delete_project_title">Delete project?</string>
+    <string name="delete_project_message">All parts and notes of “%1$s” will be deleted too. This cannot be undone.</string>
+
+    <!-- Edit project -->
+    <string name="edit_project">Edit project</string>
+    <string name="project_name">Project name</string>
+    <string name="project_name_error">Enter a name</string>
+    <string name="project_icon">Icon</string>
+    <string name="project_color">Color</string>
+    <string name="yarn_type">Yarn</string>
+    <string name="yarn_type_hint">E.g. 100% merino wool</string>
+    <string name="needle_size">Needles</string>
+    <string name="needle_size_hint">E.g. 4.5</string>
+
+    <!-- Project detail -->
+    <string name="parts">Parts</string>
+    <string name="parts_empty_title">No parts yet</string>
+    <string name="parts_empty_subtitle">Add the parts of your project: front, back, sleeves…</string>
+    <string name="add_part">Add part</string>
+    <string name="edit_part">Edit part</string>
+    <string name="part_name">Part name</string>
+    <string name="total_rows">Total rows</string>
+    <string name="rows_invalid">Enter a valid number of rows</string>
+    <string name="delete_part_title">Delete part?</string>
+    <string name="delete_part_message">Notes of “%1$s” will be deleted too.</string>
+    <string name="rows_progress">%1$d / %2$d rows</string>
+    <string name="total_progress">Total progress</string>
+    <string name="part_reduce_warning">Warning: completed rows (%1$d) exceed the new total.</string>
+
+    <!-- Counter -->
+    <string name="row_current">Row %1$d</string>
+    <string name="row_of_total">of %1$d</string>
+    <string name="next_row_label">Next: row %1$d</string>
+    <string name="current_row_note">Note for this row</string>
+    <string name="row_done">Row done</string>
+    <string name="row_undo">Undo last row</string>
+    <string name="part_complete">Part complete!</string>
+    <string name="part_complete_subtitle">You finished all %1$d rows 🎉</string>
+    <string name="reset_counter">Reset counter</string>
+    <string name="reset_confirm_title">Reset the counter?</string>
+    <string name="reset_confirm_message">Counting restarts from row 1. Notes are kept.</string>
+    <string name="set_row">Go to row…</string>
+    <string name="set_row_title">Go to row</string>
+    <string name="row_number">Row number</string>
+    <string name="notes">Notes</string>
+
+    <!-- Notes -->
+    <string name="notes_of">Notes · %1$s</string>
+    <string name="notes_empty_title">No notes yet</string>
+    <string name="notes_empty_subtitle">Add special instructions: increases, decreases, stitch changes…</string>
+    <string name="add_note">Add note</string>
+    <string name="edit_note">Edit note</string>
+    <string name="note_text">Note text</string>
+    <string name="from_row">From row</string>
+    <string name="to_row">To row</string>
+    <string name="frequency">Applies to</string>
+    <string name="freq_every">Every row</string>
+    <string name="freq_odd">Odd rows</string>
+    <string name="freq_even">Even rows</string>
+    <string name="note_error_start">Start row must be at least 1</string>
+    <string name="note_error_end">End row is before start row</string>
+    <string name="note_error_range">Beyond the part’s total rows</string>
+    <string name="note_error_text">Write the note text</string>
+    <string name="note_rows_single">Row %1$d</string>
+    <string name="note_rows_range">Rows %1$d–%2$d</string>
+    <string name="delete_note_title">Delete note?</string>
+
+    <!-- Settings -->
+    <string name="settings">Settings</string>
+    <string name="language">Language</string>
+    <string name="lang_system">System</string>
+    <string name="lang_it">Italiano</string>
+    <string name="lang_en">English</string>
+    <string name="theme">Theme</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="dynamic_colors">Dynamic colors</string>
+    <string name="dynamic_colors_desc">Use your phone’s wallpaper colors (Android 12+)</string>
+    <string name="haptics">Vibration</string>
+    <string name="haptics_desc">Haptic feedback when you complete a row</string>
+    <string name="keep_screen_on">Keep screen on</string>
+    <string name="keep_screen_on_desc">While the counter is open</string>
+    <string name="data_section">Your data</string>
+    <string name="export_data">Export data</string>
+    <string name="export_data_desc">Save all projects to a JSON file</string>
+    <string name="import_data">Import data</string>
+    <string name="import_data_desc">Add projects from a backup</string>
+    <string name="export_done">Backup saved</string>
+    <string name="import_done">%1$d projects imported</string>
+    <string name="import_error">Invalid file: no projects imported</string>
+    <string name="export_error">Export failed</string>
+</resources>

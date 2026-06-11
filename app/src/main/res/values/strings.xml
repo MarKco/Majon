@@ -1,3 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Majon - Knit Counter</string>
+    <string name="app_name">Majon</string>
+
+    <!-- Common -->
+    <string name="back">Indietro</string>
+    <string name="menu">Menu</string>
+    <string name="edit">Modifica</string>
+    <string name="delete">Elimina</string>
+    <string name="save">Salva</string>
+    <string name="cancel">Annulla</string>
+    <string name="confirm">Conferma</string>
+
+    <!-- Home -->
+    <string name="home_title">I miei progetti</string>
+    <string name="home_empty_title">Nessun progetto</string>
+    <string name="home_empty_subtitle">Crea il tuo primo progetto di maglia con il pulsante +</string>
+    <string name="add_project">Nuovo progetto</string>
+    <string name="percent_complete">%1$d%% completato</string>
+    <string name="delete_project_title">Eliminare il progetto?</string>
+    <string name="delete_project_message">Verranno eliminate anche tutte le parti e le note di “%1$s”. L’operazione non si può annullare.</string>
+
+    <!-- Edit project -->
+    <string name="edit_project">Modifica progetto</string>
+    <string name="project_name">Nome del progetto</string>
+    <string name="project_name_error">Inserisci un nome</string>
+    <string name="project_icon">Icona</string>
+    <string name="project_color">Colore</string>
+    <string name="yarn_type">Filato</string>
+    <string name="yarn_type_hint">Es. lana merino 100%</string>
+    <string name="needle_size">Ferri</string>
+    <string name="needle_size_hint">Es. 4,5</string>
+
+    <!-- Project detail -->
+    <string name="parts">Parti</string>
+    <string name="parts_empty_title">Nessuna parte</string>
+    <string name="parts_empty_subtitle">Aggiungi le parti del progetto: davanti, dietro, maniche…</string>
+    <string name="add_part">Aggiungi parte</string>
+    <string name="edit_part">Modifica parte</string>
+    <string name="part_name">Nome della parte</string>
+    <string name="total_rows">Righe totali</string>
+    <string name="rows_invalid">Inserisci un numero di righe valido</string>
+    <string name="delete_part_title">Eliminare la parte?</string>
+    <string name="delete_part_message">Verranno eliminate anche le note di “%1$s”.</string>
+    <string name="rows_progress">%1$d / %2$d righe</string>
+    <string name="total_progress">Avanzamento totale</string>
+    <string name="part_reduce_warning">Attenzione: le righe completate (%1$d) superano il nuovo totale.</string>
+
+    <!-- Counter -->
+    <string name="row_current">Riga %1$d</string>
+    <string name="row_of_total">di %1$d</string>
+    <string name="next_row_label">Prossima: riga %1$d</string>
+    <string name="current_row_note">Nota per questa riga</string>
+    <string name="row_done">Riga fatta</string>
+    <string name="row_undo">Annulla ultima riga</string>
+    <string name="part_complete">Parte completata!</string>
+    <string name="part_complete_subtitle">Hai finito tutte le %1$d righe 🎉</string>
+    <string name="reset_counter">Azzera contatore</string>
+    <string name="reset_confirm_title">Azzerare il contatore?</string>
+    <string name="reset_confirm_message">Il conteggio riparte dalla riga 1. Le note restano salvate.</string>
+    <string name="set_row">Vai alla riga…</string>
+    <string name="set_row_title">Vai alla riga</string>
+    <string name="row_number">Numero riga</string>
+    <string name="notes">Note</string>
+
+    <!-- Notes -->
+    <string name="notes_of">Note · %1$s</string>
+    <string name="notes_empty_title">Nessuna nota</string>
+    <string name="notes_empty_subtitle">Aggiungi istruzioni speciali: aumenti, diminuzioni, cambi di punto…</string>
+    <string name="add_note">Aggiungi nota</string>
+    <string name="edit_note">Modifica nota</string>
+    <string name="note_text">Testo della nota</string>
+    <string name="from_row">Dalla riga</string>
+    <string name="to_row">Alla riga</string>
+    <string name="frequency">Si applica a</string>
+    <string name="freq_every">Tutte le righe</string>
+    <string name="freq_odd">Righe dispari</string>
+    <string name="freq_even">Righe pari</string>
+    <string name="note_error_start">La riga iniziale deve essere almeno 1</string>
+    <string name="note_error_end">La riga finale precede quella iniziale</string>
+    <string name="note_error_range">Oltre il totale di righe della parte</string>
+    <string name="note_error_text">Scrivi il testo della nota</string>
+    <string name="note_rows_single">Riga %1$d</string>
+    <string name="note_rows_range">Righe %1$d–%2$d</string>
+    <string name="delete_note_title">Eliminare la nota?</string>
+
+    <!-- Settings -->
+    <string name="settings">Impostazioni</string>
+    <string name="language">Lingua</string>
+    <string name="lang_system">Sistema</string>
+    <string name="lang_it">Italiano</string>
+    <string name="lang_en">English</string>
+    <string name="theme">Tema</string>
+    <string name="theme_system">Sistema</string>
+    <string name="theme_light">Chiaro</string>
+    <string name="theme_dark">Scuro</string>
+    <string name="dynamic_colors">Colori dinamici</string>
+    <string name="dynamic_colors_desc">Usa i colori dello sfondo del telefono (Android 12+)</string>
+    <string name="haptics">Vibrazione</string>
+    <string name="haptics_desc">Feedback tattile quando completi una riga</string>
+    <string name="keep_screen_on">Schermo sempre acceso</string>
+    <string name="keep_screen_on_desc">Mentre il contatore è aperto</string>
+    <string name="data_section">I tuoi dati</string>
+    <string name="export_data">Esporta dati</string>
+    <string name="export_data_desc">Salva tutti i progetti in un file JSON</string>
+    <string name="import_data">Importa dati</string>
+    <string name="import_data_desc">Aggiungi progetti da un backup</string>
+    <string name="export_done">Backup salvato</string>
+    <string name="import_done">%1$d progetti importati</string>
+    <string name="import_error">File non valido: nessun progetto importato</string>
+    <string name="export_error">Errore durante l’esportazione</string>
 </resources>
