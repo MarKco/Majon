@@ -80,6 +80,7 @@
     <string name="note_error_end">End row is before start row</string>
     <string name="note_error_range">Beyond the part’s total rows</string>
     <string name="note_error_text">Write the note text</string>
+    <string name="note_out_of_range">Beyond the total rows: this note will not be shown</string>
     <string name="note_rows_single">Row %1$d</string>
     <string name="note_rows_range">Rows %1$d–%2$d</string>
     <string name="delete_note_title">Delete note?</string>

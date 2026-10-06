@@ -10,20 +10,20 @@ partenza (`starting-docs/`).
 |---|---|
 | Package | `com.ilsecondodasinistra.majon` |
 | minSdk / target / compile | 24 / 37 / 37 |
-| Linguaggio | Kotlin 2.3.21 |
+| Linguaggio | Kotlin 2.4.20 |
 | UI | Jetpack Compose + Material 3 |
-| Build | Gradle 9.5.1, AGP 9.2.1 (Kotlin built-in) |
-| Test | 71 unit test, 0 falliti |
+| Build | Gradle 9.8.0, AGP 9.4.1 (Kotlin built-in) |
+| Test | 75 unit test, 0 falliti |
 
 ## Stack
 
-- **Compose BOM 2026.05.01** — Material 3, animation, navigation-compose 2.9.8
-- **Room 2.8.4** con **KSP** — persistenza SQLite
-- **Hilt 2.59.2** — dependency injection
+- **Compose BOM 2026.09.00** — Material 3, animation, navigation-compose 2.10.2
+- **Room 2.8.5** con **KSP** — persistenza SQLite
+- **Hilt 2.60.1** — dependency injection
 - **DataStore Preferences 1.2.1** — impostazioni
 - **kotlinx.serialization 1.11.0** — export/import JSON
 - **AppCompat 1.7.1** — per-app locales (cambio lingua in-app)
-- Test: JUnit4, **Robolectric 4.16.1**, **Turbine**, MockK, coroutines-test
+- Test: JUnit4, **Robolectric 4.17**, **Turbine**, MockK, coroutines-test
 
 ## Architettura
 
@@ -155,7 +155,7 @@ Nota: Robolectric non supporta ancora SDK 37 → pin a 36 in
 1. **AndroidX 2026 richiede AGP 9.1+ / compileSdk 37** → upgrade Gradle 9.5.1 + AGP 9.2.1.
 2. **AGP 9 ha Kotlin built-in**: il plugin `org.jetbrains.kotlin.android` va
    rimosso; restano `kotlin.plugin.compose` e `kotlin.plugin.serialization`.
-3. **Hilt 2.59 non legge metadata Kotlin 2.4** → Kotlin 2.3.21 (ultimo supportato).
+3. **Hilt 2.59 non leggeva metadata Kotlin 2.4**: risolto con Hilt 2.60.1 + Kotlin 2.4.20.
 4. **Tema XML**: l'Activity è `AppCompatActivity` (serve per i locales), quindi
    il tema base è `Theme.AppCompat.DayNight.NoActionBar`; tutto il resto è Compose.
 

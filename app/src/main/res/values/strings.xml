@@ -80,6 +80,7 @@
     <string name="note_error_end">La riga finale precede quella iniziale</string>
     <string name="note_error_range">Oltre il totale di righe della parte</string>
     <string name="note_error_text">Scrivi il testo della nota</string>
+    <string name="note_out_of_range">Oltre il totale di righe: la nota non verrà mostrata</string>
     <string name="note_rows_single">Riga %1$d</string>
     <string name="note_rows_range">Righe %1$d–%2$d</string>
     <string name="delete_note_title">Eliminare la nota?</string>

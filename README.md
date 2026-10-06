@@ -12,7 +12,7 @@ JSON export/import. No permissions, no network: data stays on the device.
 |---|---|
 | Stack | Kotlin 2.3, Compose + Material 3, Room, Hilt, DataStore |
 | Build | Gradle 9.5, AGP 9.2, minSdk 24, targetSdk 37 |
-| Tests | 71 unit tests (TDD), Robolectric + Turbine |
+| Tests | 75 unit tests (TDD), Robolectric + Turbine |
 
 ## Build
 

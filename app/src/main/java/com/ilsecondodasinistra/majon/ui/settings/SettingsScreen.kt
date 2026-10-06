@@ -5,6 +5,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +19,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -202,13 +206,13 @@ fun SettingsScreen(
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.export_data)) },
                     supportingContent = { Text(stringResource(R.string.export_data_desc)) },
-                    leadingContent = { Text("📤") },
+                    leadingContent = { Icon(Icons.Default.FileUpload, contentDescription = null) },
                     modifier = Modifier.clickableItem { exportLauncher.launch("majon-backup.json") },
                 )
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.import_data)) },
                     supportingContent = { Text(stringResource(R.string.import_data_desc)) },
-                    leadingContent = { Text("📥") },
+                    leadingContent = { Icon(Icons.Default.FileDownload, contentDescription = null) },
                     modifier = Modifier.clickableItem {
                         importLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
                     },
@@ -245,21 +249,14 @@ private fun ToggleItem(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 10.dp),
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
-            Text(
-                subtitle,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        Spacer(Modifier.width(16.dp))
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
+    ListItem(
+        headlineContent = { Text(title) },
+        supportingContent = { Text(subtitle) },
+        trailingContent = { Switch(checked = checked, onCheckedChange = null) },
+        modifier = Modifier.toggleable(
+            value = checked,
+            role = Role.Switch,
+            onValueChange = onCheckedChange,
+        ),
+    )
 }

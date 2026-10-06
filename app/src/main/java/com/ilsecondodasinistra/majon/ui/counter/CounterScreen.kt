@@ -5,6 +5,7 @@ import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
@@ -29,12 +30,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -257,9 +259,10 @@ fun CounterScreen(
                         viewModel.decrement()
                     },
                     modifier = Modifier.size(64.dp),
+                    shape = MaterialTheme.shapes.extraLarge,
                     colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                     ),
                 ) {
                     Icon(
@@ -319,14 +322,20 @@ private fun PlusButton(
         animationSpec = spring(stiffness = Spring.StiffnessMedium),
         label = "plusScale",
     )
+    // Expressive shape morph: circle at rest, squircle while pressed
+    val corner by animateDpAsState(
+        targetValue = if (pressed) 36.dp else 56.dp,
+        animationSpec = spring(stiffness = Spring.StiffnessMedium),
+        label = "plusCorner",
+    )
     FilledIconButton(
         onClick = onClick,
         enabled = enabled,
         interactionSource = interactionSource,
         modifier = Modifier
-            .size(104.dp)
+            .size(112.dp)
             .scale(scale),
-        shape = CircleShape,
+        shape = RoundedCornerShape(corner),
     ) {
         Icon(
             Icons.Default.Add,
@@ -365,19 +374,31 @@ private fun NoteCard(
             if (notes.isNotEmpty()) {
                 Spacer(Modifier.height(4.dp))
                 notes.forEach { note ->
-                    Text(
-                        "📌 ${note.text}",
-                        style = if (highlighted) {
-                            MaterialTheme.typography.titleMedium
-                        } else {
-                            MaterialTheme.typography.bodyLarge
-                        },
-                        color = if (highlighted) {
-                            MaterialTheme.colorScheme.onTertiaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                    )
+                    Row(verticalAlignment = Alignment.Top) {
+                        Icon(
+                            Icons.Default.PushPin,
+                            contentDescription = null,
+                            modifier = Modifier.padding(top = 3.dp, end = 8.dp).size(18.dp),
+                            tint = if (highlighted) {
+                                MaterialTheme.colorScheme.onTertiaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        )
+                        Text(
+                            note.text,
+                            style = if (highlighted) {
+                                MaterialTheme.typography.titleMedium
+                            } else {
+                                MaterialTheme.typography.bodyLarge
+                            },
+                            color = if (highlighted) {
+                                MaterialTheme.colorScheme.onTertiaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        )
+                    }
                 }
             }
         }
