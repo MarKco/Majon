@@ -88,9 +88,9 @@ private val WaveLength = 26.dp
 private val WaveAnchorRamp = 80.dp
 
 /**
- * Progress bar whose filled part looks like a thread held still at the start and shaken from
- * the tip: the wave grows from nothing at the left edge to full amplitude, and travels toward
- * the anchored start. Falls back to a flat bar when waves are disabled, empty or complete.
+ * Progress bar whose filled part looks like a thread held still at the tip (where the colored
+ * part meets the uncolored track) and shaken from the start: the wave grows from nothing at the
+ * tip to full amplitude at the left edge, and travels toward the anchored tip. Falls back to a flat bar when waves are disabled, empty or complete.
  */
 @Composable
 fun AnimatedProgressBar(
@@ -141,9 +141,10 @@ fun AnimatedProgressBar(
         val path = Path()
         var x = 0f
         while (true) {
-            val t = (x / ramp).coerceIn(0f, 1f)
+            // Distance from the anchored tip: still at the tip, full wave at the free start
+            val t = ((length - x) / ramp).coerceIn(0f, 1f)
             val envelope = t * t * (3f - 2f * t)
-            val y = centerY + amplitude * envelope * sin(k * x + phase)
+            val y = centerY + amplitude * envelope * sin(k * x - phase)
             if (x == 0f) path.moveTo(inset + x, y) else path.lineTo(inset + x, y)
             if (x >= length) break
             x = (x + 3.dp.toPx()).coerceAtMost(length)
