@@ -14,8 +14,8 @@ android {
         applicationId = "com.ilsecondodasinistra.majon"
         minSdk = 24
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -44,6 +44,10 @@ android {
                 )
             }
         }
+    }
+    sourceSets {
+        // Exported Room schemas feed MigrationTestHelper in androidTest
+        getByName("androidTest").assets.directories.add("$projectDir/schemas")
     }
     androidResources {
         @Suppress("UnstableApiUsage")
@@ -98,6 +102,8 @@ dependencies {
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.room.testing)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(composeBom)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
