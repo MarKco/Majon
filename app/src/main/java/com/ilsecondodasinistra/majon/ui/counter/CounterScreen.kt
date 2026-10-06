@@ -150,75 +150,84 @@ fun CounterScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 24.dp)
-                    .verticalScroll(rememberScrollState()),
+                    .padding(horizontal = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Spacer(Modifier.height(8.dp))
-
-                // Progress
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
+                // Only the information scrolls: the buttons and toolbar stay pinned at the bottom
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState()),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    AnimatedProgressBar(
-                        progress = state.progress,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Text(
-                        "${(state.progress * 100).roundToInt()}%",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
+                    Spacer(Modifier.height(8.dp))
 
-                Spacer(Modifier.height(24.dp))
+                    // Progress
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        AnimatedProgressBar(
+                            progress = state.progress,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            "${(state.progress * 100).roundToInt()}%",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
 
-                if (state.isComplete) {
-                    CompletionCelebration(totalRows = state.totalRows)
-                } else {
-                    RowNumber(row = state.currentRow, totalRows = state.totalRows)
+                    Spacer(Modifier.height(24.dp))
+
+                    if (state.isComplete) {
+                        CompletionCelebration(totalRows = state.totalRows)
+                    } else {
+                        RowNumber(row = state.currentRow, totalRows = state.totalRows)
+
+                        Spacer(Modifier.height(16.dp))
+
+                        // Current row notes
+                        AnimatedVisibility(
+                            visible = state.currentNotes.isNotEmpty(),
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut(),
+                        ) {
+                            NoteCard(
+                                title = stringResource(R.string.current_row_note),
+                                notes = state.currentNotes,
+                                highlighted = true,
+                            )
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
+                        // Next row preview
+                        if (state.currentRow < state.totalRows) {
+                            NoteCard(
+                                title = stringResource(R.string.next_row_label, state.currentRow + 1),
+                                notes = state.nextNotes,
+                                highlighted = false,
+                            )
+                        }
+                    }
 
                     Spacer(Modifier.height(16.dp))
 
-                    // Current row notes
-                    AnimatedVisibility(
-                        visible = state.currentNotes.isNotEmpty(),
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut(),
-                    ) {
-                        NoteCard(
-                            title = stringResource(R.string.current_row_note),
-                            notes = state.currentNotes,
-                            highlighted = true,
-                        )
-                    }
+                    KnitProgressArt(
+                        icon = state.projectIcon,
+                        progress = state.progress,
+                        color = state.projectColor.toColor(),
+                        emptyColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.18f),
+                        modifier = Modifier.height(190.dp),
+                    )
 
                     Spacer(Modifier.height(8.dp))
-
-                    // Next row preview
-                    if (state.currentRow < state.totalRows) {
-                        NoteCard(
-                            title = stringResource(R.string.next_row_label, state.currentRow + 1),
-                            notes = state.nextNotes,
-                            highlighted = false,
-                        )
-                    }
                 }
 
-                Spacer(Modifier.weight(1f))
-                Spacer(Modifier.height(16.dp))
-
-                KnitProgressArt(
-                    icon = state.projectIcon,
-                    progress = state.progress,
-                    color = state.projectColor.toColor(),
-                    emptyColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.18f),
-                    modifier = Modifier.height(210.dp),
-                )
-
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(12.dp))
 
                 CounterButtons(
                     canIncrement = !state.isComplete,
