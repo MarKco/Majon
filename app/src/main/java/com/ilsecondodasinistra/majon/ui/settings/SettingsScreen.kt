@@ -198,6 +198,12 @@ fun SettingsScreen(
                 checked = settings.keepScreenOn,
                 onCheckedChange = viewModel::setKeepScreenOn,
             )
+            ToggleItem(
+                title = stringResource(R.string.wavy_progress),
+                subtitle = stringResource(R.string.wavy_progress_desc),
+                checked = settings.wavyProgress,
+                onCheckedChange = viewModel::setWavyProgress,
+            )
 
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
 

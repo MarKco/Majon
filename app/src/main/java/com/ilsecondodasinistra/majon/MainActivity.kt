@@ -4,11 +4,13 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
+import com.ilsecondodasinistra.majon.ui.components.LocalWavyProgress
 import com.ilsecondodasinistra.majon.ui.navigation.MajonNavGraph
 import com.ilsecondodasinistra.majon.ui.settings.SettingsViewModel
 import com.ilsecondodasinistra.majon.ui.theme.MajonTheme
@@ -28,7 +30,9 @@ class MainActivity : AppCompatActivity() {
                 themeMode = settings.theme,
                 dynamicColor = settings.dynamicColor,
             ) {
-                MajonNavGraph(navController = rememberNavController())
+                CompositionLocalProvider(LocalWavyProgress provides settings.wavyProgress) {
+                    MajonNavGraph(navController = rememberNavController())
+                }
             }
         }
     }

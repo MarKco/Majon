@@ -101,6 +101,8 @@
     <string name="haptics_desc">Haptic feedback when you complete a row</string>
     <string name="keep_screen_on">Keep screen on</string>
     <string name="keep_screen_on_desc">While the counter is open</string>
+    <string name="wavy_progress">Animated progress bars</string>
+    <string name="wavy_progress_desc">The colored part waves like a thread</string>
     <string name="data_section">Your data</string>
     <string name="export_data">Export data</string>
     <string name="export_data_desc">Save all projects to a JSON file</string>

@@ -24,6 +24,7 @@ data class AppSettings(
     val dynamicColor: Boolean = false,
     val haptics: Boolean = true,
     val keepScreenOn: Boolean = true,
+    val wavyProgress: Boolean = true,
 )
 
 @Singleton
@@ -36,6 +37,7 @@ class SettingsRepository @Inject constructor(
         val dynamicColor = booleanPreferencesKey("dynamic_color")
         val haptics = booleanPreferencesKey("haptics")
         val keepScreenOn = booleanPreferencesKey("keep_screen_on")
+        val wavyProgress = booleanPreferencesKey("wavy_progress")
     }
 
     val settings: Flow<AppSettings> = dataStore.data.map { prefs ->
@@ -49,6 +51,7 @@ class SettingsRepository @Inject constructor(
             dynamicColor = prefs[Keys.dynamicColor] ?: false,
             haptics = prefs[Keys.haptics] ?: true,
             keepScreenOn = prefs[Keys.keepScreenOn] ?: true,
+            wavyProgress = prefs[Keys.wavyProgress] ?: true,
         )
     }
 
@@ -70,5 +73,9 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setKeepScreenOn(enabled: Boolean) {
         dataStore.edit { it[Keys.keepScreenOn] = enabled }
+    }
+
+    suspend fun setWavyProgress(enabled: Boolean) {
+        dataStore.edit { it[Keys.wavyProgress] = enabled }
     }
 }
