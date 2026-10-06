@@ -10,7 +10,13 @@ import com.ilsecondodasinistra.majon.domain.model.notesForRow
 import com.ilsecondodasinistra.majon.domain.repository.MajonRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import com.ilsecondodasinistra.majon.domain.voice.VoiceCommand
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -36,6 +42,22 @@ sealed interface CounterUiState {
         val projectIcon: ProjectIcon,
         val projectColor: ProjectColor,
     ) : CounterUiState
+}
+
+/** What the app says (and shows) back after a voice command. */
+sealed interface VoiceReply {
+    /** [row] is the row now in progress. */
+    data class RowAdvanced(val row: Int) : VoiceReply
+    data class RowUndone(val row: Int) : VoiceReply
+    data class WentTo(val row: Int) : VoiceReply
+    data class OutOfRange(val totalRows: Int) : VoiceReply
+    data class PartFinished(val totalRows: Int) : VoiceReply
+    data class Note(val texts: List<String>) : VoiceReply
+    data object NoNote : VoiceReply
+    data class Remaining(val rows: Int) : VoiceReply
+    data object AskResetConfirm : VoiceReply
+    data object ResetDone : VoiceReply
+    data object ResetCancelled : VoiceReply
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -103,5 +125,80 @@ class CounterViewModel @Inject constructor(
         viewModelScope.launch {
             repository.setCompletedRows(partId, 0)
         }
+    }
+
+    private val _voiceReplies = MutableSharedFlow<VoiceReply>(extraBufferCapacity = 8)
+    val voiceReplies: SharedFlow<VoiceReply> = _voiceReplies.asSharedFlow()
+
+    private var resetPending = false
+    private var resetTimeout: Job? = null
+
+    /**
+     * Runs a spoken command. Resetting needs a spoken confirmation within
+     * [RESET_CONFIRM_MILLIS]; any other command in the meantime cancels it, so that a stray
+     * word never wipes the count.
+     */
+    fun onVoiceCommand(command: VoiceCommand) {
+        viewModelScope.launch {
+            val part = repository.observePart(partId).first() ?: return@launch
+            if (resetPending) {
+                resetPending = false
+                resetTimeout?.cancel()
+                if (command == VoiceCommand.Confirm) {
+                    repository.setCompletedRows(partId, 0)
+                    _voiceReplies.emit(VoiceReply.ResetDone)
+                } else {
+                    _voiceReplies.emit(VoiceReply.ResetCancelled)
+                }
+                return@launch
+            }
+            when (command) {
+                VoiceCommand.Increment -> {
+                    if (part.isComplete) {
+                        _voiceReplies.emit(VoiceReply.PartFinished(part.totalRows))
+                    } else {
+                        repository.adjustCompletedRows(partId, +1)
+                        val done = part.completedRows + 1
+                        _voiceReplies.emit(
+                            if (done >= part.totalRows) VoiceReply.PartFinished(part.totalRows)
+                            else VoiceReply.RowAdvanced(done + 1),
+                        )
+                    }
+                }
+                VoiceCommand.Decrement -> {
+                    repository.adjustCompletedRows(partId, -1)
+                    _voiceReplies.emit(VoiceReply.RowUndone((part.completedRows - 1).coerceAtLeast(0) + 1))
+                }
+                is VoiceCommand.GoToRow -> {
+                    if (command.row in 1..part.totalRows) {
+                        repository.setCompletedRows(partId, command.row - 1)
+                        _voiceReplies.emit(VoiceReply.WentTo(command.row))
+                    } else {
+                        _voiceReplies.emit(VoiceReply.OutOfRange(part.totalRows))
+                    }
+                }
+                VoiceCommand.ReadNote -> {
+                    val notes = repository.observeNotes(partId).first().notesForRow(part.currentRow)
+                    _voiceReplies.emit(
+                        if (notes.isEmpty()) VoiceReply.NoNote else VoiceReply.Note(notes.map { it.text }),
+                    )
+                }
+                VoiceCommand.RemainingRows ->
+                    _voiceReplies.emit(VoiceReply.Remaining((part.totalRows - part.completedRows).coerceAtLeast(0)))
+                VoiceCommand.Reset -> {
+                    resetPending = true
+                    _voiceReplies.emit(VoiceReply.AskResetConfirm)
+                    resetTimeout = launch {
+                        delay(RESET_CONFIRM_MILLIS)
+                        resetPending = false
+                    }
+                }
+                VoiceCommand.Confirm -> Unit // nothing to confirm
+            }
+        }
+    }
+
+    companion object {
+        const val RESET_CONFIRM_MILLIS = 10_000L
     }
 }

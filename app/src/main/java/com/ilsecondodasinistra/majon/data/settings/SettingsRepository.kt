@@ -25,6 +25,8 @@ data class AppSettings(
     val haptics: Boolean = true,
     val keepScreenOn: Boolean = true,
     val wavyProgress: Boolean = true,
+    val voiceFeedback: Boolean = true,
+    val volumeKeys: Boolean = false,
 )
 
 @Singleton
@@ -38,6 +40,8 @@ class SettingsRepository @Inject constructor(
         val haptics = booleanPreferencesKey("haptics")
         val keepScreenOn = booleanPreferencesKey("keep_screen_on")
         val wavyProgress = booleanPreferencesKey("wavy_progress")
+        val voiceFeedback = booleanPreferencesKey("voice_feedback")
+        val volumeKeys = booleanPreferencesKey("volume_keys")
     }
 
     val settings: Flow<AppSettings> = dataStore.data.map { prefs ->
@@ -52,6 +56,8 @@ class SettingsRepository @Inject constructor(
             haptics = prefs[Keys.haptics] ?: true,
             keepScreenOn = prefs[Keys.keepScreenOn] ?: true,
             wavyProgress = prefs[Keys.wavyProgress] ?: true,
+            voiceFeedback = prefs[Keys.voiceFeedback] ?: true,
+            volumeKeys = prefs[Keys.volumeKeys] ?: false,
         )
     }
 
@@ -77,5 +83,13 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setWavyProgress(enabled: Boolean) {
         dataStore.edit { it[Keys.wavyProgress] = enabled }
+    }
+
+    suspend fun setVoiceFeedback(enabled: Boolean) {
+        dataStore.edit { it[Keys.voiceFeedback] = enabled }
+    }
+
+    suspend fun setVolumeKeys(enabled: Boolean) {
+        dataStore.edit { it[Keys.volumeKeys] = enabled }
     }
 }

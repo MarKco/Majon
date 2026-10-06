@@ -49,6 +49,14 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setWavyProgress(enabled) }
     }
 
+    fun setVoiceFeedback(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setVoiceFeedback(enabled) }
+    }
+
+    fun setVolumeKeys(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setVolumeKeys(enabled) }
+    }
+
     suspend fun exportData(): String =
         backupCodec.encode(majonRepository.getFullProjects(), exportedAt = System.currentTimeMillis())
 

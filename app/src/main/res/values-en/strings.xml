@@ -101,6 +101,10 @@
     <string name="haptics_desc">Haptic feedback when you complete a row</string>
     <string name="keep_screen_on">Keep screen on</string>
     <string name="keep_screen_on_desc">While the counter is open</string>
+    <string name="voice_feedback">Spoken replies</string>
+    <string name="voice_feedback_desc">The phone answers voice commands out loud</string>
+    <string name="volume_keys">Volume keys</string>
+    <string name="volume_keys_desc">Volume up = row done, volume down = undo, in the counter</string>
     <string name="wavy_progress">Animated progress bars</string>
     <string name="wavy_progress_desc">The colored part waves like a thread</string>
     <string name="data_section">Your data</string>

@@ -49,6 +49,8 @@ class SettingsRepositoryTest {
         assertTrue(settings.haptics)
         assertTrue(settings.keepScreenOn)
         assertTrue(settings.wavyProgress)
+        assertTrue(settings.voiceFeedback)
+        assertFalse(settings.volumeKeys)
     }
 
     @Test
@@ -72,10 +74,14 @@ class SettingsRepositoryTest {
         repo.setHaptics(false)
         repo.setKeepScreenOn(false)
         repo.setWavyProgress(false)
+        repo.setVoiceFeedback(false)
+        repo.setVolumeKeys(true)
         val settings = repo.settings.first()
         assertTrue(settings.dynamicColor)
         assertFalse(settings.haptics)
         assertFalse(settings.keepScreenOn)
         assertFalse(settings.wavyProgress)
+        assertFalse(settings.voiceFeedback)
+        assertTrue(settings.volumeKeys)
     }
 }

@@ -204,6 +204,18 @@ fun SettingsScreen(
                 checked = settings.wavyProgress,
                 onCheckedChange = viewModel::setWavyProgress,
             )
+            ToggleItem(
+                title = stringResource(R.string.voice_feedback),
+                subtitle = stringResource(R.string.voice_feedback_desc),
+                checked = settings.voiceFeedback,
+                onCheckedChange = viewModel::setVoiceFeedback,
+            )
+            ToggleItem(
+                title = stringResource(R.string.volume_keys),
+                subtitle = stringResource(R.string.volume_keys_desc),
+                checked = settings.volumeKeys,
+                onCheckedChange = viewModel::setVolumeKeys,
+            )
 
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
 

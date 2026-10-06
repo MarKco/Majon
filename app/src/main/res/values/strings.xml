@@ -101,6 +101,10 @@
     <string name="haptics_desc">Feedback tattile quando completi una riga</string>
     <string name="keep_screen_on">Schermo sempre acceso</string>
     <string name="keep_screen_on_desc">Mentre il contatore è aperto</string>
+    <string name="voice_feedback">Risposte vocali</string>
+    <string name="voice_feedback_desc">Il telefono risponde a voce ai comandi vocali</string>
+    <string name="volume_keys">Tasti volume</string>
+    <string name="volume_keys_desc">Volume su = riga fatta, volume giù = annulla, nel contatore</string>
     <string name="wavy_progress">Barre di avanzamento animate</string>
     <string name="wavy_progress_desc">La parte colorata ondeggia come un filo</string>
     <string name="data_section">I tuoi dati</string>
