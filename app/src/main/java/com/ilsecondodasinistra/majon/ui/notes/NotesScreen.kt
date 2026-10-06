@@ -1,6 +1,9 @@
 package com.ilsecondodasinistra.majon.ui.notes
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -26,10 +29,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -271,20 +272,23 @@ private fun NoteEditorDialog(
                 Column {
                     Text(stringResource(R.string.frequency), style = MaterialTheme.typography.labelLarge)
                     Spacer(Modifier.height(6.dp))
-                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                        NoteFrequency.entries.forEachIndexed { index, freq ->
-                            SegmentedButton(
-                                selected = frequency == freq,
-                                onClick = { frequency = freq },
-                                shape = SegmentedButtonDefaults.itemShape(index = index, count = NoteFrequency.entries.size),
-                                label = {
-                                    Text(
-                                        frequencyLabel(freq),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        maxLines = 1,
+                    Column(Modifier.selectableGroup()) {
+                        NoteFrequency.entries.forEach { freq ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .selectable(
+                                        selected = frequency == freq,
+                                        onClick = { frequency = freq },
+                                        role = Role.RadioButton,
                                     )
-                                },
-                            )
+                                    .padding(vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                RadioButton(selected = frequency == freq, onClick = null)
+                                Spacer(Modifier.width(12.dp))
+                                Text(frequencyLabel(freq), style = MaterialTheme.typography.bodyLarge)
+                            }
                         }
                     }
                 }

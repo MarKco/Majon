@@ -13,7 +13,7 @@ partenza (`starting-docs/`).
 | Linguaggio | Kotlin 2.4.20 |
 | UI | Jetpack Compose + Material 3 |
 | Build | Gradle 9.8.0, AGP 9.4.1 (Kotlin built-in) |
-| Test | 75 unit test, 0 falliti |
+| Test | 80 unit test, 0 falliti |
 
 ## Stack
 
