@@ -30,6 +30,12 @@ Inserisci le istruzioni del modello come note: "alla riga 19 diminuisci di 2", "
 • Note solo per righe pari o dispari, anche combinate con un intervallo
 • Modifica e cancella in qualsiasi momento
 
+A MANI LIBERE
+• Comandi vocali: "avanti", "indietro", "vai alla riga 40", "leggi la nota", "quante righe mancano"
+• Il telefono risponde a voce, e puoi disattivarlo
+• Tasti volume come pulsanti + e − (opzionale)
+• Il microfono si attiva solo quando lo decidi tu, dalla schermata del contatore
+
 PROGETTI E PARTI
 • Progetti illimitati, ognuno con icona e colore personalizzati
 • Dividi ogni progetto in parti: davanti, dietro, maniche, collo
@@ -37,7 +43,8 @@ PROGETTI E PARTI
 • Campo filato e ferri per ricordare cosa hai usato
 
 I TUOI DATI RESTANO TUOI
-• Nessun permesso richiesto, niente internet, niente pubblicità
+• Nessuna pubblicità, nessun account, l'app non usa internet e non salva l'audio
+• Il permesso del microfono serve solo se attivi i comandi vocali
 • Esporta tutto in un file JSON e reimportalo quando vuoi
 • Perfetto per cambiare telefono senza perdere nulla
 
@@ -54,4 +61,4 @@ Che tu stia facendo un maglione complicato o la tua prima sciarpa, Majon tiene i
 
 - Titolo: 28/30 caratteri
 - Breve: 68/80 caratteri
-- Completa: 1688/4000 caratteri
+- Completa: 2065/4000 caratteri

@@ -30,6 +30,12 @@ Enter your pattern's instructions as notes: "decrease by 2 at row 19", "increase
 • Notes for odd or even rows only, combinable with a range
 • Edit and delete anytime
 
+HANDS-FREE
+• Voice commands: "next", "back", "go to row 40", "read note", "how many rows left"
+• The phone answers out loud, and you can turn that off
+• Volume keys as + and − buttons (optional)
+• The microphone only turns on when you decide, from the counter screen
+
 PROJECTS AND PARTS
 • Unlimited projects, each with its own icon and color
 • Split every project into parts: front, back, sleeves, collar
@@ -37,7 +43,8 @@ PROJECTS AND PARTS
 • Yarn and needle fields to remember what you used
 
 YOUR DATA STAYS YOURS
-• No permissions, no internet, no ads
+• No ads, no account, the app doesn't use the internet and never saves audio
+• The microphone permission is only needed if you turn on voice commands
 • Export everything to a JSON file and import it back anytime
 • Perfect for switching phones without losing a stitch
 
@@ -54,4 +61,4 @@ Whether you're knitting an intricate sweater or your very first scarf, Majon kee
 
 - Title: 27/30 characters
 - Short: 72/80 characters
-- Full: 1556/4000 characters
+- Full: 1936/4000 characters

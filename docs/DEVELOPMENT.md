@@ -13,7 +13,7 @@ partenza (`starting-docs/`).
 | Linguaggio | Kotlin 2.4.20 |
 | UI | Jetpack Compose + Material 3 |
 | Build | Gradle 9.8.0, AGP 9.4.1 (Kotlin built-in) |
-| Test | 80 unit test, 0 falliti |
+| Test | 102 unit test, 0 falliti |
 
 ## Stack
 
@@ -149,6 +149,37 @@ Test scritti prima dell'implementazione, per layer:
 
 Nota: Robolectric non supporta ancora SDK 37 → pin a 36 in
 `app/src/test/resources/robolectric.properties`.
+
+## Comandi vocali e tasti volume
+
+Controllo a mani libere del contatore, attivo solo dalla schermata del contatore.
+
+```
+domain/voice/   parseVoiceCommand(testo) -> VoiceCommand?   (pura, testata)
+                NumberWords: numeri a parole IT (0-999) ed EN, cifre
+ui/voice/       ContinuousSpeechListener  SpeechRecognizer con riavvio automatico
+                Speaker (TextToSpeech)    risposte vocali, disattivabili
+ui/input/       VolumeKeyHost             l'activity cede i tasti volume alla schermata
+CounterViewModel.onVoiceCommand(cmd) -> voiceReplies (SharedFlow<VoiceReply>)
+```
+
+- **Parser**: accetta insieme i vocabolari IT ed EN (il riconoscitore gira già nella
+  lingua dell'app) e solo frasi corte (≤ 6 parole), per ignorare le chiacchiere.
+  Prova le tre alternative del riconoscitore finché una è un comando.
+- **Azzeramento**: «azzera» chiede conferma a voce; qualunque altro comando, o 10 s
+  (`RESET_CONFIRM_MILLIS`), annullano. «annulla» durante la conferma annulla
+  l'azzeramento invece di togliere una riga.
+- **Ascolto**: `ContinuousSpeechListener` preferisce il riconoscitore on-device
+  (Android 12+); se manca la lingua offline ripiega su quello di sistema (con rete).
+  Errori transitori: riavvio con backoff, poi stop dopo 5 errori consecutivi.
+  Si ferma con `ON_STOP`, quindi il microfono non resta aperto in background.
+- **Permesso**: `RECORD_AUDIO` richiesto a runtime solo all'attivazione, con una
+  schermata che spiega cosa succede. `<queries>` per RecognitionService e TTS (API 30+).
+- **Tasti volume**: `MainActivity.dispatchKeyEvent` li intercetta solo mentre il
+  contatore li ha reclamati (impostazione "Tasti volume", spenta di default).
+- **Limiti noti**: il riconoscimento vero e proprio non è testabile in unit test
+  né sull'emulatore senza pacchetti lingua; parser e ViewModel sono coperti da
+  test, il listener si prova a mano su un dispositivo.
 
 ## Problemi incontrati e soluzioni
 

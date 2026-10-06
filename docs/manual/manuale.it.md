@@ -75,13 +75,48 @@ Tocca una parte per aprire il **contatore**.
 - La barra con le tre icone in basso contiene:
   - 📌 **Note**: gestisci le istruzioni della parte;
   - **123** **Vai alla riga…**: salta a un punto preciso;
-  - ↻ **Azzera contatore**: ricomincia da capo (le note restano).
+  - ↻ **Azzera contatore**: ricomincia da capo (le note restano);
+  - 🎙 **Comandi vocali**: attiva l'ascolto (vedi sotto).
 - Sotto le note trovi un **capo a maglia** della forma dell'icona del
   progetto: man mano che completi righe, i punti si colorano dal basso verso
   l'alto, fino a completare il lavoro.
 
 I pulsanti e la barra restano sempre in fondo allo schermo: se il contenuto è
 lungo, scorre solo la parte sopra.
+
+### Comandi vocali
+
+Con le mani occupate dai ferri puoi parlare al telefono. Tocca 🎙 nella barra
+in basso: la prima volta Majon ti spiega come funziona e chiede il permesso
+del microfono. Da quel momento ascolta di continuo, **solo mentre questa
+schermata è aperta e il microfono è attivo** (compare "In ascolto…" e il
+pallino verde di Android). Si spegne da solo se esci dalla schermata o
+blocchi il telefono, e ogni volta lo riattivi tu.
+
+<img src="images/it/12-voice.png" width="260" alt="Comandi vocali attivi">
+
+| Dici | Succede |
+|---|---|
+| «avanti», «fatto», «riga fatta», «più» | riga fatta (+1) |
+| «indietro», «annulla», «meno» | annulla l'ultima riga (−1) |
+| «vai alla riga 40» (anche «quaranta») | salta a quella riga |
+| «leggi la nota», «cosa devo fare» | legge a voce la nota della riga |
+| «quante righe mancano» | dice quante righe restano |
+| «azzera» → «conferma» | azzera il contatore, solo dopo conferma a voce |
+
+I comandi funzionano anche in inglese («next», «back», «go to row 40», «read
+note», «how many rows left», «reset»). Contano solo frasi brevi, così le
+chiacchiere in stanza non spostano il contatore. Se dopo «azzera» dici
+qualunque altra cosa, o aspetti 10 secondi, l'azzeramento è annullato.
+
+Per le risposte a voce ("Riga 41") vedi **Risposte vocali** nelle
+Impostazioni. Il riconoscimento lo fa il servizio vocale del telefono: se la
+lingua non è installata offline, può usare internet.
+
+### Tasti volume
+
+Se li attivi nelle Impostazioni, nel contatore **volume su** = riga fatta e
+**volume giù** = annulla, senza guardare lo schermo.
 
 ### A lavoro finito
 
@@ -136,6 +171,12 @@ Si aprono dall'ingranaggio nella schermata principale.
 - **Schermo sempre acceso**: mentre il contatore è aperto.
 - **Barre di avanzamento animate**: attiva o disattiva l'ondeggiamento della
   parte colorata. Spento, le barre restano piatte.
+- **Risposte vocali**: il telefono risponde a voce ai comandi vocali (riga
+  attuale, note, righe rimaste). Spento, i comandi funzionano in silenzio.
+- **Tasti volume**: nel contatore, volume su = riga fatta, volume giù =
+  annulla. Spento per impostazione predefinita.
+
+<img src="images/it/11-settings-more.png" width="260" alt="Altre impostazioni">
 
 ## 6. Backup dei dati
 
@@ -164,5 +205,10 @@ parte mantengono il proprio conteggio.
 
 **Se tocco + velocemente perdo dei conteggi?** No: ogni tocco viene contato.
 
-**L'app chiede permessi?** Nessuno. Niente internet, niente pubblicità: i
-dati restano tuoi.
+**L'app chiede permessi?** Solo il microfono, e solo se attivi i comandi
+vocali nel contatore. L'app non usa internet, non ha pubblicità e non salva
+l'audio: i dati restano tuoi.
+
+**I comandi vocali non capiscono.** Parla chiaro e con frasi brevi; controlla
+che la lingua dell'app sia installata nel riconoscimento vocale del telefono
+(Impostazioni di Android → Lingue → Digitazione vocale).

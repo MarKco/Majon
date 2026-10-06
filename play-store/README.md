@@ -25,3 +25,9 @@ Tutto il materiale per la scheda Play Store di Majon.
 
 Screenshot ripresi da emulatore Pixel 4 con dati dimostrativi
 ("Maglione a righe" con 3 parti e note attive sulla riga 19, "Sciarpa arcobaleno").
+
+## Modulo "Sicurezza dei dati" e permessi
+
+- Permesso dichiarato: `RECORD_AUDIO`, richiesto a runtime solo quando l'utente attiva i comandi vocali nel contatore. `uses-feature` microfono `required="false"`: l'app resta installabile su dispositivi senza microfono.
+- Audio: raccolto solo mentre i comandi vocali sono attivi e la schermata del contatore è aperta; non viene registrato, salvato né inviato dall'app. Il riconoscimento è fatto dal servizio vocale di sistema (Google), che può usare la rete se la lingua non è installata offline.
+- Nessun altro dato raccolto o condiviso; nessun account, nessuna pubblicità.

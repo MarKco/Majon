@@ -76,13 +76,48 @@ Tap a part to open the **counter**.
 - The bar with three icons at the bottom holds:
   - 📌 **Notes**: manage the part's instructions;
   - **123** **Go to row…**: jump to an exact row;
-  - ↻ **Reset counter**: start over (notes are kept).
+  - ↻ **Reset counter**: start over (notes are kept);
+  - 🎙 **Voice commands**: turn listening on (see below).
 - Below the notes you'll see a **knitted garment** shaped like the project's
   icon: as you finish rows, its stitches take on color from the bottom up
   until the piece is complete.
 
 The buttons and the bar always stay at the bottom of the screen: when the
 content is long, only the part above scrolls.
+
+### Voice commands
+
+With your hands busy with the needles you can talk to your phone. Tap 🎙 in
+the bottom bar: the first time Majon explains how it works and asks for
+microphone permission. From then on it listens continuously, **only while
+this screen is open and the microphone is on** ("Listening…" appears, plus
+Android's green dot). It switches itself off when you leave the screen or
+lock the phone, and you turn it on again each time.
+
+<img src="images/en/12-voice.png" width="260" alt="Voice commands on">
+
+| Say | What happens |
+|---|---|
+| "next", "done", "row done", "plus" | row finished (+1) |
+| "back", "undo", "minus" | undo the last row (−1) |
+| "go to row 40" (or "forty") | jump to that row |
+| "read note", "what to do" | reads the row's note out loud |
+| "how many rows left" | tells how many rows remain |
+| "reset" → "confirm" | resets the counter, only after a spoken confirmation |
+
+Commands also work in Italian ("avanti", "indietro", "vai alla riga 40"…).
+Only short phrases count, so chatter in the room won't move the counter. If
+after "reset" you say anything else, or wait 10 seconds, the reset is
+cancelled.
+
+For spoken answers ("Row 41") see **Spoken replies** in Settings.
+Recognition is done by the phone's speech service: if the language isn't
+installed offline, it may use the internet.
+
+### Volume keys
+
+If you turn them on in Settings, in the counter **volume up** = row done and
+**volume down** = undo, without looking at the screen.
 
 ### When you finish
 
@@ -136,6 +171,12 @@ Open them from the gear on the home screen.
 - **Keep screen on**: while the counter is open.
 - **Animated progress bars**: turn the waving of the colored part on or off.
   When off, bars stay flat.
+- **Spoken replies**: the phone answers voice commands out loud (current
+  row, notes, rows left). When off, commands work silently.
+- **Volume keys**: in the counter, volume up = row done, volume down = undo.
+  Off by default.
+
+<img src="images/en/11-settings-more.png" width="260" alt="More settings">
 
 ## 6. Data backup
 
@@ -164,5 +205,10 @@ every part keeps its own count.
 
 **If I tap + very fast, do I lose counts?** No: every tap is counted.
 
-**Does the app ask for permissions?** None. No internet, no ads: your data
-stays yours.
+**Does the app ask for permissions?** Only the microphone, and only if you
+turn on voice commands in the counter. The app doesn't use the internet, has
+no ads and never saves audio: your data stays yours.
+
+**Voice commands don't understand me.** Speak clearly in short phrases, and
+check that the app's language is installed in your phone's speech
+recognition (Android Settings → Languages → Voice input).
