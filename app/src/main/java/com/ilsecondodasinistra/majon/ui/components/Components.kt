@@ -150,7 +150,7 @@ fun AnimatedProgressBar(
             x = (x + 3.dp.toPx()).coerceAtMost(length)
         }
         // Slightly thinner than the track so it reads as a thread lying on it
-        drawPath(path, color, style = Stroke(width = strokeWidth * 0.7f, cap = StrokeCap.Round))
+        drawPath(path, color, style = Stroke(width = strokeWidth * 0.4f, cap = StrokeCap.Round))
     }
 }
 
