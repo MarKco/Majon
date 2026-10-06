@@ -12,6 +12,8 @@ import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.runtime.LaunchedEffect
 import com.ilsecondodasinistra.majon.ui.components.Confetti
+import com.ilsecondodasinistra.majon.ui.components.KnitProgressArt
+import com.ilsecondodasinistra.majon.ui.theme.toColor
 import com.ilsecondodasinistra.majon.ui.components.PulseRing
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
@@ -144,7 +146,6 @@ fun CounterScreen(
         },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
-            // Disabled for now; to bring it back: YarnThreadBackground(state.progress, MaterialTheme.colorScheme.primary)
 
             Column(
                 modifier = Modifier
@@ -207,7 +208,17 @@ fun CounterScreen(
                 }
 
                 Spacer(Modifier.weight(1f))
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(16.dp))
+
+                KnitProgressArt(
+                    icon = state.projectIcon,
+                    progress = state.progress,
+                    color = state.projectColor.toColor(),
+                    emptyColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.18f),
+                    modifier = Modifier.height(210.dp),
+                )
+
+                Spacer(Modifier.height(16.dp))
 
                 CounterButtons(
                     canIncrement = !state.isComplete,

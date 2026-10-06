@@ -3,6 +3,8 @@ package com.ilsecondodasinistra.majon.ui.counter
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilsecondodasinistra.majon.domain.model.ProjectColor
+import com.ilsecondodasinistra.majon.domain.model.ProjectIcon
 import com.ilsecondodasinistra.majon.domain.model.RowNote
 import com.ilsecondodasinistra.majon.domain.model.notesForRow
 import com.ilsecondodasinistra.majon.domain.repository.MajonRepository
@@ -11,7 +13,12 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -26,9 +33,12 @@ sealed interface CounterUiState {
         val isComplete: Boolean,
         val currentNotes: List<RowNote>,
         val nextNotes: List<RowNote>,
+        val projectIcon: ProjectIcon,
+        val projectColor: ProjectColor,
     ) : CounterUiState
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class CounterViewModel @Inject constructor(
     private val repository: MajonRepository,
@@ -37,10 +47,18 @@ class CounterViewModel @Inject constructor(
 
     private val partId: Long = checkNotNull(savedStateHandle["partId"])
 
+    private val project = repository.observePart(partId)
+        .map { it?.projectId }
+        .distinctUntilChanged()
+        .flatMapLatest { projectId ->
+            if (projectId == null) flowOf(null) else repository.observeProject(projectId)
+        }
+
     val uiState: StateFlow<CounterUiState> = combine(
         repository.observePart(partId),
         repository.observeNotes(partId),
-    ) { part, notes ->
+        project,
+    ) { part, notes, projectWithParts ->
         if (part == null) {
             CounterUiState.Loading
         } else {
@@ -54,6 +72,8 @@ class CounterViewModel @Inject constructor(
                 isComplete = part.isComplete,
                 currentNotes = notes.notesForRow(currentRow),
                 nextNotes = if (currentRow < part.totalRows) notes.notesForRow(currentRow + 1) else emptyList(),
+                projectIcon = projectWithParts?.project?.icon ?: ProjectIcon.YARN,
+                projectColor = projectWithParts?.project?.color ?: ProjectColor.TERRACOTTA,
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CounterUiState.Loading)
