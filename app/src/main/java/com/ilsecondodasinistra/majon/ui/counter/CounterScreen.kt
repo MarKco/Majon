@@ -1,6 +1,25 @@
 package com.ilsecondodasinistra.majon.ui.counter
 
 import android.view.WindowManager
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MicOff
+import androidx.compose.material3.FilledTonalIconToggleButton
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import com.ilsecondodasinistra.majon.domain.voice.parseVoiceCommand
+import com.ilsecondodasinistra.majon.ui.input.VolumeKeyHost
+import com.ilsecondodasinistra.majon.ui.voice.ContinuousSpeechListener
+import com.ilsecondodasinistra.majon.ui.voice.SpeechFailure
+import com.ilsecondodasinistra.majon.ui.voice.rememberSpeaker
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
@@ -133,6 +152,109 @@ fun CounterScreen(
         wasComplete = state.isComplete
     }
 
+    val context = LocalContext.current
+    val resources = LocalResources.current
+    val languageTag = LocalLocale.current.platformLocale.toLanguageTag()
+    var listening by rememberSaveable { mutableStateOf(false) }
+    var heardText by remember { mutableStateOf<String?>(null) }
+    var voiceMessage by remember { mutableStateOf<String?>(null) }
+    var showVoiceInfo by rememberSaveable { mutableStateOf(false) }
+    val speaker = rememberSpeaker(enabled = settings.voiceFeedback)
+
+    // Same feedback whether a row is finished by tap, volume key or voice
+    val advance = {
+        if (!state.isComplete) {
+            if (settings.haptics) haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+            pulseKey++
+            viewModel.increment()
+        }
+    }
+    val undo = {
+        if (settings.haptics) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        viewModel.decrement()
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            voiceMessage = null
+            listening = true
+        } else {
+            voiceMessage = resources.getString(R.string.voice_permission_denied)
+        }
+    }
+    val toggleVoice = {
+        voiceMessage = null
+        when {
+            listening -> listening = false
+            ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
+                PackageManager.PERMISSION_GRANTED -> listening = true
+            else -> showVoiceInfo = true
+        }
+    }
+
+    val onHeard by rememberUpdatedState<(List<String>) -> Unit> { alternatives ->
+        heardText = alternatives.first()
+        alternatives.firstNotNullOfOrNull { parseVoiceCommand(it) }?.let(viewModel::onVoiceCommand)
+    }
+    DisposableEffect(listening, languageTag) {
+        if (!listening) return@DisposableEffect onDispose { }
+        val listener = ContinuousSpeechListener(
+            context = context,
+            languageTag = languageTag,
+            onHeard = { onHeard(it) },
+            onFailure = { failure ->
+                listening = false
+                voiceMessage = resources.getString(
+                    when (failure) {
+                        SpeechFailure.UNAVAILABLE -> R.string.voice_unavailable
+                        SpeechFailure.PERMISSION -> R.string.voice_permission_denied
+                        SpeechFailure.LANGUAGE -> R.string.voice_language_unavailable
+                        SpeechFailure.TOO_MANY_ERRORS -> R.string.voice_stopped
+                    },
+                )
+            },
+        )
+        listener.start()
+        onDispose { listener.stop() }
+    }
+    LaunchedEffect(listening) { if (!listening) heardText = null }
+    // Never keep the microphone open once the app is out of sight
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) { listening = false }
+
+    LaunchedEffect(viewModel, speaker, settings.haptics) {
+        viewModel.voiceReplies.collect { reply ->
+            val text = when (reply) {
+                is VoiceReply.RowAdvanced -> {
+                    pulseKey++
+                    if (settings.haptics) haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                    resources.getString(R.string.voice_reply_row, reply.row)
+                }
+                is VoiceReply.RowUndone -> resources.getString(R.string.voice_reply_undo, reply.row)
+                is VoiceReply.WentTo -> resources.getString(R.string.voice_reply_row, reply.row)
+                is VoiceReply.OutOfRange -> resources.getString(R.string.voice_reply_out_of_range, reply.totalRows)
+                is VoiceReply.PartFinished -> resources.getString(R.string.voice_reply_finished)
+                is VoiceReply.Note -> reply.texts.joinToString(". ")
+                VoiceReply.NoNote -> resources.getString(R.string.voice_reply_no_note)
+                is VoiceReply.Remaining ->
+                    resources.getQuantityString(R.plurals.voice_reply_remaining, reply.rows, reply.rows)
+                VoiceReply.AskResetConfirm -> resources.getString(R.string.voice_reply_ask_reset)
+                VoiceReply.ResetDone -> resources.getString(R.string.voice_reply_reset_done)
+                VoiceReply.ResetCancelled -> resources.getString(R.string.voice_reply_reset_cancelled)
+            }
+            speaker?.speak(text)
+        }
+    }
+
+    val volumeHost = LocalActivity.current as? VolumeKeyHost
+    val currentAdvance by rememberUpdatedState(advance)
+    val currentUndo by rememberUpdatedState(undo)
+    DisposableEffect(volumeHost, settings.volumeKeys) {
+        if (volumeHost != null && settings.volumeKeys) {
+            volumeHost.volumeKeyHandler = { up -> if (up) currentAdvance() else currentUndo() }
+        }
+        onDispose { volumeHost?.volumeKeyHandler = null }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -229,23 +351,20 @@ fun CounterScreen(
 
                 Spacer(Modifier.height(12.dp))
 
+                VoiceStatus(listening = listening, heard = heardText, message = voiceMessage)
+
                 CounterButtons(
                     canIncrement = !state.isComplete,
                     pulseKey = pulseKey,
-                    onDecrement = {
-                        if (settings.haptics) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        viewModel.decrement()
-                    },
-                    onIncrement = {
-                        if (settings.haptics) haptic.performHapticFeedback(HapticFeedbackType.Confirm)
-                        pulseKey++
-                        viewModel.increment()
-                    },
+                    onDecrement = undo,
+                    onIncrement = advance,
                 )
 
                 Spacer(Modifier.height(20.dp))
 
                 CounterToolbar(
+                    listening = listening,
+                    onToggleVoice = toggleVoice,
                     onNotes = onNotes,
                     onSetRow = { goToRowDialog = true },
                     onReset = { resetDialog = true },
@@ -256,6 +375,25 @@ fun CounterScreen(
 
             Confetti(burstKey = confettiKey)
         }
+    }
+
+    if (showVoiceInfo) {
+        AlertDialog(
+            onDismissRequest = { showVoiceInfo = false },
+            title = { Text(stringResource(R.string.voice_rationale_title)) },
+            text = { Text(stringResource(R.string.voice_rationale_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showVoiceInfo = false
+                        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    },
+                ) { Text(stringResource(R.string.voice_rationale_continue)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showVoiceInfo = false }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
     }
 
     if (resetDialog) {
@@ -397,9 +535,49 @@ private fun CounterButtons(
     }
 }
 
+@Composable
+private fun VoiceStatus(listening: Boolean, heard: String?, message: String?) {
+    AnimatedVisibility(
+        visible = listening || message != null,
+        enter = expandVertically() + fadeIn(),
+        exit = shrinkVertically() + fadeOut(),
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(bottom = 12.dp)) {
+            if (message != null) {
+                Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Mic,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        stringResource(R.string.voice_listening),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                if (heard != null) {
+                    Text(
+                        stringResource(R.string.voice_heard, heard),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun CounterToolbar(
+    listening: Boolean,
+    onToggleVoice: () -> Unit,
     onNotes: () -> Unit,
     onSetRow: () -> Unit,
     onReset: () -> Unit,
@@ -416,6 +594,12 @@ private fun CounterToolbar(
             }
             IconButton(onClick = onReset) {
                 Icon(Icons.Default.RestartAlt, contentDescription = stringResource(R.string.reset_counter))
+            }
+            FilledTonalIconToggleButton(checked = listening, onCheckedChange = { onToggleVoice() }) {
+                Icon(
+                    if (listening) Icons.Default.Mic else Icons.Default.MicOff,
+                    contentDescription = stringResource(if (listening) R.string.voice_stop else R.string.voice_start),
+                )
             }
         },
     )

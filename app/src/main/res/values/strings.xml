@@ -105,6 +105,29 @@
     <string name="voice_feedback_desc">Il telefono risponde a voce ai comandi vocali</string>
     <string name="volume_keys">Tasti volume</string>
     <string name="volume_keys_desc">Volume su = riga fatta, volume giù = annulla, nel contatore</string>
+    <string name="voice_start">Attiva i comandi vocali</string>
+    <string name="voice_stop">Disattiva i comandi vocali</string>
+    <string name="voice_listening">In ascolto…</string>
+    <string name="voice_heard">Ho sentito: «%1$s»</string>
+    <string name="voice_unavailable">Il riconoscimento vocale non è disponibile su questo dispositivo</string>
+    <string name="voice_language_unavailable">Lingua non disponibile per il riconoscimento vocale</string>
+    <string name="voice_permission_denied">Serve il permesso del microfono per i comandi vocali</string>
+    <string name="voice_stopped">Comandi vocali interrotti</string>
+    <string name="voice_rationale_title">Comandi vocali</string>
+    <string name="voice_rationale_message">Majon ascolta il microfono solo mentre questa schermata è aperta e i comandi vocali sono attivi. L\'audio non viene registrato né salvato da Majon. Il riconoscimento è fatto dal servizio vocale del telefono: senza la lingua offline installata può usare internet. Prova a dire: «avanti», «indietro», «vai alla riga 40», «leggi la nota», «quante righe mancano», «azzera».</string>
+    <string name="voice_rationale_continue">Continua</string>
+    <string name="voice_reply_row">Riga %1$d</string>
+    <string name="voice_reply_undo">Indietro, riga %1$d</string>
+    <string name="voice_reply_out_of_range">La parte ha %1$d righe</string>
+    <string name="voice_reply_finished">Parte completata</string>
+    <string name="voice_reply_no_note">Nessuna nota per questa riga</string>
+    <plurals name="voice_reply_remaining">
+        <item quantity="one">Manca %1$d riga</item>
+        <item quantity="other">Mancano %1$d righe</item>
+    </plurals>
+    <string name="voice_reply_ask_reset">Dì conferma per azzerare il contatore</string>
+    <string name="voice_reply_reset_done">Contatore azzerato</string>
+    <string name="voice_reply_reset_cancelled">Azzeramento annullato</string>
     <string name="wavy_progress">Barre di avanzamento animate</string>
     <string name="wavy_progress_desc">La parte colorata ondeggia come un filo</string>
     <string name="data_section">I tuoi dati</string>

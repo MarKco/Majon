@@ -105,6 +105,29 @@
     <string name="voice_feedback_desc">The phone answers voice commands out loud</string>
     <string name="volume_keys">Volume keys</string>
     <string name="volume_keys_desc">Volume up = row done, volume down = undo, in the counter</string>
+    <string name="voice_start">Turn on voice commands</string>
+    <string name="voice_stop">Turn off voice commands</string>
+    <string name="voice_listening">Listening…</string>
+    <string name="voice_heard">Heard: “%1$s”</string>
+    <string name="voice_unavailable">Speech recognition is not available on this device</string>
+    <string name="voice_language_unavailable">Language not available for speech recognition</string>
+    <string name="voice_permission_denied">Microphone permission is needed for voice commands</string>
+    <string name="voice_stopped">Voice commands stopped</string>
+    <string name="voice_rationale_title">Voice commands</string>
+    <string name="voice_rationale_message">Majon listens to the microphone only while this screen is open and voice commands are on. Majon never records or saves audio. Recognition is done by the phone’s speech service: without the offline language installed it may use the internet. Try saying: “next”, “back”, “go to row 40”, “read note”, “how many rows left”, “reset”.</string>
+    <string name="voice_rationale_continue">Continue</string>
+    <string name="voice_reply_row">Row %1$d</string>
+    <string name="voice_reply_undo">Back, row %1$d</string>
+    <string name="voice_reply_out_of_range">The part has %1$d rows</string>
+    <string name="voice_reply_finished">Part complete</string>
+    <string name="voice_reply_no_note">No note for this row</string>
+    <plurals name="voice_reply_remaining">
+        <item quantity="one">%1$d row left</item>
+        <item quantity="other">%1$d rows left</item>
+    </plurals>
+    <string name="voice_reply_ask_reset">Say confirm to reset the counter</string>
+    <string name="voice_reply_reset_done">Counter reset</string>
+    <string name="voice_reply_reset_cancelled">Reset cancelled</string>
     <string name="wavy_progress">Animated progress bars</string>
     <string name="wavy_progress_desc">The colored part waves like a thread</string>
     <string name="data_section">Your data</string>
