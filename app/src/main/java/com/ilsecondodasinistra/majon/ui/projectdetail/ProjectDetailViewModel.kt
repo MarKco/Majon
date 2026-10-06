@@ -52,7 +52,13 @@ class ProjectDetailViewModel @Inject constructor(
         if (name.isBlank() || totalRows <= 0) return false
         viewModelScope.launch {
             val part = repository.observePart(partId).first() ?: return@launch
-            repository.upsertPart(part.copy(name = name.trim(), totalRows = totalRows))
+            repository.upsertPart(
+                part.copy(
+                    name = name.trim(),
+                    totalRows = totalRows,
+                    completedRows = part.completedRows.coerceAtMost(totalRows),
+                ),
+            )
         }
         return true
     }

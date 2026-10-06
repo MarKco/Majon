@@ -128,4 +128,28 @@ class BackupCodecTest {
         val json = codec.encode(emptyList(), exportedAt = 1L)
         assertTrue(codec.decode(json).getOrThrow().isEmpty())
     }
+
+    @Test
+    fun `decode sanitizes invalid numbers and drops blank notes`() {
+        val json = """
+            {"app":"majon","exportedAt":1,"projects":[{"name":" X ","parts":[
+              {"name":"P","totalRows":0,"completedRows":9,"notes":[
+                {"rowStart":0,"rowEnd":-3,"text":"ok"},
+                {"rowStart":1,"rowEnd":2,"text":"  "}]}]}]}
+        """.trimIndent()
+        val project = codec.decode(json).getOrThrow().single()
+        assertEquals("X", project.project.name)
+        val part = project.parts.single()
+        assertEquals(1, part.part.totalRows)
+        assertEquals(1, part.part.completedRows)
+        val note = part.notes.single()
+        assertEquals(1, note.rowStart)
+        assertEquals(1, note.rowEnd)
+    }
+
+    @Test
+    fun `decode rejects project without name`() {
+        val json = """{"app":"majon","exportedAt":1,"projects":[{"name":" "}]}"""
+        assertTrue(codec.decode(json).isFailure)
+    }
 }

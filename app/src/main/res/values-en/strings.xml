@@ -80,6 +80,7 @@
     <string name="note_error_end">End row is before start row</string>
     <string name="note_error_range">Beyond the part’s total rows</string>
     <string name="note_error_text">Write the note text</string>
+    <string name="note_out_of_range">Beyond the total rows: this note will not be shown</string>
     <string name="note_rows_single">Row %1$d</string>
     <string name="note_rows_range">Rows %1$d–%2$d</string>
     <string name="delete_note_title">Delete note?</string>
@@ -100,6 +101,8 @@
     <string name="haptics_desc">Haptic feedback when you complete a row</string>
     <string name="keep_screen_on">Keep screen on</string>
     <string name="keep_screen_on_desc">While the counter is open</string>
+    <string name="wavy_progress">Animated progress bars</string>
+    <string name="wavy_progress_desc">The colored part waves like a thread</string>
     <string name="data_section">Your data</string>
     <string name="export_data">Export data</string>
     <string name="export_data_desc">Save all projects to a JSON file</string>

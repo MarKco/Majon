@@ -70,6 +70,13 @@ class ProjectDetailViewModelTest {
     }
 
     @Test
+    fun `updatePart clamps completed rows to the new total`() = runTest {
+        val partId = repository.upsertPart(Part(projectId = projectId, name = "Davanti", totalRows = 100, completedRows = 80))
+        assertTrue(viewModel().updatePart(partId, "Davanti", 50))
+        assertEquals(50, repository.observePart(partId).first()!!.completedRows)
+    }
+
+    @Test
     fun `deletePart removes it`() = runTest {
         val partId = repository.upsertPart(Part(projectId = projectId, name = "Collo", totalRows = 20))
         viewModel().deletePart(partId)

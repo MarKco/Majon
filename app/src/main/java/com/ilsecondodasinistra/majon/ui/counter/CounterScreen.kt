@@ -3,8 +3,21 @@ package com.ilsecondodasinistra.majon.ui.counter
 import android.view.WindowManager
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.material.icons.filled.Pin
+import androidx.compose.material.icons.filled.RestartAlt
+import androidx.compose.material3.ButtonGroup
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FloatingToolbarDefaults
+import androidx.compose.material3.HorizontalFloatingToolbar
+import androidx.compose.runtime.LaunchedEffect
+import com.ilsecondodasinistra.majon.ui.components.Confetti
+import com.ilsecondodasinistra.majon.ui.components.KnitProgressArt
+import com.ilsecondodasinistra.majon.ui.theme.toColor
+import com.ilsecondodasinistra.majon.ui.components.PulseRing
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
@@ -29,12 +42,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -107,6 +121,18 @@ fun CounterScreen(
 
     val state = uiState as? CounterUiState.Ready ?: return
 
+    var pulseKey by rememberSaveable { mutableStateOf(0) }
+    var confettiKey by rememberSaveable { mutableStateOf(0) }
+    // Celebrate only on the transition to complete, not when reopening a finished part
+    var wasComplete by rememberSaveable { mutableStateOf(state.isComplete) }
+    LaunchedEffect(state.isComplete) {
+        if (state.isComplete && !wasComplete) {
+            confettiKey++
+            if (settings.haptics) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        }
+        wasComplete = state.isComplete
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -116,168 +142,110 @@ fun CounterScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
                     }
                 },
-                actions = {
-                    var menuOpen by remember { mutableStateOf(false) }
-                    Box {
-                        IconButton(onClick = { menuOpen = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.menu))
-                        }
-                        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.notes)) },
-                                onClick = {
-                                    menuOpen = false
-                                    onNotes()
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.set_row)) },
-                                onClick = {
-                                    menuOpen = false
-                                    goToRowDialog = true
-                                },
-                            )
-                            DropdownMenuItem(
-                                text = { Text(stringResource(R.string.reset_counter)) },
-                                onClick = {
-                                    menuOpen = false
-                                    resetDialog = true
-                                },
-                            )
-                        }
-                    }
-                },
             )
         },
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 24.dp)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Spacer(Modifier.height(8.dp))
+        Box(Modifier.fillMaxSize().padding(padding)) {
 
-            // Progress
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp)
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                AnimatedProgressBar(
-                    progress = state.progress,
-                    modifier = Modifier.weight(1f),
-                )
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    "${(state.progress * 100).roundToInt()}%",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                )
-            }
+                Spacer(Modifier.height(8.dp))
 
-            Spacer(Modifier.height(24.dp))
+                // Progress
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    AnimatedProgressBar(
+                        progress = state.progress,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Text(
+                        "${(state.progress * 100).roundToInt()}%",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
 
-            if (state.isComplete) {
-                CompletionCelebration(totalRows = state.totalRows)
-            } else {
-                // Row counter
-                AnimatedContent(
-                    targetState = state.currentRow,
-                    transitionSpec = {
-                        if (targetState > initialState) {
-                            (slideInVertically { it / 2 } + fadeIn()) togetherWith
-                                (slideOutVertically { -it / 2 } + fadeOut())
-                        } else {
-                            (slideInVertically { -it / 2 } + fadeIn()) togetherWith
-                                (slideOutVertically { it / 2 } + fadeOut())
-                        }
-                    },
-                    label = "rowNumber",
-                ) { row ->
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            stringResource(R.string.row_current, row),
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                Spacer(Modifier.height(24.dp))
+
+                if (state.isComplete) {
+                    CompletionCelebration(totalRows = state.totalRows)
+                } else {
+                    RowNumber(row = state.currentRow, totalRows = state.totalRows)
+
+                    Spacer(Modifier.height(16.dp))
+
+                    // Current row notes
+                    AnimatedVisibility(
+                        visible = state.currentNotes.isNotEmpty(),
+                        enter = expandVertically() + fadeIn(),
+                        exit = shrinkVertically() + fadeOut(),
+                    ) {
+                        NoteCard(
+                            title = stringResource(R.string.current_row_note),
+                            notes = state.currentNotes,
+                            highlighted = true,
                         )
-                        Text(
-                            "$row",
-                            style = MaterialTheme.typography.displayLarge,
-                            fontSize = 110.sp,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                        Text(
-                            stringResource(R.string.row_of_total, state.totalRows),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    // Next row preview
+                    if (state.currentRow < state.totalRows) {
+                        NoteCard(
+                            title = stringResource(R.string.next_row_label, state.currentRow + 1),
+                            notes = state.nextNotes,
+                            highlighted = false,
                         )
                     }
                 }
 
+                Spacer(Modifier.weight(1f))
                 Spacer(Modifier.height(16.dp))
 
-                // Current row notes
-                AnimatedVisibility(
-                    visible = state.currentNotes.isNotEmpty(),
-                    enter = expandVertically() + fadeIn(),
-                    exit = shrinkVertically() + fadeOut(),
-                ) {
-                    NoteCard(
-                        title = stringResource(R.string.current_row_note),
-                        notes = state.currentNotes,
-                        highlighted = true,
-                    )
-                }
+                KnitProgressArt(
+                    icon = state.projectIcon,
+                    progress = state.progress,
+                    color = state.projectColor.toColor(),
+                    emptyColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.18f),
+                    modifier = Modifier.height(210.dp),
+                )
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(16.dp))
 
-                // Next row preview
-                if (state.currentRow < state.totalRows) {
-                    NoteCard(
-                        title = stringResource(R.string.next_row_label, state.currentRow + 1),
-                        notes = state.nextNotes,
-                        highlighted = false,
-                    )
-                }
-            }
-
-            Spacer(Modifier.weight(1f))
-            Spacer(Modifier.height(24.dp))
-
-            // Buttons
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(24.dp),
-            ) {
-                FilledIconButton(
-                    onClick = {
+                CounterButtons(
+                    canIncrement = !state.isComplete,
+                    pulseKey = pulseKey,
+                    onDecrement = {
                         if (settings.haptics) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         viewModel.decrement()
                     },
-                    modifier = Modifier.size(64.dp),
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    ),
-                ) {
-                    Icon(
-                        Icons.Default.Remove,
-                        contentDescription = stringResource(R.string.row_undo),
-                        modifier = Modifier.size(28.dp),
-                    )
-                }
-
-                PlusButton(
-                    enabled = !state.isComplete,
-                    onClick = {
+                    onIncrement = {
                         if (settings.haptics) haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                        pulseKey++
                         viewModel.increment()
                     },
                 )
+
+                Spacer(Modifier.height(20.dp))
+
+                CounterToolbar(
+                    onNotes = onNotes,
+                    onSetRow = { goToRowDialog = true },
+                    onReset = { resetDialog = true },
+                )
+
+                Spacer(Modifier.height(24.dp))
             }
-            Spacer(Modifier.height(32.dp))
+
+            Confetti(burstKey = confettiKey)
         }
     }
 
@@ -308,32 +276,140 @@ fun CounterScreen(
 }
 
 @Composable
-private fun PlusButton(
-    enabled: Boolean,
-    onClick: () -> Unit,
+private fun RowNumber(row: Int, totalRows: Int) {
+    // Springy pop each time the row changes
+    val pop = remember { Animatable(1f) }
+    LaunchedEffect(row) {
+        pop.snapTo(0.85f)
+        pop.animateTo(1f, spring(dampingRatio = Spring.DampingRatioHighBouncy, stiffness = Spring.StiffnessMedium))
+    }
+    AnimatedContent(
+        targetState = row,
+        transitionSpec = {
+            if (targetState > initialState) {
+                (slideInVertically { it / 2 } + fadeIn()) togetherWith
+                    (slideOutVertically { -it / 2 } + fadeOut())
+            } else {
+                (slideInVertically { -it / 2 } + fadeIn()) togetherWith
+                    (slideOutVertically { it / 2 } + fadeOut())
+            }
+        },
+        label = "rowNumber",
+    ) { value ->
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                stringResource(R.string.row_current, value),
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                "$value",
+                style = MaterialTheme.typography.displayLarge,
+                fontSize = 110.sp,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.scale(pop.value),
+            )
+            Text(
+                stringResource(R.string.row_of_total, totalRows),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun CounterButtons(
+    canIncrement: Boolean,
+    pulseKey: Int,
+    onDecrement: () -> Unit,
+    onIncrement: () -> Unit,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val pressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (pressed) 0.88f else 1f,
+    val minusSource = remember { MutableInteractionSource() }
+    val plusSource = remember { MutableInteractionSource() }
+    val plusPressed by plusSource.collectIsPressedAsState()
+    val corner by animateDpAsState(
+        targetValue = if (plusPressed) 36.dp else 56.dp,
         animationSpec = spring(stiffness = Spring.StiffnessMedium),
-        label = "plusScale",
+        label = "plusCorner",
     )
-    FilledIconButton(
-        onClick = onClick,
-        enabled = enabled,
-        interactionSource = interactionSource,
-        modifier = Modifier
-            .size(104.dp)
-            .scale(scale),
-        shape = CircleShape,
-    ) {
-        Icon(
-            Icons.Default.Add,
-            contentDescription = stringResource(R.string.row_done),
-            modifier = Modifier.size(52.dp),
+    ButtonGroup(overflowIndicator = {}) {
+        customItem(
+            buttonGroupContent = {
+                Box(
+                    modifier = Modifier.size(width = 72.dp, height = 112.dp).animateWidth(minusSource),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    FilledIconButton(
+                        onClick = onDecrement,
+                        interactionSource = minusSource,
+                        modifier = Modifier.fillMaxWidth().height(72.dp),
+                        shape = MaterialTheme.shapes.extraLarge,
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        ),
+                    ) {
+                        Icon(
+                            Icons.Default.Remove,
+                            contentDescription = stringResource(R.string.row_undo),
+                            modifier = Modifier.size(28.dp),
+                        )
+                    }
+                }
+            },
+            menuContent = {},
+        )
+        customItem(
+            buttonGroupContent = {
+                Box(
+                    modifier = Modifier.size(width = 112.dp, height = 112.dp).animateWidth(plusSource),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    PulseRing(pulseKey = pulseKey, color = MaterialTheme.colorScheme.primary)
+                    FilledIconButton(
+                        onClick = onIncrement,
+                        enabled = canIncrement,
+                        interactionSource = plusSource,
+                        modifier = Modifier.fillMaxSize(),
+                        shape = RoundedCornerShape(corner),
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = stringResource(R.string.row_done),
+                            modifier = Modifier.size(52.dp),
+                        )
+                    }
+                }
+            },
+            menuContent = {},
         )
     }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun CounterToolbar(
+    onNotes: () -> Unit,
+    onSetRow: () -> Unit,
+    onReset: () -> Unit,
+) {
+    HorizontalFloatingToolbar(
+        expanded = true,
+        colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
+        content = {
+            IconButton(onClick = onNotes) {
+                Icon(Icons.Default.PushPin, contentDescription = stringResource(R.string.notes))
+            }
+            IconButton(onClick = onSetRow) {
+                Icon(Icons.Default.Pin, contentDescription = stringResource(R.string.set_row))
+            }
+            IconButton(onClick = onReset) {
+                Icon(Icons.Default.RestartAlt, contentDescription = stringResource(R.string.reset_counter))
+            }
+        },
+    )
 }
 
 @Composable
@@ -365,19 +441,31 @@ private fun NoteCard(
             if (notes.isNotEmpty()) {
                 Spacer(Modifier.height(4.dp))
                 notes.forEach { note ->
-                    Text(
-                        "📌 ${note.text}",
-                        style = if (highlighted) {
-                            MaterialTheme.typography.titleMedium
-                        } else {
-                            MaterialTheme.typography.bodyLarge
-                        },
-                        color = if (highlighted) {
-                            MaterialTheme.colorScheme.onTertiaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                    )
+                    Row(verticalAlignment = Alignment.Top) {
+                        Icon(
+                            Icons.Default.PushPin,
+                            contentDescription = null,
+                            modifier = Modifier.padding(top = 3.dp, end = 8.dp).size(18.dp),
+                            tint = if (highlighted) {
+                                MaterialTheme.colorScheme.onTertiaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        )
+                        Text(
+                            note.text,
+                            style = if (highlighted) {
+                                MaterialTheme.typography.titleMedium
+                            } else {
+                                MaterialTheme.typography.bodyLarge
+                            },
+                            color = if (highlighted) {
+                                MaterialTheme.colorScheme.onTertiaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                        )
+                    }
                 }
             }
         }

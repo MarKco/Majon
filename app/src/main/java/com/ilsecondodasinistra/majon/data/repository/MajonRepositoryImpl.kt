@@ -1,5 +1,7 @@
 package com.ilsecondodasinistra.majon.data.repository
 
+import androidx.room.withTransaction
+import com.ilsecondodasinistra.majon.data.db.MajonDatabase
 import com.ilsecondodasinistra.majon.data.db.NoteDao
 import com.ilsecondodasinistra.majon.data.db.PartDao
 import com.ilsecondodasinistra.majon.data.db.ProjectDao
@@ -19,6 +21,7 @@ import kotlinx.coroutines.flow.map
 
 @Singleton
 class MajonRepositoryImpl @Inject constructor(
+    private val db: MajonDatabase,
     private val projectDao: ProjectDao,
     private val partDao: PartDao,
     private val noteDao: NoteDao,
@@ -63,6 +66,9 @@ class MajonRepositoryImpl @Inject constructor(
     override suspend fun setCompletedRows(partId: Long, completedRows: Int) =
         partDao.updateCompletedRows(partId, completedRows)
 
+    override suspend fun adjustCompletedRows(partId: Long, delta: Int) =
+        partDao.adjustCompletedRows(partId, delta)
+
     override fun observeNotes(partId: Long): Flow<List<RowNote>> =
         noteDao.observeByPartId(partId).map { notes -> notes.map { it.toDomain() } }
 
@@ -85,12 +91,14 @@ class MajonRepositoryImpl @Inject constructor(
         }
 
     override suspend fun importProjects(projects: List<FullProject>): Int {
-        projects.forEach { full ->
-            val projectId = upsertProject(full.project.copy(id = 0L))
-            full.parts.forEach { fp ->
-                val partId = upsertPart(fp.part.copy(id = 0L, projectId = projectId))
-                fp.notes.forEach { note ->
-                    upsertNote(note.copy(id = 0L, partId = partId))
+        db.withTransaction {
+            projects.forEach { full ->
+                val projectId = upsertProject(full.project.copy(id = 0L))
+                full.parts.forEach { fp ->
+                    val partId = upsertPart(fp.part.copy(id = 0L, projectId = projectId))
+                    fp.notes.forEach { note ->
+                        upsertNote(note.copy(id = 0L, partId = partId))
+                    }
                 }
             }
         }

@@ -48,6 +48,7 @@ class SettingsRepositoryTest {
         assertFalse(settings.dynamicColor)
         assertTrue(settings.haptics)
         assertTrue(settings.keepScreenOn)
+        assertTrue(settings.wavyProgress)
     }
 
     @Test
@@ -70,9 +71,11 @@ class SettingsRepositoryTest {
         repo.setDynamicColor(true)
         repo.setHaptics(false)
         repo.setKeepScreenOn(false)
+        repo.setWavyProgress(false)
         val settings = repo.settings.first()
         assertTrue(settings.dynamicColor)
         assertFalse(settings.haptics)
         assertFalse(settings.keepScreenOn)
+        assertFalse(settings.wavyProgress)
     }
 }

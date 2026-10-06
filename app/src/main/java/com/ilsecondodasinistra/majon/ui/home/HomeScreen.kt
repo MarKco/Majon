@@ -27,6 +27,7 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeTopAppBar
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -52,7 +53,7 @@ import com.ilsecondodasinistra.majon.ui.components.ProjectIconBadge
 import com.ilsecondodasinistra.majon.ui.theme.toColor
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.material3.ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HomeScreen(
     onProjectClick: (Long) -> Unit,
@@ -87,7 +88,9 @@ fun HomeScreen(
         },
     ) { padding ->
         when (val state = uiState) {
-            is HomeUiState.Loading -> Box(Modifier.fillMaxSize().padding(padding))
+            is HomeUiState.Loading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                LoadingIndicator()
+            }
             is HomeUiState.Ready -> {
                 if (state.projects.isEmpty()) {
                     Box(
@@ -149,8 +152,8 @@ private fun ProjectCard(
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth().animateContentSize(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),

@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.MajonKnitCounter" parent="Theme.AppCompat.DayNight.NoActionBar">
-        <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:windowBackground">@color/majon_background</item>
     </style>
 </resources>

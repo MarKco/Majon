@@ -2,7 +2,11 @@ package com.ilsecondodasinistra.majon.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialExpressiveTheme
+import androidx.compose.material3.MotionScheme
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
@@ -10,6 +14,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import com.ilsecondodasinistra.majon.data.settings.ThemeMode
 
 private val LightColors = lightColorScheme(
@@ -32,6 +37,12 @@ private val LightColors = lightColorScheme(
     surfaceVariant = Color(0xFFF2E5DD),
     onSurfaceVariant = WarmGray,
     outline = Color(0xFF85736B),
+    outlineVariant = Color(0xFFD8C2B8),
+    surfaceContainerLowest = Color(0xFFFFFFFF),
+    surfaceContainerLow = Color(0xFFFCF5EF),
+    surfaceContainer = Color(0xFFF7EEE7),
+    surfaceContainerHigh = Color(0xFFF1E7DF),
+    surfaceContainerHighest = Color(0xFFEBE0D8),
 )
 
 private val DarkColors = darkColorScheme(
@@ -47,13 +58,28 @@ private val DarkColors = darkColorScheme(
     onTertiary = Color(0xFF3D2E00),
     background = DarkSurface,
     onBackground = DarkCream,
-    surface = DarkSurfaceHigh,
+    surface = DarkSurface,
     onSurface = DarkCream,
     surfaceVariant = Color(0xFF3C322D),
     onSurfaceVariant = Color(0xFFD8C2B8),
     outline = Color(0xFFA08D84),
+    outlineVariant = Color(0xFF53433D),
+    surfaceContainerLowest = Color(0xFF140E0C),
+    surfaceContainerLow = Color(0xFF221A17),
+    surfaceContainer = DarkSurfaceHigh,
+    surfaceContainerHigh = Color(0xFF352B26),
+    surfaceContainerHighest = Color(0xFF403531),
 )
 
+private val MajonShapes = Shapes(
+    extraSmall = RoundedCornerShape(8.dp),
+    small = RoundedCornerShape(12.dp),
+    medium = RoundedCornerShape(16.dp),
+    large = RoundedCornerShape(24.dp),
+    extraLarge = RoundedCornerShape(32.dp),
+)
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun MajonTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
@@ -73,9 +99,11 @@ fun MajonTheme(
         darkTheme -> DarkColors
         else -> LightColors
     }
-    MaterialTheme(
+    MaterialExpressiveTheme(
         colorScheme = colorScheme,
+        motionScheme = MotionScheme.expressive(),
         typography = MajonTypography,
+        shapes = MajonShapes,
         content = content,
     )
 }

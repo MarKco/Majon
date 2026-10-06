@@ -45,6 +45,10 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setKeepScreenOn(enabled) }
     }
 
+    fun setWavyProgress(enabled: Boolean) {
+        viewModelScope.launch { settingsRepository.setWavyProgress(enabled) }
+    }
+
     suspend fun exportData(): String =
         backupCodec.encode(majonRepository.getFullProjects(), exportedAt = System.currentTimeMillis())
 

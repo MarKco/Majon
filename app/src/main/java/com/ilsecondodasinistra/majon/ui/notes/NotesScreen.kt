@@ -109,6 +109,7 @@ fun NotesScreen(
                 items(state.notes, key = { it.id }) { note ->
                     NoteItem(
                         note = note,
+                        outOfRange = note.rowEnd > state.totalRows,
                         onClick = {
                             editorNote = note
                             editorOpen = true
@@ -155,6 +156,7 @@ private fun frequencyLabel(frequency: NoteFrequency): String = when (frequency) 
 @Composable
 private fun NoteItem(
     note: RowNote,
+    outOfRange: Boolean,
     onClick: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
@@ -162,8 +164,8 @@ private fun NoteItem(
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -187,6 +189,14 @@ private fun NoteItem(
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(note.text, style = MaterialTheme.typography.bodyLarge)
+                if (outOfRange) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        stringResource(R.string.note_out_of_range),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
             }
             Spacer(Modifier.width(8.dp))
             IconButton(onClick = onDelete) {

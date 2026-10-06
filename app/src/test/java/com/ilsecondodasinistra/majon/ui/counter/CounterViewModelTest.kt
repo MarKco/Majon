@@ -5,6 +5,8 @@ import app.cash.turbine.test
 import com.ilsecondodasinistra.majon.domain.model.NoteFrequency
 import com.ilsecondodasinistra.majon.domain.model.Part
 import com.ilsecondodasinistra.majon.domain.model.Project
+import com.ilsecondodasinistra.majon.domain.model.ProjectColor
+import com.ilsecondodasinistra.majon.domain.model.ProjectIcon
 import com.ilsecondodasinistra.majon.domain.model.RowNote
 import com.ilsecondodasinistra.majon.testutil.FakeMajonRepository
 import com.ilsecondodasinistra.majon.testutil.MainDispatcherRule
@@ -50,6 +52,20 @@ class CounterViewModelTest {
             assertEquals(listOf("punto diritto"), state.currentNotes.map { it.text })
             assertEquals(listOf("aumenta di due"), state.nextNotes.map { it.text })
             assertEquals(0f, state.progress, 0.0001f)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `state exposes the project icon and color`() = runTest {
+        val projectId = repository.upsertProject(
+            Project(name = "Sciarpa", icon = ProjectIcon.SCARF, color = ProjectColor.OCEAN),
+        )
+        partId = repository.upsertPart(Part(projectId = projectId, name = "Corpo", totalRows = 5))
+        viewModel().uiState.test {
+            val state = awaitItemOfType<CounterUiState.Ready>()
+            assertEquals(ProjectIcon.SCARF, state.projectIcon)
+            assertEquals(ProjectColor.OCEAN, state.projectColor)
             cancelAndIgnoreRemainingEvents()
         }
     }
