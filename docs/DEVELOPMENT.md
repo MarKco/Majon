@@ -17,7 +17,7 @@ partenza (`starting-docs/`).
 
 ## Stack
 
-- **Compose BOM 2026.09.00** — Material 3, animation, navigation-compose 2.10.2
+- **Compose BOM 2026.09.00** — Material 3 (1.5.0-alpha29 per le API Expressive), animation, navigation-compose 2.10.2
 - **Room 2.8.5** con **KSP** — persistenza SQLite
 - **Hilt 2.60.1** — dependency injection
 - **DataStore Preferences 1.2.1** — impostazioni

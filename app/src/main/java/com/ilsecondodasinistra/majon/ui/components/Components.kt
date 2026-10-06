@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -66,6 +68,7 @@ fun ProjectIconBadge(
     }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AnimatedProgressBar(
     progress: Float,
@@ -78,21 +81,14 @@ fun AnimatedProgressBar(
         animationSpec = spring(stiffness = Spring.StiffnessLow, dampingRatio = Spring.DampingRatioNoBouncy),
         label = "progress",
     )
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(height)
-            .clip(RoundedCornerShape(height / 2))
-            .background(color.copy(alpha = 0.15f)),
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(animated)
-                .height(height)
-                .clip(RoundedCornerShape(height / 2))
-                .background(color),
-        )
-    }
+    // Wavy "yarn" while work is in progress, flat once finished
+    LinearWavyProgressIndicator(
+        progress = { animated },
+        modifier = modifier.fillMaxWidth(),
+        color = color,
+        trackColor = color.copy(alpha = 0.18f),
+        stopSize = 0.dp,
+    )
 }
 
 @Composable
