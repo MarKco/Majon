@@ -69,6 +69,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -78,6 +79,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -159,6 +161,7 @@ fun CounterScreen(
     var heardText by remember { mutableStateOf<String?>(null) }
     var voiceMessage by remember { mutableStateOf<String?>(null) }
     var showVoiceInfo by rememberSaveable { mutableStateOf(false) }
+    var showVoiceHelp by rememberSaveable { mutableStateOf(false) }
     val speaker = rememberSpeaker(enabled = settings.voiceFeedback)
 
     // Same feedback whether a row is finished by tap, volume key or voice
@@ -365,6 +368,7 @@ fun CounterScreen(
                 CounterToolbar(
                     listening = listening,
                     onToggleVoice = toggleVoice,
+                    onVoiceHelp = { showVoiceHelp = true },
                     onNotes = onNotes,
                     onSetRow = { goToRowDialog = true },
                     onReset = { resetDialog = true },
@@ -394,6 +398,10 @@ fun CounterScreen(
                 TextButton(onClick = { showVoiceInfo = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
+    }
+
+    if (showVoiceHelp) {
+        VoiceHelpSheet(onDismiss = { showVoiceHelp = false })
     }
 
     if (resetDialog) {
@@ -573,11 +581,47 @@ private fun VoiceStatus(listening: Boolean, heard: String?, message: String?) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VoiceHelpSheet(onDismiss: () -> Unit) {
+    val commands = listOf(
+        R.string.voice_help_next to R.string.voice_help_next_examples,
+        R.string.voice_help_back to R.string.voice_help_back_examples,
+        R.string.voice_help_goto to R.string.voice_help_goto_examples,
+        R.string.voice_help_note to R.string.voice_help_note_examples,
+        R.string.voice_help_remaining to R.string.voice_help_remaining_examples,
+        R.string.voice_help_reset to R.string.voice_help_reset_examples,
+    )
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 32.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(stringResource(R.string.voice_help_title), style = MaterialTheme.typography.titleLarge)
+            commands.forEach { (title, examples) ->
+                Column {
+                    Text(stringResource(title), style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        stringResource(examples),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun CounterToolbar(
     listening: Boolean,
     onToggleVoice: () -> Unit,
+    onVoiceHelp: () -> Unit,
     onNotes: () -> Unit,
     onSetRow: () -> Unit,
     onReset: () -> Unit,
@@ -595,11 +639,23 @@ private fun CounterToolbar(
             IconButton(onClick = onReset) {
                 Icon(Icons.Default.RestartAlt, contentDescription = stringResource(R.string.reset_counter))
             }
-            FilledTonalIconToggleButton(checked = listening, onCheckedChange = { onToggleVoice() }) {
-                Icon(
-                    if (listening) Icons.Default.Mic else Icons.Default.MicOff,
-                    contentDescription = stringResource(if (listening) R.string.voice_stop else R.string.voice_start),
-                )
+            // Mic and info share one tonal pill so they read as a single voice control
+            Row(
+                modifier = Modifier.background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(50)),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                FilledTonalIconToggleButton(checked = listening, onCheckedChange = { onToggleVoice() }) {
+                    Icon(
+                        if (listening) Icons.Default.Mic else Icons.Default.MicOff,
+                        contentDescription = stringResource(if (listening) R.string.voice_stop else R.string.voice_start),
+                    )
+                }
+                IconButton(
+                    onClick = onVoiceHelp,
+                    colors = IconButtonDefaults.iconButtonColors(contentColor = MaterialTheme.colorScheme.onSecondaryContainer),
+                ) {
+                    Icon(Icons.Outlined.Info, contentDescription = stringResource(R.string.voice_help))
+                }
             }
         },
     )
