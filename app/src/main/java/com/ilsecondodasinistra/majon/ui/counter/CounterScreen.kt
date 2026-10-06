@@ -13,7 +13,6 @@ import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.runtime.LaunchedEffect
 import com.ilsecondodasinistra.majon.ui.components.Confetti
 import com.ilsecondodasinistra.majon.ui.components.PulseRing
-import com.ilsecondodasinistra.majon.ui.components.YarnThreadBackground
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -145,7 +144,7 @@ fun CounterScreen(
         },
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
-            YarnThreadBackground(progress = state.progress, color = MaterialTheme.colorScheme.primary)
+            // Disabled for now; to bring it back: YarnThreadBackground(state.progress, MaterialTheme.colorScheme.primary)
 
             Column(
                 modifier = Modifier
