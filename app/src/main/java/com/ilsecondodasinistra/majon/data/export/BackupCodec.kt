@@ -89,27 +89,30 @@ class BackupCodec @Inject constructor() {
         val file = json.decodeFromString<BackupFile>(content)
         require(file.app == "majon") { "Not a Majon backup file" }
         file.projects.map { bp ->
+            require(bp.name.isNotBlank()) { "Project without a name" }
             FullProject(
                 project = Project(
-                    name = bp.name,
+                    name = bp.name.trim(),
                     icon = runCatching { ProjectIcon.valueOf(bp.icon) }.getOrDefault(ProjectIcon.YARN),
                     color = runCatching { ProjectColor.valueOf(bp.color) }.getOrDefault(ProjectColor.TERRACOTTA),
                     yarnType = bp.yarnType,
                     needleSize = bp.needleSize,
                 ),
                 parts = bp.parts.map { part ->
+                    val totalRows = part.totalRows.coerceAtLeast(1)
                     FullPart(
                         part = Part(
                             projectId = 0L,
-                            name = part.name,
-                            totalRows = part.totalRows,
-                            completedRows = part.completedRows,
+                            name = part.name.trim().ifBlank { "-" },
+                            totalRows = totalRows,
+                            completedRows = part.completedRows.coerceIn(0, totalRows),
                         ),
-                        notes = part.notes.map { n ->
+                        notes = part.notes.filter { it.text.isNotBlank() }.map { n ->
+                            val rowStart = n.rowStart.coerceAtLeast(1)
                             RowNote(
                                 partId = 0L,
-                                rowStart = n.rowStart,
-                                rowEnd = n.rowEnd,
+                                rowStart = rowStart,
+                                rowEnd = n.rowEnd.coerceAtLeast(rowStart),
                                 frequency = runCatching { NoteFrequency.valueOf(n.frequency) }
                                     .getOrDefault(NoteFrequency.EVERY_ROW),
                                 text = n.text,

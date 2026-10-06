@@ -36,6 +36,7 @@ class MajonRepositoryTest {
             .allowMainThreadQueries()
             .build()
         repository = MajonRepositoryImpl(
+            db = db,
             projectDao = db.projectDao(),
             partDao = db.partDao(),
             noteDao = db.noteDao(),
@@ -100,6 +101,16 @@ class MajonRepositoryTest {
         val partId = repository.upsertPart(Part(projectId = projectId, name = "Davanti", totalRows = 120))
         repository.setCompletedRows(partId, 42)
         assertEquals(42, repository.observePart(partId).first()!!.completedRows)
+    }
+
+    @Test
+    fun `adjustCompletedRows is clamped to zero and total`() = runTest {
+        val projectId = repository.upsertProject(newProject())
+        val partId = repository.upsertPart(Part(projectId = projectId, name = "Davanti", totalRows = 2))
+        repository.adjustCompletedRows(partId, -1)
+        assertEquals(0, repository.observePart(partId).first()!!.completedRows)
+        repeat(5) { repository.adjustCompletedRows(partId, +1) }
+        assertEquals(2, repository.observePart(partId).first()!!.completedRows)
     }
 
     @Test

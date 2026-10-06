@@ -60,16 +60,13 @@ class CounterViewModel @Inject constructor(
 
     fun increment() {
         viewModelScope.launch {
-            val part = repository.observePart(partId).first() ?: return@launch
-            if (part.isComplete) return@launch
-            repository.setCompletedRows(partId, (part.completedRows + 1).coerceAtMost(part.totalRows))
+            repository.adjustCompletedRows(partId, +1)
         }
     }
 
     fun decrement() {
         viewModelScope.launch {
-            val part = repository.observePart(partId).first() ?: return@launch
-            repository.setCompletedRows(partId, (part.completedRows - 1).coerceAtLeast(0))
+            repository.adjustCompletedRows(partId, -1)
         }
     }
 
