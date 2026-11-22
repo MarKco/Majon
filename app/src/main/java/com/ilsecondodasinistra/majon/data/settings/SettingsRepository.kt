@@ -18,9 +18,14 @@ enum class ThemeMode {
     SYSTEM, LIGHT, DARK
 }
 
+enum class ColorPalette {
+    CHEERFUL, CLASSIC, FOREST
+}
+
 data class AppSettings(
     val language: AppLanguage = AppLanguage.SYSTEM,
     val theme: ThemeMode = ThemeMode.SYSTEM,
+    val palette: ColorPalette = ColorPalette.CHEERFUL,
     val dynamicColor: Boolean = false,
     val haptics: Boolean = true,
     val keepScreenOn: Boolean = true,
@@ -36,6 +41,7 @@ class SettingsRepository @Inject constructor(
     private object Keys {
         val language = stringPreferencesKey("language")
         val theme = stringPreferencesKey("theme")
+        val palette = stringPreferencesKey("palette")
         val dynamicColor = booleanPreferencesKey("dynamic_color")
         val haptics = booleanPreferencesKey("haptics")
         val keepScreenOn = booleanPreferencesKey("keep_screen_on")
@@ -52,6 +58,9 @@ class SettingsRepository @Inject constructor(
             theme = prefs[Keys.theme]?.let { stored ->
                 ThemeMode.entries.find { it.name == stored }
             } ?: ThemeMode.SYSTEM,
+            palette = prefs[Keys.palette]?.let { stored ->
+                ColorPalette.entries.find { it.name == stored }
+            } ?: ColorPalette.CHEERFUL,
             dynamicColor = prefs[Keys.dynamicColor] ?: false,
             haptics = prefs[Keys.haptics] ?: true,
             keepScreenOn = prefs[Keys.keepScreenOn] ?: true,
@@ -67,6 +76,10 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setTheme(theme: ThemeMode) {
         dataStore.edit { it[Keys.theme] = theme.name }
+    }
+
+    suspend fun setPalette(palette: ColorPalette) {
+        dataStore.edit { it[Keys.palette] = palette.name }
     }
 
     suspend fun setDynamicColor(enabled: Boolean) {

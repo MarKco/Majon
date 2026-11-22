@@ -50,6 +50,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilsecondodasinistra.majon.R
 import com.ilsecondodasinistra.majon.data.settings.AppLanguage
+import com.ilsecondodasinistra.majon.data.settings.ColorPalette
 import com.ilsecondodasinistra.majon.data.settings.ThemeMode
 import kotlinx.coroutines.launch
 
@@ -171,6 +172,26 @@ fun SettingsScreen(
                             selected = settings.theme == mode,
                             onClick = { viewModel.setTheme(mode) },
                             shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                            label = { Text(label, maxLines = 1) },
+                        )
+                    }
+                }
+
+                SingleChoiceSegmentedButtonRow(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                ) {
+                    val palettes = listOf(
+                        ColorPalette.CHEERFUL to stringResource(R.string.palette_cheerful),
+                        ColorPalette.CLASSIC to stringResource(R.string.palette_classic),
+                        ColorPalette.FOREST to stringResource(R.string.palette_forest),
+                    )
+                    palettes.forEachIndexed { index, (palette, label) ->
+                        SegmentedButton(
+                            selected = settings.palette == palette,
+                            onClick = { viewModel.setPalette(palette) },
+                            shape = SegmentedButtonDefaults.itemShape(index = index, count = palettes.size),
                             label = { Text(label, maxLines = 1) },
                         )
                     }

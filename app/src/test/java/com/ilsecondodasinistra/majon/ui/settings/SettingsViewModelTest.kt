@@ -4,6 +4,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import app.cash.turbine.test
 import com.ilsecondodasinistra.majon.data.export.BackupCodec
 import com.ilsecondodasinistra.majon.data.settings.AppLanguage
+import com.ilsecondodasinistra.majon.data.settings.ColorPalette
 import com.ilsecondodasinistra.majon.data.settings.SettingsRepository
 import com.ilsecondodasinistra.majon.data.settings.ThemeMode
 import com.ilsecondodasinistra.majon.domain.model.Part
@@ -59,10 +60,12 @@ class SettingsViewModelTest {
         val vm = viewModel()
         vm.setLanguage(AppLanguage.ENGLISH)
         vm.setTheme(ThemeMode.DARK)
+        vm.setPalette(ColorPalette.FOREST)
         vm.setDynamicColor(true)
         vm.settings.test {
             val s = awaitItemMatching { it.language == AppLanguage.ENGLISH }
             assertEquals(ThemeMode.DARK, s.theme)
+            assertEquals(ColorPalette.FOREST, s.palette)
             assertTrue(s.dynamicColor)
             cancelAndIgnoreRemainingEvents()
         }

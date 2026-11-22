@@ -165,6 +165,7 @@ Si aprono dall'ingranaggio nella schermata principale.
 
 - **Lingua**: Sistema / Italiano / English — cambio immediato.
 - **Tema**: Sistema / Chiaro / Scuro.
+- **Palette**: Allegro / Classico / Bosco.
 - **Colori dinamici**: usa i colori dello sfondo del telefono (Android 12+)
   al posto della palette di Majon.
 - **Vibrazione**: feedback tattile quando completi una riga.

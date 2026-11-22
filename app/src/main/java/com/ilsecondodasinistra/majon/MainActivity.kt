@@ -45,6 +45,7 @@ class MainActivity : AppCompatActivity(), VolumeKeyHost {
             val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
             MajonTheme(
                 themeMode = settings.theme,
+                palette = settings.palette,
                 dynamicColor = settings.dynamicColor,
             ) {
                 CompositionLocalProvider(LocalWavyProgress provides settings.wavyProgress) {

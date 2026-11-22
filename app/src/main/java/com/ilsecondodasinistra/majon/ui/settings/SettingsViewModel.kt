@@ -6,6 +6,7 @@ import com.ilsecondodasinistra.majon.data.export.BackupCodec
 import com.ilsecondodasinistra.majon.data.settings.AppLanguage
 import com.ilsecondodasinistra.majon.data.settings.AppSettings
 import com.ilsecondodasinistra.majon.data.settings.SettingsRepository
+import com.ilsecondodasinistra.majon.data.settings.ColorPalette
 import com.ilsecondodasinistra.majon.data.settings.ThemeMode
 import com.ilsecondodasinistra.majon.domain.repository.MajonRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,6 +32,10 @@ class SettingsViewModel @Inject constructor(
 
     fun setTheme(theme: ThemeMode) {
         viewModelScope.launch { settingsRepository.setTheme(theme) }
+    }
+
+    fun setPalette(palette: ColorPalette) {
+        viewModelScope.launch { settingsRepository.setPalette(palette) }
     }
 
     fun setDynamicColor(enabled: Boolean) {

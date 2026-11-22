@@ -95,6 +95,9 @@
     <string name="theme_system">Sistema</string>
     <string name="theme_light">Chiaro</string>
     <string name="theme_dark">Scuro</string>
+    <string name="palette_cheerful">Allegro</string>
+    <string name="palette_classic">Classico</string>
+    <string name="palette_forest">Bosco</string>
     <string name="dynamic_colors">Colori dinamici</string>
     <string name="dynamic_colors_desc">Usa i colori dello sfondo del telefono (Android 12+)</string>
     <string name="haptics">Vibrazione</string>

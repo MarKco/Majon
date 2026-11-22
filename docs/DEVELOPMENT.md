@@ -40,7 +40,7 @@ data/
   export/        BackupCodec (JSON encode/decode, tollerante a valori ignoti)
 di/              AppModule + RepositoryModule (Hilt)
 ui/
-  theme/         palette craft (terracotta/salvia/crema), dark, dynamic color
+  theme/         palette craft (Cheerful default, Classic terracotta/salvia/crema, Forest), dark, dynamic color
   components/    ProjectIconBadge, AnimatedProgressBar, ConfirmDialog, EmptyState
   navigation/    MajonNavGraph (route + transizioni slide/fade)
   home/ editproject/ projectdetail/ counter/ notes/ settings/

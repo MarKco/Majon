@@ -3,6 +3,7 @@ package com.ilsecondodasinistra.majon.data
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.ilsecondodasinistra.majon.data.settings.AppLanguage
 import com.ilsecondodasinistra.majon.data.settings.SettingsRepository
+import com.ilsecondodasinistra.majon.data.settings.ColorPalette
 import com.ilsecondodasinistra.majon.data.settings.ThemeMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -45,6 +46,7 @@ class SettingsRepositoryTest {
         val settings = repository().settings.first()
         assertEquals(AppLanguage.SYSTEM, settings.language)
         assertEquals(ThemeMode.SYSTEM, settings.theme)
+        assertEquals(ColorPalette.CHEERFUL, settings.palette)
         assertFalse(settings.dynamicColor)
         assertTrue(settings.haptics)
         assertTrue(settings.keepScreenOn)
@@ -58,6 +60,13 @@ class SettingsRepositoryTest {
         val repo = repository()
         repo.setLanguage(AppLanguage.ENGLISH)
         assertEquals(AppLanguage.ENGLISH, repo.settings.first().language)
+    }
+
+    @Test
+    fun `palette change is persisted`() = runTest {
+        val repo = repository()
+        repo.setPalette(ColorPalette.FOREST)
+        assertEquals(ColorPalette.FOREST, repo.settings.first().palette)
     }
 
     @Test

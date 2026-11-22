@@ -95,6 +95,9 @@
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
+    <string name="palette_cheerful">Cheerful</string>
+    <string name="palette_classic">Classic</string>
+    <string name="palette_forest">Forest</string>
     <string name="dynamic_colors">Dynamic colors</string>
     <string name="dynamic_colors_desc">Use your phone’s wallpaper colors (Android 12+)</string>
     <string name="haptics">Vibration</string>

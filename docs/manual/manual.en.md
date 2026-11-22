@@ -165,6 +165,7 @@ Open them from the gear on the home screen.
 
 - **Language**: System / Italiano / English — instant switch.
 - **Theme**: System / Light / Dark.
+- **Palette**: Cheerful / Classic / Forest.
 - **Dynamic colors**: use your phone's wallpaper colors (Android 12+)
   instead of Majon's palette.
 - **Vibration**: haptic feedback when you complete a row.
