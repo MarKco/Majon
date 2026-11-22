@@ -53,6 +53,18 @@ Le righe totali servono per la percentuale di avanzamento: in alto trovi il
 progresso complessivo del progetto, ogni parte ha il suo. Una parte finita
 mostra una spunta ✓.
 
+Due interruttori opzionali, per ogni parte:
+
+- **Riga di preparazione (riga 0)**: una riga prima della numero 1 (es. avvio
+  delle maglie, un giro di ferri). Compare come «Riga 0», con un colore e una
+  nota tutti suoi.
+- **Riga finale di raccordo**: una riga dopo l'ultima, per unire la parte a
+  un'altra. Compare come «Riga finale», con colore e nota propri.
+
+Entrambe contano nell'avanzamento, ma non nelle «righe totali» (che sono le
+righe vere, da 1 a N). Puoi attivarle o toglierle anche a lavoro iniziato: il
+contatore resta sulla stessa riga.
+
 Dal menu **⋮** di una parte puoi **modificarla**, aprirne le **note** o
 **eliminarla**.
 
@@ -68,9 +80,11 @@ Tocca una parte per aprire il **contatore**.
 <img src="images/it/05-counter.png" width="260" alt="Il contatore">
 <img src="images/it/06-go-to-row.png" width="260" alt="Vai alla riga">
 
-- Il numero grande è la riga **che stai facendo ora**.
-- **+** (pulsante grande): riga finita. Il contatore avanza con una piccola
-  vibrazione di conferma e un'onda che parte dal pulsante.
+- Il numero grande è la riga **che stai facendo ora**. Ha un colore
+  *tenue* e la scritta «In lavorazione».
+- **+** (pulsante grande): riga finita. Il numero si accende per un istante
+  del suo colore pieno («Fatta ✓») e poi diventa la riga successiva, di nuovo
+  tenue. Piccola vibrazione di conferma e un'onda che parte dal pulsante.
 - **−**: annulla l'ultima riga (per i + di troppo).
 - La barra con le tre icone in basso contiene:
   - 📌 **Note**: gestisci le istruzioni della parte;
@@ -117,6 +131,15 @@ lingua non è installata offline, può usare internet.
 
 Se li attivi nelle Impostazioni, nel contatore **volume su** = riga fatta e
 **volume giù** = annulla, senza guardare lo schermo.
+
+### Passare alla parte successiva
+
+Se premi **+** sull'ultima riga di una parte e dopo c'è un'altra parte non
+finita, l'app chiede «Passare a …?». Confermando, la parte si chiude (con i
+coriandoli) e dopo un attimo si apre il contatore della successiva; con
+«Resta qui» non cambia niente. A mani libere: dì «conferma» (qualsiasi altro
+comando annulla), oppure **volume su** = sì e **volume giù** = no. Le parti
+si seguono nell'ordine in cui le hai create. Con **←** torni al progetto.
 
 ### A lavoro finito
 

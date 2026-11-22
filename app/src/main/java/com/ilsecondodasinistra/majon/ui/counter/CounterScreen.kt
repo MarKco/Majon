@@ -36,7 +36,9 @@ import com.ilsecondodasinistra.majon.ui.theme.toColor
 import com.ilsecondodasinistra.majon.ui.components.PulseRing
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.expandVertically
@@ -108,7 +110,10 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilsecondodasinistra.majon.R
-import com.ilsecondodasinistra.majon.domain.model.RowNote
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import com.ilsecondodasinistra.majon.domain.model.RowStep
+import kotlinx.coroutines.delay
 import com.ilsecondodasinistra.majon.ui.components.AnimatedProgressBar
 import com.ilsecondodasinistra.majon.ui.components.ConfirmDialog
 import com.ilsecondodasinistra.majon.ui.settings.SettingsViewModel
@@ -119,6 +124,7 @@ import kotlin.math.roundToInt
 fun CounterScreen(
     onBack: () -> Unit,
     onNotes: () -> Unit,
+    onNextPart: (Long) -> Unit = {},
     viewModel: CounterViewModel = hiltViewModel(),
     settingsViewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -126,6 +132,10 @@ fun CounterScreen(
     val settings by settingsViewModel.settings.collectAsStateWithLifecycle()
     val haptic = LocalHapticFeedback.current
     val activity = LocalActivity.current
+
+    val nextPartPrompt by viewModel.nextPartPrompt.collectAsStateWithLifecycle()
+    val openNextPart by rememberUpdatedState(onNextPart)
+    LaunchedEffect(viewModel) { viewModel.navigateToPart.collect { openNextPart(it) } }
 
     var resetDialog by rememberSaveable { mutableStateOf(false) }
     var goToRowDialog by rememberSaveable { mutableStateOf(false) }
@@ -233,6 +243,15 @@ fun CounterScreen(
                     resources.getString(R.string.voice_reply_row, reply.row)
                 }
                 is VoiceReply.RowUndone -> resources.getString(R.string.voice_reply_undo, reply.row)
+                VoiceReply.PrepRowNow -> resources.getString(R.string.voice_reply_prep_row)
+                VoiceReply.FinalRowNow -> {
+                    pulseKey++
+                    if (settings.haptics) haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                    resources.getString(R.string.voice_reply_final_row)
+                }
+                is VoiceReply.AskNextPartConfirm -> resources.getString(R.string.voice_reply_ask_next_part, reply.partName)
+                is VoiceReply.NextPartOpening -> resources.getString(R.string.voice_reply_next_part, reply.partName)
+                VoiceReply.NextPartCancelled -> resources.getString(R.string.voice_reply_next_part_cancelled)
                 is VoiceReply.WentTo -> resources.getString(R.string.voice_reply_row, reply.row)
                 is VoiceReply.OutOfRange -> resources.getString(R.string.voice_reply_out_of_range, reply.totalRows)
                 is VoiceReply.PartFinished -> resources.getString(R.string.voice_reply_finished)
@@ -251,9 +270,17 @@ fun CounterScreen(
     val volumeHost = LocalActivity.current as? VolumeKeyHost
     val currentAdvance by rememberUpdatedState(advance)
     val currentUndo by rememberUpdatedState(undo)
+    val promptOpen by rememberUpdatedState(nextPartPrompt != null)
     DisposableEffect(volumeHost, settings.volumeKeys) {
         if (volumeHost != null && settings.volumeKeys) {
-            volumeHost.volumeKeyHandler = { up -> if (up) currentAdvance() else currentUndo() }
+            volumeHost.volumeKeyHandler = { up ->
+                when {
+                    // While the "next part?" question is open: volume up = yes, volume down = no
+                    promptOpen -> if (up) viewModel.confirmNextPart() else viewModel.dismissNextPart()
+                    up -> currentAdvance()
+                    else -> currentUndo()
+                }
+            }
         }
         onDispose { volumeHost?.volumeKeyHandler = null }
     }
@@ -310,30 +337,41 @@ fun CounterScreen(
                     if (state.isComplete) {
                         CompletionCelebration(totalRows = state.totalRows)
                     } else {
-                        RowNumber(row = state.currentRow, totalRows = state.totalRows)
+                        RowNumber(step = state.step, totalRows = state.totalRows)
 
                         Spacer(Modifier.height(16.dp))
 
-                        // Current row notes
+                        // Current step notes (row notes, or the preparation / final row note)
+                        val currentTexts = state.currentNotes.map { it.text } + listOfNotNull(state.stepNote)
                         AnimatedVisibility(
-                            visible = state.currentNotes.isNotEmpty(),
+                            visible = currentTexts.isNotEmpty(),
                             enter = expandVertically() + fadeIn(),
                             exit = shrinkVertically() + fadeOut(),
                         ) {
                             NoteCard(
-                                title = stringResource(R.string.current_row_note),
-                                notes = state.currentNotes,
+                                title = stringResource(
+                                    when (state.step) {
+                                        RowStep.Prep -> R.string.current_prep_note
+                                        RowStep.Final -> R.string.current_final_note
+                                        is RowStep.Row -> R.string.current_row_note
+                                    },
+                                ),
+                                texts = currentTexts,
                                 highlighted = true,
                             )
                         }
 
                         Spacer(Modifier.height(8.dp))
 
-                        // Next row preview
-                        if (state.currentRow < state.totalRows) {
+                        // Next step preview
+                        state.nextStep?.let { next ->
                             NoteCard(
-                                title = stringResource(R.string.next_row_label, state.currentRow + 1),
-                                notes = state.nextNotes,
+                                title = when (next) {
+                                    is RowStep.Row -> stringResource(R.string.next_row_label, next.number)
+                                    RowStep.Final -> stringResource(R.string.next_final_label)
+                                    RowStep.Prep -> ""
+                                },
+                                texts = state.nextNotes.map { it.text } + listOfNotNull(state.nextStepNote),
                                 highlighted = false,
                             )
                         }
@@ -418,6 +456,20 @@ fun CounterScreen(
         )
     }
 
+    nextPartPrompt?.let { prompt ->
+        ConfirmDialog(
+            title = stringResource(R.string.next_part_title, prompt.finishedPartName),
+            message = stringResource(R.string.next_part_message, prompt.partName),
+            confirmLabel = stringResource(R.string.next_part_go),
+            dismissLabel = stringResource(R.string.next_part_stay),
+            onConfirm = {
+                if (settings.haptics) haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                viewModel.confirmNextPart()
+            },
+            onDismiss = viewModel::dismissNextPart,
+        )
+    }
+
     if (goToRowDialog) {
         GoToRowDialog(
             totalRows = state.totalRows,
@@ -430,18 +482,63 @@ fun CounterScreen(
     }
 }
 
+/** Order used to decide which way the number slides: preparation < rows < final. */
+private fun RowStep.order(): Int = when (this) {
+    RowStep.Prep -> 0
+    is RowStep.Row -> number
+    RowStep.Final -> Int.MAX_VALUE
+}
+
+/** How long the number stays in the saturated "done" colour before turning into the next row. */
+private const val DONE_FLASH_MILLIS = 320L
+
+/**
+ * The big row number. Muted colour = "I am knitting this row"; when the row is finished it flashes to the
+ * full colour ("done"), then becomes the next row in the muted colour again.
+ * The stored count changes immediately; only what is drawn waits for the flash.
+ */
 @Composable
-private fun RowNumber(row: Int, totalRows: Int) {
+private fun RowNumber(step: RowStep, totalRows: Int) {
+    var shown by remember { mutableStateOf(step) }
+    var confirmed by remember { mutableStateOf(false) }
+    LaunchedEffect(step) {
+        when {
+            step == shown -> Unit
+            // A second tap during the flash skips it
+            confirmed -> { shown = step; confirmed = false }
+            step.order() > shown.order() -> {
+                confirmed = true
+                delay(DONE_FLASH_MILLIS)
+                shown = step
+                confirmed = false
+            }
+            else -> shown = step
+        }
+    }
+
+    val colors = MaterialTheme.colorScheme
+    val strong = when (shown) {
+        RowStep.Prep -> colors.tertiary
+        RowStep.Final -> colors.secondary
+        is RowStep.Row -> colors.primary
+    }
+    val muted = lerp(strong, colors.outline, 0.6f)
+    val numberColor by animateColorAsState(
+        targetValue = if (confirmed) strong else muted,
+        animationSpec = tween(durationMillis = if (confirmed) 180 else 260),
+        label = "rowNumberColor",
+    )
+
     // Springy pop each time the row changes
     val pop = remember { Animatable(1f) }
-    LaunchedEffect(row) {
+    LaunchedEffect(shown) {
         pop.snapTo(0.85f)
         pop.animateTo(1f, spring(dampingRatio = Spring.DampingRatioHighBouncy, stiffness = Spring.StiffnessMedium))
     }
     AnimatedContent(
-        targetState = row,
+        targetState = shown,
         transitionSpec = {
-            if (targetState > initialState) {
+            if (targetState.order() > initialState.order()) {
                 (slideInVertically { it / 2 } + fadeIn()) togetherWith
                     (slideOutVertically { -it / 2 } + fadeOut())
             } else {
@@ -453,19 +550,36 @@ private fun RowNumber(row: Int, totalRows: Int) {
     ) { value ->
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                stringResource(R.string.row_current, value),
+                stringResource(if (confirmed) R.string.row_state_done else R.string.row_state_working),
+                style = MaterialTheme.typography.labelLarge,
+                color = numberColor,
+            )
+            Text(
+                when (value) {
+                    RowStep.Prep -> stringResource(R.string.row_prep_label)
+                    RowStep.Final -> stringResource(R.string.row_final_label)
+                    is RowStep.Row -> stringResource(R.string.row_current, value.number)
+                },
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                "$value",
+                when (value) {
+                    RowStep.Prep -> "0"
+                    RowStep.Final -> stringResource(R.string.row_final_big)
+                    is RowStep.Row -> "${value.number}"
+                },
                 style = MaterialTheme.typography.displayLarge,
-                fontSize = 110.sp,
-                color = MaterialTheme.colorScheme.primary,
+                fontSize = if (value == RowStep.Final) 72.sp else 110.sp,
+                color = numberColor,
                 modifier = Modifier.scale(pop.value),
             )
             Text(
-                stringResource(R.string.row_of_total, totalRows),
+                when (value) {
+                    RowStep.Prep -> stringResource(R.string.row_before_first)
+                    RowStep.Final -> stringResource(R.string.row_after_last, totalRows)
+                    is RowStep.Row -> stringResource(R.string.row_of_total, totalRows)
+                },
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -664,7 +778,7 @@ private fun CounterToolbar(
 @Composable
 private fun NoteCard(
     title: String,
-    notes: List<RowNote>,
+    texts: List<String>,
     highlighted: Boolean,
 ) {
     Card(
@@ -687,9 +801,9 @@ private fun NoteCard(
                     MaterialTheme.colorScheme.onSurfaceVariant
                 },
             )
-            if (notes.isNotEmpty()) {
+            if (texts.isNotEmpty()) {
                 Spacer(Modifier.height(4.dp))
-                notes.forEach { note ->
+                texts.forEach { text ->
                     Row(verticalAlignment = Alignment.Top) {
                         Icon(
                             Icons.Default.PushPin,
@@ -702,7 +816,7 @@ private fun NoteCard(
                             },
                         )
                         Text(
-                            note.text,
+                            text,
                             style = if (highlighted) {
                                 MaterialTheme.typography.titleMedium
                             } else {

@@ -55,8 +55,14 @@ interface PartDao {
     @Query("UPDATE parts SET completedRows = :completedRows WHERE id = :id")
     suspend fun updateCompletedRows(id: Long, completedRows: Int)
 
-    /** Atomic read-modify-write, clamped to 0..totalRows. Safe under rapid taps. */
-    @Query("UPDATE parts SET completedRows = MAX(0, MIN(totalRows, completedRows + :delta)) WHERE id = :id")
+    /**
+     * Atomic read-modify-write, clamped to 0..totalSteps (normal rows plus the optional preparation
+     * and final rows). Safe under rapid taps.
+     */
+    @Query(
+        "UPDATE parts SET completedRows = MAX(0, MIN(totalRows + hasPrepRow + hasFinalRow, completedRows + :delta)) " +
+            "WHERE id = :id",
+    )
     suspend fun adjustCompletedRows(id: Long, delta: Int)
 }
 

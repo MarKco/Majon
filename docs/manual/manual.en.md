@@ -54,6 +54,17 @@ A project splits into parts: front, back, sleeves, collar…
 Total rows drive the progress percentage: the top card shows the whole
 project's progress, every part has its own. A finished part shows a ✓.
 
+Two optional switches per part:
+
+- **Preparation row (row 0)**: a row before row 1 (casting on, a setup
+  round…). It shows as “Row 0”, with its own colour and note.
+- **Final joining row**: a row after the last one, to join the part to
+  another. It shows as “Final row”, with its own colour and note.
+
+Both count towards progress, but not in the “total rows” (those are the real
+rows, 1 to N). You can switch them on or off after starting: the counter stays
+on the same row.
+
 The **⋮** menu of a part lets you **edit** it, open its **notes** or
 **delete** it.
 
@@ -69,9 +80,11 @@ Tap a part to open the **counter**.
 <img src="images/en/05-counter.png" width="260" alt="The counter">
 <img src="images/en/06-go-to-row.png" width="260" alt="Go to row">
 
-- The big number is the row **you are working on now**.
-- **+** (big button): row finished. The counter advances with a small
-  confirmation vibration and a ripple that radiates from the button.
+- The big number is the row **you are working on now**. It has a *muted*
+  colour and the label “In progress”.
+- **+** (big button): row finished. The number lights up for a moment in its
+  full colour (“Done ✓”) and then becomes the next row, muted again. A small
+  confirmation vibration and a ripple from the button.
 - **−**: undo the last row (for accidental +).
 - The bar with three icons at the bottom holds:
   - 📌 **Notes**: manage the part's instructions;
@@ -118,6 +131,15 @@ installed offline, it may use the internet.
 
 If you turn them on in Settings, in the counter **volume up** = row done and
 **volume down** = undo, without looking at the screen.
+
+### Moving on to the next part
+
+If you press **+** on the last row of a part and there is another unfinished
+part after it, the app asks “Move on to …?”. Confirm and the part is closed
+(with confetti), then the next part's counter opens a moment later; “Stay
+here” changes nothing. Hands-free: say “confirm” (any other command cancels),
+or **volume up** = yes and **volume down** = no. Parts follow the order you
+created them in. The **←** button takes you back to the project.
 
 ### When you finish
 

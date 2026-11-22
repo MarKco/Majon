@@ -94,6 +94,12 @@ fun MajonNavGraph(navController: NavHostController) {
             CounterScreen(
                 onBack = { navController.popBackStack() },
                 onNotes = { navController.navigate(Routes.notes(partId)) },
+                onNextPart = { nextId ->
+                    // Replace this counter with the next part's, so Back still returns to the project
+                    navController.navigate(Routes.counter(nextId)) {
+                        popUpTo(Routes.COUNTER) { inclusive = true }
+                    }
+                },
             )
         }
 

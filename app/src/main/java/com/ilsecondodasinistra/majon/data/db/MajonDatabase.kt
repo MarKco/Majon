@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [ProjectEntity::class, PartEntity::class, NoteEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class MajonDatabase : RoomDatabase() {

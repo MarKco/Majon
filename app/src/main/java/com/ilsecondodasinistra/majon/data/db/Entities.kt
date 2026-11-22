@@ -1,5 +1,6 @@
 package com.ilsecondodasinistra.majon.data.db
 
+import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.ForeignKey
@@ -46,6 +47,12 @@ data class PartEntity(
     val totalRows: Int,
     val completedRows: Int,
     val createdAt: Long,
+    @ColumnInfo(defaultValue = "0")
+    val hasPrepRow: Boolean = false,
+    @ColumnInfo(defaultValue = "0")
+    val hasFinalRow: Boolean = false,
+    val prepNote: String? = null,
+    val finalNote: String? = null,
 )
 
 @Entity(
@@ -107,6 +114,10 @@ fun PartEntity.toDomain() = Part(
     totalRows = totalRows,
     completedRows = completedRows,
     createdAt = createdAt,
+    hasPrepRow = hasPrepRow,
+    hasFinalRow = hasFinalRow,
+    prepNote = prepNote,
+    finalNote = finalNote,
 )
 
 fun Part.toEntity() = PartEntity(
@@ -116,6 +127,10 @@ fun Part.toEntity() = PartEntity(
     totalRows = totalRows,
     completedRows = completedRows,
     createdAt = createdAt,
+    hasPrepRow = hasPrepRow,
+    hasFinalRow = hasFinalRow,
+    prepNote = prepNote,
+    finalNote = finalNote,
 )
 
 fun NoteEntity.toDomain() = RowNote(

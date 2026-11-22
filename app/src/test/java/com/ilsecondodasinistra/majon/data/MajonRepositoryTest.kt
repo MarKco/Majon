@@ -114,6 +114,32 @@ class MajonRepositoryTest {
     }
 
     @Test
+    fun `adjustCompletedRows counts the preparation and final rows`() = runTest {
+        val projectId = repository.upsertProject(newProject())
+        val partId = repository.upsertPart(
+            Part(projectId = projectId, name = "Davanti", totalRows = 2, hasPrepRow = true, hasFinalRow = true),
+        )
+        repeat(10) { repository.adjustCompletedRows(partId, +1) }
+        assertEquals(4, repository.observePart(partId).first()!!.completedRows)
+    }
+
+    @Test
+    fun `preparation and final row settings are persisted`() = runTest {
+        val projectId = repository.upsertProject(newProject())
+        val partId = repository.upsertPart(
+            Part(
+                projectId = projectId, name = "Manica", totalRows = 20,
+                hasPrepRow = true, hasFinalRow = true, prepNote = "Avvia 60 maglie", finalNote = "Chiudi a maglia rasata",
+            ),
+        )
+        val part = repository.observePart(partId).first()!!
+        assertTrue(part.hasPrepRow)
+        assertTrue(part.hasFinalRow)
+        assertEquals("Avvia 60 maglie", part.prepNote)
+        assertEquals("Chiudi a maglia rasata", part.finalNote)
+    }
+
+    @Test
     fun `deleting a project cascades to parts and notes`() = runTest {
         val projectId = repository.upsertProject(newProject())
         val partId = repository.upsertPart(Part(projectId = projectId, name = "Davanti", totalRows = 120))

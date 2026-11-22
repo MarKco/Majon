@@ -35,6 +35,10 @@ private data class BackupPart(
     val name: String,
     val totalRows: Int,
     val completedRows: Int = 0,
+    val hasPrepRow: Boolean = false,
+    val hasFinalRow: Boolean = false,
+    val prepNote: String? = null,
+    val finalNote: String? = null,
     val notes: List<BackupNote> = emptyList(),
 )
 
@@ -69,6 +73,10 @@ class BackupCodec @Inject constructor() {
                             name = fp.part.name,
                             totalRows = fp.part.totalRows,
                             completedRows = fp.part.completedRows,
+                            hasPrepRow = fp.part.hasPrepRow,
+                            hasFinalRow = fp.part.hasFinalRow,
+                            prepNote = fp.part.prepNote,
+                            finalNote = fp.part.finalNote,
                             notes = fp.notes.map { n ->
                                 BackupNote(
                                     rowStart = n.rowStart,
@@ -100,12 +108,17 @@ class BackupCodec @Inject constructor() {
                 ),
                 parts = bp.parts.map { part ->
                     val totalRows = part.totalRows.coerceAtLeast(1)
+                    val extraRows = (if (part.hasPrepRow) 1 else 0) + (if (part.hasFinalRow) 1 else 0)
                     FullPart(
                         part = Part(
                             projectId = 0L,
                             name = part.name.trim().ifBlank { "-" },
                             totalRows = totalRows,
-                            completedRows = part.completedRows.coerceIn(0, totalRows),
+                            completedRows = part.completedRows.coerceIn(0, totalRows + extraRows),
+                            hasPrepRow = part.hasPrepRow,
+                            hasFinalRow = part.hasFinalRow,
+                            prepNote = part.prepNote?.takeIf { it.isNotBlank() },
+                            finalNote = part.finalNote?.takeIf { it.isNotBlank() },
                         ),
                         notes = part.notes.filter { it.text.isNotBlank() }.map { n ->
                             val rowStart = n.rowStart.coerceAtLeast(1)

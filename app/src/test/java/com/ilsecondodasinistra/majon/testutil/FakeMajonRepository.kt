@@ -80,7 +80,7 @@ class FakeMajonRepository : MajonRepository {
 
     override suspend fun adjustCompletedRows(partId: Long, delta: Int) {
         parts.value = parts.value.map {
-            if (it.id == partId) it.copy(completedRows = (it.completedRows + delta).coerceIn(0, it.totalRows)) else it
+            if (it.id == partId) it.copy(completedRows = (it.completedRows + delta).coerceIn(0, it.totalSteps)) else it
         }
     }
 

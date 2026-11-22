@@ -18,7 +18,7 @@ interface MajonRepository {
     suspend fun deletePart(id: Long)
     suspend fun setCompletedRows(partId: Long, completedRows: Int)
 
-    /** Atomically adds [delta] to the completed rows, clamped to 0..totalRows. */
+    /** Atomically adds [delta] to the completed steps, clamped to 0..totalSteps (extra rows included). */
     suspend fun adjustCompletedRows(partId: Long, delta: Int)
 
     fun observeNotes(partId: Long): Flow<List<RowNote>>

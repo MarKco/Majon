@@ -124,6 +124,40 @@ class BackupCodecTest {
     }
 
     @Test
+    fun `preparation and final rows round-trip`() {
+        val source = listOf(
+            FullProject(
+                project = Project(name = "Sciarpa"),
+                parts = listOf(
+                    FullPart(
+                        part = Part(
+                            projectId = 0L, name = "Unica", totalRows = 50, completedRows = 52,
+                            hasPrepRow = true, hasFinalRow = true, prepNote = "Avvia", finalNote = "Chiudi",
+                        ),
+                        notes = emptyList(),
+                    ),
+                ),
+            ),
+        )
+        val part = codec.decode(codec.encode(source, 1L)).getOrThrow().single().parts.single().part
+        assertTrue(part.hasPrepRow)
+        assertTrue(part.hasFinalRow)
+        assertEquals("Avvia", part.prepNote)
+        assertEquals("Chiudi", part.finalNote)
+        assertEquals(52, part.completedRows)
+    }
+
+    @Test
+    fun `old backup without the extra rows decodes with them off`() {
+        val json = """{"app":"majon","version":1,"exportedAt":1,"projects":[{"name":"X","parts":[{"name":"P","totalRows":10,"completedRows":4}]}]}"""
+        val part = codec.decode(json).getOrThrow().single().parts.single().part
+        assertEquals(false, part.hasPrepRow)
+        assertEquals(false, part.hasFinalRow)
+        assertEquals(null, part.prepNote)
+        assertEquals(4, part.completedRows)
+    }
+
+    @Test
     fun `empty project list round-trips`() {
         val json = codec.encode(emptyList(), exportedAt = 1L)
         assertTrue(codec.decode(json).getOrThrow().isEmpty())

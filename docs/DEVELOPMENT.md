@@ -55,12 +55,18 @@ MainActivity     AppCompatActivity (necessaria per per-app locales) + Compose
 Project (1) ──< Part (1) ──< RowNote
 ```
 
-- `Part.completedRows` è il contatore; `currentRow = completedRows + 1`
+- `Part.completedRows` è il contatore dei **passi**: riga di preparazione (opzionale,
+  «riga 0») + righe 1..N + riga finale (opzionale). `totalRows` = solo le righe 1..N,
+  `totalSteps` = con gli extra. `currentStep: RowStep` (`Prep | Row(n) | Final`) dice
+  cosa si sta lavorando; `rowsDone` = righe vere finite; `isLastStep`.
+  Attivare/togliere la preparazione a lavoro iniziato sposta il conteggio di 1
+  (`Part.withRowOptions`) per restare sulla stessa riga
 - `RowNote` = testo + intervallo `rowStart..rowEnd` + frequenza
   (`EVERY_ROW | ODD_ROWS | EVEN_ROWS`). Range e frequenza componibili:
   "righe dispari dalla 20 alla 30" è una sola nota.
 - Cascade delete: progetto → parti → note (FK Room).
-- Percentuale progetto = somma righe fatte / somma righe totali (pesata).
+- Percentuale progetto = somma passi fatti / somma passi totali (pesata).
+- `nextPart(parts, current)`: prima parte non finita creata dopo la corrente (ordine di id).
 
 ### Logica chiave (domain, pura e testata)
 
@@ -149,6 +155,21 @@ Test scritti prima dell'implementazione, per layer:
 
 Nota: Robolectric non supporta ancora SDK 37 → pin a 36 in
 `app/src/test/resources/robolectric.properties`.
+
+## Contatore: numero della riga, righe extra, parte successiva
+
+- **Numero grande** (`CounterScreen.RowNumber`): colore tenue = «in lavorazione». Al `+` il
+  dato si salva subito, ma ciò che si vede resta sul numero vecchio per
+  `DONE_FLASH_MILLIS` (320 ms) in colore pieno («Fatta ✓»), poi `AnimatedContent`
+  passa a X+1 tenue. Un secondo `+` durante il lampo lo salta. Riga 0 usa `tertiary`,
+  riga finale `secondary`, righe normali `primary`.
+- **Parte successiva**: `CounterViewModel.increment()` sull'ultimo passo, se `nextPart`
+  esiste, non avanza ma pubblica `nextPartPrompt` (dialog). `confirmNextPart()` completa la
+  parte, attende `NEXT_PART_DELAY_MILLIS` (festeggiamento) ed emette `navigateToPart`;
+  il NavGraph sostituisce il contatore (`popUpTo` inclusive) così Back torna al progetto.
+  A voce: `Confirm` conferma, qualunque altro comando annulla; tasti volume: su = sì, giù = no.
+- Schema DB v2 (`MIGRATION_1_2`): `parts.hasPrepRow`, `hasFinalRow`, `prepNote`, `finalNote`.
+  `PartDao.adjustCompletedRows` fa il clamp su `totalRows + hasPrepRow + hasFinalRow`.
 
 ## Comandi vocali e tasti volume
 

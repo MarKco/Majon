@@ -1,5 +1,6 @@
 package com.ilsecondodasinistra.majon.ui.projectdetail
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +18,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
@@ -29,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -162,11 +166,11 @@ fun ProjectDetailScreen(
         PartEditorDialog(
             state = dialog,
             onDismiss = { partDialog = null },
-            onSave = { name, rows ->
+            onSave = { name, rows, extras ->
                 val ok = if (dialog.part == null) {
-                    viewModel.addPart(name, rows)
+                    viewModel.addPart(name, rows, extras)
                 } else {
-                    viewModel.updatePart(dialog.part.id, name, rows)
+                    viewModel.updatePart(dialog.part.id, name, rows, extras)
                 }
                 if (ok) partDialog = null
                 ok
@@ -280,7 +284,7 @@ private fun PartCard(
                 AnimatedProgressBar(progress = part.progress, color = accentColor, height = 8.dp)
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    stringResource(R.string.rows_progress, part.completedRows, part.totalRows),
+                    stringResource(R.string.rows_progress, part.rowsDone, part.totalRows),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -323,13 +327,17 @@ private data class PartDialogState(val part: Part? = null)
 private fun PartEditorDialog(
     state: PartDialogState,
     onDismiss: () -> Unit,
-    onSave: (String, Int) -> Boolean,
+    onSave: (String, Int, RowExtras) -> Boolean,
 ) {
     var name by rememberSaveable { mutableStateOf(state.part?.name.orEmpty()) }
+    var prepRow by rememberSaveable { mutableStateOf(state.part?.hasPrepRow ?: false) }
+    var prepNote by rememberSaveable { mutableStateOf(state.part?.prepNote.orEmpty()) }
+    var finalRow by rememberSaveable { mutableStateOf(state.part?.hasFinalRow ?: false) }
+    var finalNote by rememberSaveable { mutableStateOf(state.part?.finalNote.orEmpty()) }
     var rowsText by rememberSaveable { mutableStateOf(state.part?.totalRows?.toString().orEmpty()) }
     var showError by rememberSaveable { mutableStateOf(false) }
     val rows = rowsText.toIntOrNull() ?: 0
-    val reduceWarning = state.part != null && rows in 1 until state.part.completedRows
+    val reduceWarning = state.part != null && rows in 1 until state.part.rowsDone
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -363,9 +371,25 @@ private fun PartEditorDialog(
                         null
                     },
                 )
+                ExtraRowOption(
+                    label = stringResource(R.string.prep_row_toggle),
+                    checked = prepRow,
+                    onCheckedChange = { prepRow = it },
+                    noteLabel = stringResource(R.string.prep_row_note),
+                    note = prepNote,
+                    onNoteChange = { prepNote = it },
+                )
+                ExtraRowOption(
+                    label = stringResource(R.string.final_row_toggle),
+                    checked = finalRow,
+                    onCheckedChange = { finalRow = it },
+                    noteLabel = stringResource(R.string.final_row_note),
+                    note = finalNote,
+                    onNoteChange = { finalNote = it },
+                )
                 if (reduceWarning) {
                     Text(
-                        stringResource(R.string.part_reduce_warning, state.part!!.completedRows),
+                        stringResource(R.string.part_reduce_warning, state.part!!.rowsDone),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -375,7 +399,7 @@ private fun PartEditorDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    val ok = onSave(name, rows)
+                    val ok = onSave(name, rows, RowExtras(prepRow, prepNote, finalRow, finalNote))
                     if (!ok) showError = true
                 },
             ) {
@@ -386,4 +410,34 @@ private fun PartEditorDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
+}
+
+/** A switch for an optional extra row (preparation / final) with its note shown while it is on. */
+@Composable
+private fun ExtraRowOption(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    noteLabel: String,
+    note: String,
+    onNoteChange: (String) -> Unit,
+) {
+    Column {
+        Row(
+            // The whole row toggles, not only the small switch
+            modifier = Modifier.fillMaxWidth().toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+            Switch(checked = checked, onCheckedChange = null)
+        }
+        AnimatedVisibility(visible = checked) {
+            OutlinedTextField(
+                value = note,
+                onValueChange = onNoteChange,
+                label = { Text(noteLabel) },
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+            )
+        }
+    }
 }

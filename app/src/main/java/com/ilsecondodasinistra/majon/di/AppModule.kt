@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
+import com.ilsecondodasinistra.majon.data.db.MIGRATIONS
 import com.ilsecondodasinistra.majon.data.db.MajonDatabase
 import com.ilsecondodasinistra.majon.data.db.NoteDao
 import com.ilsecondodasinistra.majon.data.db.PartDao
@@ -28,7 +29,9 @@ object AppModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): MajonDatabase =
-        Room.databaseBuilder(context, MajonDatabase::class.java, "majon.db").build()
+        Room.databaseBuilder(context, MajonDatabase::class.java, "majon.db")
+            .addMigrations(*MIGRATIONS)
+            .build()
 
     @Provides
     fun provideProjectDao(db: MajonDatabase): ProjectDao = db.projectDao()
