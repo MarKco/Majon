@@ -1,5 +1,7 @@
 package com.ilsecondodasinistra.majon.ui.stash
 
+import androidx.compose.foundation.layout.imePadding
+import com.ilsecondodasinistra.majon.ui.components.KeyboardBackHandler
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -78,6 +80,7 @@ fun YarnEditScreen(
     onSaved: () -> Unit,
     viewModel: YarnEditViewModel = hiltViewModel(),
 ) {
+    KeyboardBackHandler()
     val form by viewModel.form.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = androidx.compose.runtime.rememberCoroutineScope()
@@ -129,6 +132,7 @@ fun YarnEditScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),

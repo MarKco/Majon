@@ -1,5 +1,7 @@
 package com.ilsecondodasinistra.majon.ui.projectlinks
 
+import androidx.compose.foundation.layout.imePadding
+import com.ilsecondodasinistra.majon.ui.components.KeyboardBackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -59,6 +61,7 @@ fun ProjectLinksScreen(
     onBack: () -> Unit,
     viewModel: ProjectLinksViewModel = androidx.hilt.navigation.compose.hiltViewModel(),
 ) {
+    KeyboardBackHandler()
     val yarns by viewModel.yarns.collectAsStateWithLifecycle()
     val needles by viewModel.needles.collectAsStateWithLifecycle()
     val links by viewModel.links.collectAsStateWithLifecycle()
@@ -82,6 +85,7 @@ fun ProjectLinksScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),

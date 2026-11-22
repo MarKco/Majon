@@ -1,6 +1,7 @@
 package com.ilsecondodasinistra.majon.domain.repository
 
 import com.ilsecondodasinistra.majon.domain.model.BackupImportCounts
+import com.ilsecondodasinistra.majon.domain.model.FinishingTask
 import com.ilsecondodasinistra.majon.domain.model.FullProject
 import com.ilsecondodasinistra.majon.domain.model.Needle
 import com.ilsecondodasinistra.majon.domain.model.Part
@@ -31,6 +32,13 @@ interface MajonRepository {
     fun observeNotes(partId: Long): Flow<List<RowNote>>
     suspend fun upsertNote(note: RowNote): Long
     suspend fun deleteNote(id: Long)
+
+    // --- finishing ---
+
+    /** The tasks to do after the knitting, in list order. */
+    fun observeFinishingTasks(projectId: Long): Flow<List<FinishingTask>>
+    suspend fun upsertFinishingTask(task: FinishingTask): Long
+    suspend fun deleteFinishingTask(id: Long)
 
     // --- stash ---
 
@@ -73,8 +81,8 @@ interface MajonRepository {
     fun observeNeedleUsage(): Flow<Map<Long, List<String>>>
 
     /**
-     * Copies a project (its parts with measures, row notes and extra rows, and its yarns and needles)
-     * under [copyName], with every part's progress back at zero. Returns the new id, null if [id] is unknown.
+     * Copies a project (its parts with measures, copies, row notes and extra rows, its finishing tasks, and its yarns and needles)
+     * under [copyName], with every part's progress back at zero and every finishing task still to do. Returns the new id, null if [id] is unknown.
      */
     suspend fun duplicateProject(id: Long, copyName: String): Long?
 

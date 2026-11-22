@@ -129,6 +129,20 @@ class ProjectPlanViewModelTest {
     }
 
     @Test
+    fun `suggested parts can all be created worked sideways`() = runTest {
+        viewModel().addSuggestedParts(
+            listOf(
+                PresetPart(PresetPartName.FRONT, MeasureKey.WIDTH, MeasureKey.LENGTH) to "Davanti",
+                PresetPart(PresetPartName.SLEEVE, MeasureKey.CIRCUMFERENCE, MeasureKey.HEIGHT) to "Manica",
+            ),
+            sideways = true,
+        )
+        val parts = repository.observeProject(projectId).first()!!.parts
+        assertEquals(listOf(MeasureKey.LENGTH, MeasureKey.HEIGHT), parts.map { it.stitchMeasure })
+        assertEquals(listOf(MeasureKey.WIDTH, MeasureKey.CIRCUMFERENCE), parts.map { it.rowMeasure })
+    }
+
+    @Test
     fun `suggested parts that already exist are not created twice`() = runTest {
         repository.upsertPart(Part(projectId = projectId, name = "Davanti", totalRows = 120))
         viewModel().addSuggestedParts(

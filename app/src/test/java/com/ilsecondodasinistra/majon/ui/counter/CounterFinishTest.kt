@@ -15,12 +15,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
-/** When the last part of a project is finished the app asks how much yarn was used (and never takes it by itself). */
+/** When the last part of a project is finished the app opens the "how much yarn was used" screen (the amounts are asked in `FinishViewModelTest`). */
 class CounterFinishTest {
 
     @get:Rule
@@ -51,21 +50,19 @@ class CounterFinishTest {
     private suspend fun stock() = repository.observeYarn(yarnId).first()!!.stockSkeins
 
     @Test
-    fun `finishing the last part asks how much of each yarn was used, with the estimate filled in`() = runTest {
+    fun `finishing the last part asks about the project's yarn, taking nothing by itself`() = runTest {
         val vm = viewModel()
         assertNull(vm.finishPrompt.value)
         vm.increment()
-        val prompt = vm.finishPrompt.value!!
-        assertEquals(listOf("Bamboo Mustard"), prompt.map { it.name })
-        assertEquals(1.25, prompt.single().suggestedSkeins!!, 0.0) // 1.2 rounded up to a quarter
-        assertEquals(2.5, stock(), 0.0) // nothing taken yet
+        assertEquals(projectId, vm.finishPrompt.value)
+        assertEquals(2.5, stock(), 0.0)
     }
 
     @Test
     fun `the same happens by voice`() = runTest {
         val vm = viewModel()
         vm.onVoiceCommand(VoiceCommand.Increment)
-        assertTrue(vm.finishPrompt.value != null)
+        assertEquals(projectId, vm.finishPrompt.value)
     }
 
     @Test
@@ -96,25 +93,7 @@ class CounterFinishTest {
     }
 
     @Test
-    fun `confirming takes the amounts off the stock`() = runTest {
-        val vm = viewModel()
-        vm.increment()
-        vm.confirmFinish(mapOf(yarnId to 1.25))
-        assertEquals(1.25, stock(), 0.0001)
-        assertNull(vm.finishPrompt.value)
-    }
-
-    @Test
-    fun `an empty or zero amount takes nothing`() = runTest {
-        val vm = viewModel()
-        vm.increment()
-        vm.confirmFinish(mapOf(yarnId to 0.0))
-        assertEquals(2.5, stock(), 0.0)
-        assertNull(vm.finishPrompt.value)
-    }
-
-    @Test
-    fun `skipping leaves the stock alone`() = runTest {
+    fun `once the screen is opened the prompt is cleared`() = runTest {
         val vm = viewModel()
         vm.increment()
         vm.dismissFinish()

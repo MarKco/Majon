@@ -8,13 +8,13 @@ import com.ilsecondodasinistra.majon.domain.model.Part
 import com.ilsecondodasinistra.majon.domain.model.ProjectIcon
 import com.ilsecondodasinistra.majon.domain.model.RowStep
 import com.ilsecondodasinistra.majon.domain.model.nextPart
-import com.ilsecondodasinistra.majon.domain.model.planYarns
 import com.ilsecondodasinistra.majon.domain.model.RowNote
 import com.ilsecondodasinistra.majon.domain.model.notesForRow
 import com.ilsecondodasinistra.majon.domain.repository.MajonRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import com.ilsecondodasinistra.majon.domain.voice.VoiceCommand
+import com.ilsecondodasinistra.majon.ui.finish.yarnsToAskAbout
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -54,20 +54,19 @@ sealed interface CounterUiState {
         val nextNotes: List<RowNote>,
         val projectIcon: ProjectIcon,
         val projectColor: ProjectColor,
+        /** How many times the part is knitted and which copy this is (1-based). */
+        val copies: Int,
+        val currentCopy: Int,
+        /** The stitches to cast on, when the part says so. */
+        val castOnStitches: Int?,
     ) : CounterUiState
 }
 
 /** Shown as a dialog when '+' is pressed on the last step of a part that has a part after it. */
 data class NextPartPrompt(val partId: Long, val partName: String, val finishedPartName: String)
 
-/** A yarn of the finished project, to ask how much of it was used. */
-data class FinishYarn(
-    val yarnId: Long,
-    val name: String,
-    /** The estimate for the project (rounded up to a quarter skein), when it can be worked out. */
-    val suggestedSkeins: Double?,
-    val stockSkeins: Double,
-)
+/** Shown as a dialog when '+' is pressed on the last step of a copy that has another copy after it. */
+data class NextCopyPrompt(val partName: String, val finishedCopy: Int, val copies: Int)
 
 /** What the app says (and shows) back after a voice command. */
 sealed interface VoiceReply {
@@ -85,6 +84,10 @@ sealed interface VoiceReply {
     data class Note(val texts: List<String>) : VoiceReply
     data object NoNote : VoiceReply
     data class Remaining(val rows: Int) : VoiceReply
+    /** The copy just finished; [copy] is the one to start. */
+    data class AskNextCopyConfirm(val copy: Int) : VoiceReply
+    data class NextCopyStarting(val copy: Int) : VoiceReply
+    data object NextCopyCancelled : VoiceReply
     data object AskResetConfirm : VoiceReply
     data object ResetDone : VoiceReply
     data object ResetCancelled : VoiceReply
@@ -125,18 +128,45 @@ class CounterViewModel @Inject constructor(
                 nextStepNote = nextStep?.let(part::noteOf),
                 totalRows = part.totalRows,
                 completedRows = part.completedRows,
-                progress = part.progress,
+                progress = part.copyProgress,
                 isComplete = part.isComplete,
                 currentNotes = (step as? RowStep.Row)?.let { notes.notesForRow(it.number) }.orEmpty(),
                 nextNotes = (nextStep as? RowStep.Row)?.let { notes.notesForRow(it.number) }.orEmpty(),
                 projectIcon = projectWithParts?.project?.icon ?: ProjectIcon.YARN,
                 projectColor = projectWithParts?.project?.color ?: ProjectColor.TERRACOTTA,
+                copies = part.copies,
+                currentCopy = part.currentCopy,
+                castOnStitches = part.castOnStitches,
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CounterUiState.Loading)
 
     private val _nextPartPrompt = MutableStateFlow<NextPartPrompt?>(null)
     val nextPartPrompt: StateFlow<NextPartPrompt?> = _nextPartPrompt
+
+    private val _nextCopyPrompt = MutableStateFlow<NextCopyPrompt?>(null)
+    val nextCopyPrompt: StateFlow<NextCopyPrompt?> = _nextCopyPrompt
+
+    /** On the last step of a copy with another to come the count does not move: [nextCopyPrompt] asks first. */
+    private fun askNextCopy(part: Part): Boolean {
+        if (!(part.isLastStep && part.hasMoreCopies)) return false
+        _nextCopyPrompt.value = NextCopyPrompt(part.name, finishedCopy = part.currentCopy, copies = part.copies)
+        return true
+    }
+
+    /** Starts the next copy of the part, the count back at the first row. */
+    fun confirmNextCopy() {
+        if (_nextCopyPrompt.value == null) return
+        _nextCopyPrompt.value = null
+        viewModelScope.launch {
+            val part = repository.observePart(partId).first() ?: return@launch
+            if (part.hasMoreCopies) repository.upsertPart(part.startNextCopy())
+        }
+    }
+
+    fun dismissNextCopy() {
+        _nextCopyPrompt.value = null
+    }
 
     private val _navigateToPart = MutableSharedFlow<Long>(extraBufferCapacity = 1)
 
@@ -154,19 +184,12 @@ class CounterViewModel @Inject constructor(
      * nothing changes yet: [nextPartPrompt] asks first, so a stray tap never jumps away.
      * Returns the part to move to when it is asking, null when the count simply advanced.
      */
-    private val _finishPrompt = MutableStateFlow<List<FinishYarn>?>(null)
+    private val _finishPrompt = MutableStateFlow<Long?>(null)
 
-    /** Set when the last part of the project has just been finished and it has yarn linked to it. */
-    val finishPrompt: StateFlow<List<FinishYarn>?> = _finishPrompt
+    /** Set to the project's id when its last part has just been finished and it has yarn in stock to ask about. */
+    val finishPrompt: StateFlow<Long?> = _finishPrompt
 
-    /** Takes the amounts (skeins per yarn id) the knitter says were used off the stock; zero or less takes nothing. */
-    fun confirmFinish(amounts: Map<Long, Double>) {
-        _finishPrompt.value = null
-        viewModelScope.launch {
-            amounts.forEach { (yarnId, skeins) -> if (skeins > 0.0) repository.adjustYarnStock(yarnId, -skeins) }
-        }
-    }
-
+    /** Called once the screen asking about the yarn used has been opened. */
     fun dismissFinish() {
         _finishPrompt.value = null
     }
@@ -175,21 +198,7 @@ class CounterViewModel @Inject constructor(
     private suspend fun askAboutYarnUsed(part: Part) {
         val project = repository.observeProject(part.projectId).first() ?: return
         if (project.parts.any { !it.isComplete }) return
-        val links = repository.observeProjectLinks(part.projectId).first()
-        if (links.yarns.isEmpty()) return
-        val yarns = repository.observeYarns().first().associateBy { it.id }
-        val swatches = links.yarns.associate { l -> l.yarnId to repository.observeSwatches(l.yarnId).first() }
-        val asked = planYarns(project.parts, links, yarns, swatches)
-            .filter { it.yarn.stockSkeins > 0.0 }
-            .map {
-                FinishYarn(
-                    yarnId = it.yarn.id,
-                    name = listOfNotNull(it.yarn.name, it.yarn.colorName).joinToString(" "),
-                    suggestedSkeins = it.neededSkeins?.let { n -> kotlin.math.ceil(n * 4 - 1e-9) / 4 },
-                    stockSkeins = it.yarn.stockSkeins,
-                )
-            }
-        if (asked.isNotEmpty()) _finishPrompt.value = asked
+        if (repository.yarnsToAskAbout(part.projectId).isNotEmpty()) _finishPrompt.value = part.projectId
     }
 
     private suspend fun advance(part: Part): Part? {
@@ -208,7 +217,8 @@ class CounterViewModel @Inject constructor(
     fun increment() {
         viewModelScope.launch {
             val part = repository.observePart(partId).first() ?: return@launch
-            if (part.isComplete || _nextPartPrompt.value != null) return@launch
+            if (part.isComplete || _nextPartPrompt.value != null || _nextCopyPrompt.value != null) return@launch
+            if (askNextCopy(part)) return@launch
             advance(part)
         }
     }
@@ -263,6 +273,17 @@ class CounterViewModel @Inject constructor(
     fun onVoiceCommand(command: VoiceCommand) {
         viewModelScope.launch {
             val part = repository.observePart(partId).first() ?: return@launch
+            val copyPrompt = _nextCopyPrompt.value
+            if (copyPrompt != null) {
+                if (command == VoiceCommand.Confirm) {
+                    confirmNextCopy()
+                    _voiceReplies.emit(VoiceReply.NextCopyStarting(copyPrompt.finishedCopy + 1))
+                } else {
+                    dismissNextCopy()
+                    _voiceReplies.emit(VoiceReply.NextCopyCancelled)
+                }
+                return@launch
+            }
             val prompt = _nextPartPrompt.value
             if (prompt != null) {
                 if (command == VoiceCommand.Confirm) {
@@ -289,6 +310,8 @@ class CounterViewModel @Inject constructor(
                 VoiceCommand.Increment -> {
                     if (part.isComplete) {
                         _voiceReplies.emit(VoiceReply.PartFinished(part.totalRows))
+                    } else if (askNextCopy(part)) {
+                        _voiceReplies.emit(VoiceReply.AskNextCopyConfirm(part.currentCopy + 1))
                     } else {
                         val asking = advance(part)
                         if (asking != null) {

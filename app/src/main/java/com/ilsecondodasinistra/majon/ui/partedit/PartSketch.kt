@@ -45,11 +45,12 @@ private fun DrawScope.arrow(from: Offset, to: Offset, color: Color, head: Float,
 }
 
 /**
- * A sketch of the part whose measures are asked, with an arrow across it (what gives the stitches) and one
- * up its side (what gives the rows), each named after the measure chosen ("Larghezza → punti").
+ * A sketch of the part whose measures are asked, with an arrow across it (width or circumference) and one
+ * up its side (length or height), each named after the measure and what it gives ("Larghezza → punti", or
+ * "Larghezza → righe" when the part is worked sideways).
  */
 @Composable
-fun PartSketch(shape: PartShape, stitchLabel: String, rowLabel: String, modifier: Modifier = Modifier) {
+fun PartSketch(shape: PartShape, acrossLabel: String, alongLabel: String, modifier: Modifier = Modifier) {
     val fill = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
     val line = MaterialTheme.colorScheme.primary.copy(alpha = 0.55f)
     val accent = MaterialTheme.colorScheme.primary
@@ -92,19 +93,19 @@ fun PartSketch(shape: PartShape, stitchLabel: String, rowLabel: String, modifier
             val x1 = left + bounds.right * scale
             val y0 = top + bounds.top * scale
             val y1 = top + bounds.bottom * scale
-            // across, under the piece: stitches
+            // across, under the piece: the width or circumference
             arrow(Offset(x0, y1 + 14.dp.toPx()), Offset(x1, y1 + 14.dp.toPx()), accent, head, stroke)
-            // up its left side: rows
+            // up its left side: the length or height
             arrow(Offset(x0 - 14.dp.toPx(), y0), Offset(x0 - 14.dp.toPx(), y1), accent, head, stroke)
         }
         Text(
-            stitchLabel,
+            acrossLabel,
             style = MaterialTheme.typography.labelMedium,
             color = accent,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
         Text(
-            rowLabel,
+            alongLabel,
             style = MaterialTheme.typography.labelMedium,
             color = accent,
             maxLines = 1,

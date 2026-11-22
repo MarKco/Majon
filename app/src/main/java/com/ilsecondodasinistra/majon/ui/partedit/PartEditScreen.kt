@@ -1,5 +1,13 @@
 package com.ilsecondodasinistra.majon.ui.partedit
 
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.FilledTonalIconButton
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.foundation.layout.imePadding
+import com.ilsecondodasinistra.majon.ui.components.KeyboardBackHandler
+import com.ilsecondodasinistra.majon.ui.components.SidewaysSwitch
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -55,6 +63,7 @@ fun PartEditScreen(
     onBack: () -> Unit,
     viewModel: PartEditViewModel = hiltViewModel(),
 ) {
+    KeyboardBackHandler()
     val form by viewModel.form.collectAsStateWithLifecycle()
     val context by viewModel.context.collectAsStateWithLifecycle()
     val estimate by viewModel.estimate.collectAsStateWithLifecycle()
@@ -81,6 +90,7 @@ fun PartEditScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -134,32 +144,86 @@ fun PartEditScreen(
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
+                val copies = (form.copies.toIntOrNull() ?: 1).coerceIn(1, MAX_COPIES)
+                Stepper(
+                    label = stringResource(R.string.part_copies),
+                    value = copies.toString(),
+                    onMinus = { viewModel.update { it.copy(copies = (copies - 1).coerceAtLeast(1).toString()) } },
+                    onPlus = { viewModel.update { it.copy(copies = (copies + 1).coerceAtMost(MAX_COPIES).toString()) } },
+                    minusDescription = stringResource(R.string.part_copies_minus),
+                    plusDescription = stringResource(R.string.part_copies_plus),
+                    hint = stringResource(R.string.part_copies_hint),
+                )
+                if (form.isEditing && copies > 1) {
+                    val inHand = form.currentCopy.coerceIn(1, copies)
+                    Stepper(
+                        label = stringResource(R.string.part_copy_current, inHand, copies),
+                        value = inHand.toString(),
+                        onMinus = { viewModel.update { it.copy(currentCopy = (inHand - 1).coerceAtLeast(1)) } },
+                        onPlus = { viewModel.update { it.copy(currentCopy = (inHand + 1).coerceAtMost(copies)) } },
+                        minusDescription = stringResource(R.string.part_copies_minus),
+                        plusDescription = stringResource(R.string.part_copies_plus),
+                        hint = stringResource(R.string.part_copy_current_hint),
+                    )
+                }
+                OutlinedTextField(
+                    value = form.castOn,
+                    onValueChange = { v -> viewModel.update { it.copy(castOn = v.filter { c -> c.isDigit() }) } },
+                    label = { Text(stringResource(R.string.part_cast_on)) },
+                    supportingText = { Text(stringResource(R.string.part_cast_on_hint)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (estimate.stitches != null && estimate.stitches.toString() != form.castOn) {
+                    TextButton(onClick = viewModel::useEstimatedCastOn) {
+                        Text(stringResource(R.string.part_use_cast_on, estimate.stitches!!))
+                    }
+                }
             }
 
             FormSection(stringResource(R.string.part_measures_title)) {
                 // The part's own shape, with the two measures to take drawn on it
                 val named = context.presets.firstOrNull { preset -> form.name.trim().equals(stringResource(preset.name.labelRes()), ignoreCase = true) }?.name
                 val shape = com.ilsecondodasinistra.majon.domain.model.partShape(context.projectIcon, named)
-                val stitchLabel = stringResource(form.stitchMeasure.labelRes()).substringBefore(" (") + " → " + stringResource(R.string.swatch_stitches_caption)
-                val rowLabel = stringResource(form.rowMeasure.labelRes()).substringBefore(" (") + " → " + stringResource(R.string.swatch_rows_caption)
+                val sideways = form.sideways
+                val stitchesCaption = stringResource(R.string.swatch_stitches_caption)
+                val rowsCaption = stringResource(R.string.swatch_rows_caption)
+                val stitchLabel = stringResource(form.stitchMeasure.labelRes()).substringBefore(" (") + " → " + stitchesCaption
+                val rowLabel = stringResource(form.rowMeasure.labelRes()).substringBefore(" (") + " → " + rowsCaption
                 Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                    PartSketch(shape = shape, stitchLabel = stitchLabel, rowLabel = rowLabel)
+                    // The arrows stay where they are (across / along the piece); the labels follow the orientation
+                    PartSketch(
+                        shape = shape,
+                        acrossLabel = if (sideways) rowLabel else stitchLabel,
+                        alongLabel = if (sideways) stitchLabel else rowLabel,
+                    )
                 }
                 Text(
                     stringResource(R.string.part_measures_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                SidewaysSwitch(checked = sideways, onCheckedChange = viewModel::setSideways)
                 MeasureField(
-                    keys = listOf(MeasureKey.WIDTH, MeasureKey.CIRCUMFERENCE),
+                    keys = if (sideways) listOf(MeasureKey.LENGTH, MeasureKey.HEIGHT) else listOf(MeasureKey.WIDTH, MeasureKey.CIRCUMFERENCE),
                     selected = form.stitchMeasure,
                     value = form.stitchCm,
                     gives = stringResource(R.string.measure_gives_stitches),
                     onKey = { k -> viewModel.update { it.copy(stitchMeasure = k) } },
                     onValue = { v -> viewModel.update { it.copy(stitchCm = v) } },
                 )
+                OutlinedTextField(
+                    value = form.endStitchCm,
+                    onValueChange = { v -> viewModel.update { it.copy(endStitchCm = v.filter { c -> c.isDigit() || c == '.' || c == ',' }) } },
+                    label = { Text(stringResource(R.string.measure_end)) },
+                    supportingText = { Text(stringResource(R.string.measure_end_hint)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 MeasureField(
-                    keys = listOf(MeasureKey.LENGTH, MeasureKey.HEIGHT),
+                    keys = if (sideways) listOf(MeasureKey.WIDTH, MeasureKey.CIRCUMFERENCE) else listOf(MeasureKey.LENGTH, MeasureKey.HEIGHT),
                     selected = form.rowMeasure,
                     value = form.rowCm,
                     gives = stringResource(R.string.measure_gives_rows),
@@ -195,6 +259,7 @@ fun PartEditScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
+                estimate.endStitches?.let { EstimateText(stringResource(R.string.part_estimate_end, it)) }
                 if (estimate.rows != null && estimate.rows != rows) {
                     TextButton(onClick = viewModel::useEstimatedRows) {
                         Text(stringResource(R.string.part_use_rows, estimate.rows!!))
@@ -226,6 +291,28 @@ fun PartEditScreen(
             }
             Spacer(Modifier.height(24.dp))
         }
+    }
+}
+
+/** A number with a minus and a plus button (copies of a part), a line of explanation under it. */
+@Composable
+private fun Stepper(
+    label: String,
+    value: String,
+    onMinus: () -> Unit,
+    onPlus: () -> Unit,
+    minusDescription: String,
+    plusDescription: String,
+    hint: String,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(label, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+            FilledTonalIconButton(onClick = onMinus) { Icon(Icons.Default.Remove, contentDescription = minusDescription) }
+            Text(value, style = MaterialTheme.typography.titleMedium, modifier = Modifier.widthIn(min = 24.dp), textAlign = TextAlign.Center)
+            FilledTonalIconButton(onClick = onPlus) { Icon(Icons.Default.Add, contentDescription = plusDescription) }
+        }
+        Text(hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

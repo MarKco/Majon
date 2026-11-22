@@ -1,5 +1,6 @@
 package com.ilsecondodasinistra.majon.data.export
 
+import com.ilsecondodasinistra.majon.domain.model.FinishingTask
 import com.ilsecondodasinistra.majon.domain.model.FullPart
 import com.ilsecondodasinistra.majon.domain.model.FullProject
 import com.ilsecondodasinistra.majon.domain.model.FullYarn
@@ -48,6 +49,13 @@ private data class BackupProject(
     // What the project is made with: positions in this file's `yarns` / `needles` lists
     val yarns: List<BackupYarnLink> = emptyList(),
     val needles: List<Int> = emptyList(),
+    val finishing: List<BackupTask> = emptyList(),
+)
+
+@Serializable
+private data class BackupTask(
+    val title: String,
+    val done: Boolean = false,
 )
 
 @Serializable
@@ -73,6 +81,10 @@ private data class BackupPart(
     val rowMeasure: String? = null,
     val rowCm: Double? = null,
     val swatch: Int? = null,
+    val copies: Int = 1,
+    val currentCopy: Int = 1,
+    val castOnStitches: Int? = null,
+    val endStitchCm: Double? = null,
     val notes: List<BackupNote> = emptyList(),
 )
 
@@ -182,6 +194,10 @@ class BackupCodec @Inject constructor() {
                             rowMeasure = fp.part.rowMeasure?.name,
                             rowCm = fp.part.rowCm,
                             swatch = fp.part.swatchId?.let(swatchPosition::get),
+                            copies = fp.part.copies,
+                            currentCopy = fp.part.currentCopy,
+                            castOnStitches = fp.part.castOnStitches,
+                            endStitchCm = fp.part.endStitchCm,
                             notes = fp.notes.map { n ->
                                 BackupNote(
                                     rowStart = n.rowStart,
@@ -192,6 +208,7 @@ class BackupCodec @Inject constructor() {
                             },
                         )
                     },
+                    finishing = full.finishing.sortedBy { it.position }.map { BackupTask(it.title, it.done) },
                 )
             },
         )
@@ -228,6 +245,7 @@ class BackupCodec @Inject constructor() {
                     // 0 = the rows are still to define (a suggested part not yet measured)
                     val totalRows = part.totalRows.coerceAtLeast(0)
                     val extraRows = (if (part.hasPrepRow) 1 else 0) + (if (part.hasFinalRow) 1 else 0)
+                    val copies = part.copies.coerceAtLeast(1)
                     FullPart(
                         part = Part(
                             projectId = 0L,
@@ -244,6 +262,10 @@ class BackupCodec @Inject constructor() {
                             rowCm = part.rowCm?.takeIf { it > 0.0 },
                             // A position in the stash, turned into an id when the backup is imported
                             swatchId = part.swatch?.takeIf { it >= 0 }?.toLong(),
+                            copies = copies,
+                            currentCopy = part.currentCopy.coerceIn(1, copies),
+                            castOnStitches = part.castOnStitches?.takeIf { it > 0 },
+                            endStitchCm = part.endStitchCm?.takeIf { it > 0.0 },
                         ),
                         notes = part.notes.filter { it.text.isNotBlank() }.map { n ->
                             val rowStart = n.rowStart.coerceAtLeast(1)
@@ -270,6 +292,9 @@ class BackupCodec @Inject constructor() {
                     },
                     needleIds = bp.needles.filter { it >= 0 }.map { it.toLong() },
                 ),
+                finishing = bp.finishing.filter { it.title.isNotBlank() }.mapIndexed { i, t ->
+                    FinishingTask(projectId = 0L, title = t.title.trim(), done = t.done, position = i)
+                },
             )
         }
     }

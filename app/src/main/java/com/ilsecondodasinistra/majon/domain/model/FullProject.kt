@@ -8,6 +8,7 @@ data class FullProject(
     val project: Project,
     val parts: List<FullPart>,
     val links: ProjectLinks = ProjectLinks(),
+    val finishing: List<FinishingTask> = emptyList(),
 )
 
 data class FullPart(

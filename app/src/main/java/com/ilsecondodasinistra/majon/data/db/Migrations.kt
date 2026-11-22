@@ -43,5 +43,20 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
     }
 }
 
+/**
+ * v4 -> v5: a part can be knitted more than once (copies, with the one being worked), can note the stitches to
+ * cast on and the width where it ends up, and a project has a list of finishing tasks.
+ */
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE parts ADD COLUMN copies INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE parts ADD COLUMN currentCopy INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE parts ADD COLUMN castOnStitches INTEGER")
+        db.execSQL("ALTER TABLE parts ADD COLUMN endStitchCm REAL")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `finishing_tasks` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `projectId` INTEGER NOT NULL, `title` TEXT NOT NULL, `done` INTEGER NOT NULL DEFAULT 0, `position` INTEGER NOT NULL DEFAULT 0, FOREIGN KEY(`projectId`) REFERENCES `projects`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_finishing_tasks_projectId` ON `finishing_tasks` (`projectId`)")
+    }
+}
+
 /** Every migration, in order. Register new ones here (see CLAUDE.md). */
-val MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+val MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)

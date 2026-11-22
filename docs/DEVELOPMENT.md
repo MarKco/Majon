@@ -172,7 +172,9 @@ Needle                         tipo, materiale, mm, cm, quantità, marca
 - `MajonRepository` espone osservazione/CRUD per lane, campioni, ferri e
   `getStash()/importStash()` per il backup. `upsertYarn` sostituisce il blend in transazione.
 - UI (`ui/stash/`): `StashScreen` (schede Lane/Ferri), `NeedleEditScreen`, `SwatchEditScreen` (il quadrato 10×10 è il modulo: `GaugeSwatchInput`), `PartEditScreen` (`ui/partedit/`);
-  gli editor sono schermate, non dialog,
+  gli editor sono schermate, non dialog (dialog solo per conferme e per UN campo; il color picker è l'unica eccezione: un solo valore scelto su un quadrato saturazione/luminosità + barra tonalità),
+  `NoteEditScreen` (`ui/notes/`) per le note di riga,
+  schermate con campi: `Modifier.imePadding()` + `KeyboardBackHandler()` (`ui/components/Keyboard.kt`), così la tastiera non copre il campo e Back la chiude prima di uscire,
   `YarnDetailScreen` (scorta, campioni col `GaugeSwatchDiagram`), `YarnEditScreen`
   (editor a schermo intero, foto da Photo Picker copiata in `filesDir`).
   Gli input numerici restano testo nei ViewModel (`parseDecimal` accetta "2,5" e "2.5").
@@ -190,6 +192,10 @@ Needle                         tipo, materiale, mm, cm, quantità, marca
 Project ──< project_yarns (yarn, isPrimary, swatchId?, plannedSkeins?)     cascade da progetto e lana
         ──< project_needles (needle)                                        cascade da progetto e ferro
 Part: + stitchMeasure/stitchCm, rowMeasure/rowCm, swatchId?                 (colonne, senza tabelle)
+  «Lavorata di lato» (`Part.worksSideways`) non è una colonna: si ricava dalle misure. Standard = punti su larghezza/giro e righe su lunghezza/altezza; di lato = scambiate (punti su lunghezza/altezza, righe su larghezza/giro). Lo switch (`SidewaysSwitch`) scambia ruoli e cm insieme, quindi stime e lana (area) restano coerenti; vale anche alla creazione delle parti suggerite (`oriented(sideways)`).
+  Copie (`Part.copies`, `currentCopy`): una parte lavorata più volte (due maniche). Il contatore chiede conferma a fine copia (`nextCopyPrompt`, come `nextPartPrompt`: a riga ultima non cambia nulla finché non confermi), poi `startNextCopy()` riparte da riga 1; «Azzera» riparte la copia in corso; `progress` conta tutte le copie, `copyProgress` solo quella in corso; la stima della lana moltiplica l'area per le copie. `withCopies()` fa avanzare una parte già finita alla copia nuova.
+  `castOnStitches` (maglie da avviare, come scrive il modello, mostrate nel contatore e nella card) e `endStitchCm` (misura finale sulla direzione dei punti: area = media × lunghezza; `PartEstimate.endStitches`); lo scambio «di lato» azzera `endStitchCm`.
+  Schema v5 (migrazione 4→5): colonne di `parts` e tabella `finishing_tasks` (checklist «Rifiniture» per progetto: `FinishingTask`, `ProjectIcon.finishingSteps()` per i passi suggeriti, nel `ProjectDetailViewModel`; duplicando un progetto i passi tornano da fare; nel backup `finishing`).
 ```
 
 - **Tipo di progetto = `ProjectIcon`** (14 valori: gli 8 originali + HEADBAND, COWL, SHAWL,
@@ -215,7 +221,7 @@ Part: + stitchMeasure/stitchCm, rowMeasure/rowCm, swatchId?                 (col
   rimappa le posizioni sugli id appena creati, scartando i collegamenti orfani.
   `FullProject.links` contiene id reali se letto dal DB e posizioni se letto da un file.
 - UI: `ProjectLinksScreen` (`ui/projectlinks/`, con `ProjectLinksViewModel`) per scegliere lane e ferri, invitata dalla scheda «Con cosa lo lavori?» nel dettaglio;
-  una parte con `totalRows = 0` significa «righe da definire» (parti suggerite create in un tap: `addSuggestedParts`); a fine progetto `CounterViewModel.finishPrompt` chiede quanta lana è stata usata (`confirmFinish`/`dismissFinish`), mai in automatico;
+  una parte con `totalRows = 0` significa «righe da definire» (parti suggerite create in un tap: `addSuggestedParts`); a fine progetto `CounterViewModel.finishPrompt` (id progetto) apre `FinishScreen` (`ui/finish/`), che chiede quanta lana è stata usata per ogni filato (`FinishViewModel.save()`), mai in automatico;
   la Home mostra tipo e lana principale (`observePrimaryYarnNames`); scheda `YarnPlanCard` e riga di
   stima su ogni parte nel dettaglio; editor parte con parti suggerite, misure, stima e
   «Usa N righe come totale»; «Nuovo progetto simile» in Home e nel dettaglio (la copia si

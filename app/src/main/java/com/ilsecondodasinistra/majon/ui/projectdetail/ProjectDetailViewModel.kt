@@ -3,9 +3,11 @@ package com.ilsecondodasinistra.majon.ui.projectdetail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ilsecondodasinistra.majon.domain.model.FinishingTask
 import com.ilsecondodasinistra.majon.domain.model.Needle
 import com.ilsecondodasinistra.majon.domain.model.Part
 import com.ilsecondodasinistra.majon.domain.model.PresetPart
+import com.ilsecondodasinistra.majon.domain.model.oriented
 import com.ilsecondodasinistra.majon.domain.model.ProjectWithParts
 import com.ilsecondodasinistra.majon.domain.model.Swatch
 import com.ilsecondodasinistra.majon.domain.model.YarnPlan
@@ -81,6 +83,49 @@ class ProjectDetailViewModel @Inject constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProjectDetailUiState.Loading)
 
+    /** What is left to do after the knitting, in list order. */
+    val finishingTasks: StateFlow<List<FinishingTask>> = repository.observeFinishingTasks(projectId)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Adds a task at the end of the list; a blank title adds nothing. */
+    fun addFinishingTask(title: String) {
+        val clean = title.trim()
+        if (clean.isEmpty()) return
+        viewModelScope.launch {
+            val next = repository.observeFinishingTasks(projectId).first().let { all -> (all.maxOfOrNull { it.position } ?: -1) + 1 }
+            repository.upsertFinishingTask(FinishingTask(projectId = projectId, title = clean, position = next))
+        }
+    }
+
+    fun toggleFinishingTask(task: FinishingTask) {
+        viewModelScope.launch { repository.upsertFinishingTask(task.copy(done = !task.done)) }
+    }
+
+    /** Renames a task; a blank title leaves it as it was. */
+    fun renameFinishingTask(task: FinishingTask, title: String) {
+        val clean = title.trim()
+        if (clean.isEmpty()) return
+        viewModelScope.launch { repository.upsertFinishingTask(task.copy(title = clean)) }
+    }
+
+    fun deleteFinishingTask(task: FinishingTask) {
+        viewModelScope.launch { repository.deleteFinishingTask(task.id) }
+    }
+
+    /** Adds the suggested tasks that are not already in the list (same title, ignoring case), after the others. */
+    fun addSuggestedFinishing(titles: List<String>) {
+        viewModelScope.launch {
+            val existing = repository.observeFinishingTasks(projectId).first()
+            val known = existing.map { it.title.trim().lowercase() }.toMutableSet()
+            var position = (existing.maxOfOrNull { it.position } ?: -1) + 1
+            titles.map { it.trim() }.filter { it.isNotEmpty() }.forEach { title ->
+                if (known.add(title.lowercase())) {
+                    repository.upsertFinishingTask(FinishingTask(projectId = projectId, title = title, position = position++))
+                }
+            }
+        }
+    }
+
     private val _duplicated = MutableSharedFlow<Long>(extraBufferCapacity = 1)
 
     /** The id of the copy once [duplicateProject] has made it. */
@@ -97,12 +142,14 @@ class ProjectDetailViewModel @Inject constructor(
 
     /**
      * Creates the suggested parts of the project's type in one go, rows still to define (zero), with the
-     * measures typical of each. A part whose name is already there is skipped.
+     * measures typical of each (turned to the sideways orientation when [sideways]). A part whose name is
+     * already there is skipped.
      */
-    fun addSuggestedParts(suggested: List<Pair<PresetPart, String>>) {
+    fun addSuggestedParts(suggested: List<Pair<PresetPart, String>>, sideways: Boolean = false) {
         viewModelScope.launch {
             val existing = repository.observeProject(projectId).first()?.parts.orEmpty().map { it.name.trim().lowercase() }.toSet()
-            suggested.filter { (_, name) -> name.trim().lowercase() !in existing }.forEach { (preset, name) ->
+            suggested.filter { (_, name) -> name.trim().lowercase() !in existing }.forEach { (suggestion, name) ->
+                val preset = suggestion.oriented(sideways)
                 repository.upsertPart(
                     Part(
                         projectId = projectId,

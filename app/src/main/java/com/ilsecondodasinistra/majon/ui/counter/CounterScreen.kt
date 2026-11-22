@@ -112,8 +112,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilsecondodasinistra.majon.R
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
-import com.ilsecondodasinistra.majon.domain.model.formatDecimalInput
-import com.ilsecondodasinistra.majon.domain.model.formatSkeins
 import com.ilsecondodasinistra.majon.domain.model.parseDecimal
 import com.ilsecondodasinistra.majon.domain.model.RowStep
 import kotlinx.coroutines.delay
@@ -128,6 +126,7 @@ fun CounterScreen(
     onBack: () -> Unit,
     onNotes: () -> Unit,
     onNextPart: (Long) -> Unit = {},
+    onFinish: (projectId: Long) -> Unit = {},
     viewModel: CounterViewModel = hiltViewModel(),
     settingsViewModel: SettingsViewModel = hiltViewModel(),
 ) {
@@ -137,8 +136,17 @@ fun CounterScreen(
     val activity = LocalActivity.current
 
     val nextPartPrompt by viewModel.nextPartPrompt.collectAsStateWithLifecycle()
+    val nextCopyPrompt by viewModel.nextCopyPrompt.collectAsStateWithLifecycle()
     val finishPrompt by viewModel.finishPrompt.collectAsStateWithLifecycle()
     val openNextPart by rememberUpdatedState(onNextPart)
+    val openFinish by rememberUpdatedState(onFinish)
+    // Finishing the project opens the screen asking how much yarn was used; the prompt is consumed once shown
+    LaunchedEffect(finishPrompt) {
+        finishPrompt?.let {
+            openFinish(it)
+            viewModel.dismissFinish()
+        }
+    }
     LaunchedEffect(viewModel) { viewModel.navigateToPart.collect { openNextPart(it) } }
 
     var resetDialog by rememberSaveable { mutableStateOf(false) }
@@ -256,6 +264,9 @@ fun CounterScreen(
                 is VoiceReply.AskNextPartConfirm -> resources.getString(R.string.voice_reply_ask_next_part, reply.partName)
                 is VoiceReply.NextPartOpening -> resources.getString(R.string.voice_reply_next_part, reply.partName)
                 VoiceReply.NextPartCancelled -> resources.getString(R.string.voice_reply_next_part_cancelled)
+                is VoiceReply.AskNextCopyConfirm -> resources.getString(R.string.voice_reply_ask_next_copy, reply.copy)
+                is VoiceReply.NextCopyStarting -> resources.getString(R.string.voice_reply_next_copy, reply.copy)
+                VoiceReply.NextCopyCancelled -> resources.getString(R.string.voice_reply_next_copy_cancelled)
                 is VoiceReply.WentTo -> resources.getString(R.string.voice_reply_row, reply.row)
                 is VoiceReply.OutOfRange -> resources.getString(R.string.voice_reply_out_of_range, reply.totalRows)
                 is VoiceReply.PartFinished -> resources.getString(R.string.voice_reply_finished)
@@ -275,12 +286,14 @@ fun CounterScreen(
     val currentAdvance by rememberUpdatedState(advance)
     val currentUndo by rememberUpdatedState(undo)
     val promptOpen by rememberUpdatedState(nextPartPrompt != null)
+    val copyPromptOpen by rememberUpdatedState(nextCopyPrompt != null)
     DisposableEffect(volumeHost, settings.volumeKeys) {
         if (volumeHost != null && settings.volumeKeys) {
             volumeHost.volumeKeyHandler = { up ->
                 when {
                     // While the "next part?" question is open: volume up = yes, volume down = no
                     promptOpen -> if (up) viewModel.confirmNextPart() else viewModel.dismissNextPart()
+                    copyPromptOpen -> if (up) viewModel.confirmNextCopy() else viewModel.dismissNextCopy()
                     up -> currentAdvance()
                     else -> currentUndo()
                 }
@@ -318,6 +331,19 @@ fun CounterScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Spacer(Modifier.height(8.dp))
+
+                    // Which copy of the part this is, and the stitches to cast on
+                    if (state.copies > 1 || state.castOnStitches != null) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.padding(bottom = 12.dp),
+                        ) {
+                            if (state.copies > 1) {
+                                InfoPill(stringResource(R.string.copy_of, state.currentCopy, state.copies))
+                            }
+                            state.castOnStitches?.let { InfoPill(stringResource(R.string.stitches_cast_on, it)) }
+                        }
+                    }
 
                     // Progress
                     Row(
@@ -474,11 +500,17 @@ fun CounterScreen(
         )
     }
 
-    finishPrompt?.let { yarns ->
-        FinishDialog(
-            yarns = yarns,
-            onConfirm = viewModel::confirmFinish,
-            onSkip = viewModel::dismissFinish,
+    nextCopyPrompt?.let { prompt ->
+        ConfirmDialog(
+            title = stringResource(R.string.next_copy_title, prompt.partName, prompt.finishedCopy, prompt.copies),
+            message = stringResource(R.string.next_copy_message, prompt.finishedCopy + 1),
+            confirmLabel = stringResource(R.string.next_copy_go, prompt.finishedCopy + 1),
+            dismissLabel = stringResource(R.string.next_copy_stay),
+            onConfirm = {
+                if (settings.haptics) haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+                viewModel.confirmNextCopy()
+            },
+            onDismiss = viewModel::dismissNextCopy,
         )
     }
 
@@ -492,6 +524,19 @@ fun CounterScreen(
             },
         )
     }
+}
+
+/** A small rounded label, like «Copia 1 di 2». */
+@Composable
+private fun InfoPill(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSecondaryContainer,
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(50))
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+    )
 }
 
 /** Order used to decide which way the number slides: preparation < rows < final. */
@@ -907,55 +952,5 @@ private fun GoToRowDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
-    )
-}
-
-/** At the end of a project: how many skeins of each linked yarn were used, filled in with the estimate. */
-@Composable
-private fun FinishDialog(
-    yarns: List<FinishYarn>,
-    onConfirm: (Map<Long, Double>) -> Unit,
-    onSkip: () -> Unit,
-) {
-    val amounts = remember(yarns) {
-        androidx.compose.runtime.mutableStateMapOf<Long, String>().apply {
-            yarns.forEach { put(it.yarnId, it.suggestedSkeins?.let { n -> formatDecimalInput(n) }.orEmpty()) }
-        }
-    }
-    val separator = java.text.DecimalFormatSymbols.getInstance(LocalLocale.current.platformLocale).decimalSeparator
-    AlertDialog(
-        onDismissRequest = onSkip,
-        title = { Text(stringResource(R.string.finish_title)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(R.string.finish_message), style = MaterialTheme.typography.bodyMedium)
-                yarns.forEach { yarn ->
-                    OutlinedTextField(
-                        value = amounts[yarn.yarnId].orEmpty(),
-                        onValueChange = { v -> amounts[yarn.yarnId] = v.filter { c -> c.isDigit() || c == '.' || c == ',' } },
-                        label = {
-                            Text(
-                                stringResource(
-                                    R.string.finish_skeins_label,
-                                    yarn.name,
-                                    formatSkeins(yarn.stockSkeins, separator),
-                                ),
-                            )
-                        },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onConfirm(amounts.mapValues { (_, text) -> parseDecimal(text) ?: 0.0 })
-                },
-            ) { Text(stringResource(R.string.finish_confirm)) }
-        },
-        dismissButton = { TextButton(onClick = onSkip) { Text(stringResource(R.string.finish_skip)) } },
     )
 }

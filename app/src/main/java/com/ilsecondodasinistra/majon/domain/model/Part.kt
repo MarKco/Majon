@@ -31,6 +31,14 @@ data class Part(
     val rowCm: Double? = null,
     /** The gauge swatch this part is estimated with; null = the project's main yarn swatch. */
     val swatchId: Long? = null,
+    /** How many times the part is knitted (two sleeves): the count starts again for each copy. */
+    val copies: Int = 1,
+    /** The copy being worked, 1-based. */
+    val currentCopy: Int = 1,
+    /** The stitches to cast on, as the pattern says; null when not noted (see the estimate from the measures). */
+    val castOnStitches: Int? = null,
+    /** Where [stitchMeasure] ends up at the last row when the part widens or narrows; null = the same all along. */
+    val endStitchCm: Double? = null,
 ) {
     private val prepOffset: Int get() = if (hasPrepRow) 1 else 0
 
@@ -38,11 +46,39 @@ data class Part(
     val totalSteps: Int
         get() = totalRows + prepOffset + (if (hasFinalRow) 1 else 0)
 
-    val progress: Float
+    /** How far the copy being worked has got. */
+    val copyProgress: Float
         get() = if (totalRows <= 0) 0f else (completedRows.toFloat() / totalSteps).coerceIn(0f, 1f)
 
+    /** Steps of every copy together, and those already done: what the progress of the whole part is made of. */
+    val allSteps: Int get() = totalSteps * copies.coerceAtLeast(1)
+    val doneSteps: Int get() = (currentCopy.coerceAtLeast(1) - 1) * totalSteps + completedRows.coerceAtMost(totalSteps)
+
+    /** How far the whole part has got, counting every copy. */
+    val progress: Float
+        get() = if (totalRows <= 0) 0f else (doneSteps.toFloat() / allSteps).coerceIn(0f, 1f)
+
+    /** True while there are copies after the one being worked. */
+    val hasMoreCopies: Boolean
+        get() = currentCopy < copies
+
+    /** All the copies, the last one included, are finished. */
     val isComplete: Boolean
-        get() = totalRows > 0 && completedRows >= totalSteps
+        get() = totalRows > 0 && !hasMoreCopies && completedRows >= totalSteps
+
+    /** The next copy, at its first step. */
+    fun startNextCopy(): Part = copy(currentCopy = (currentCopy + 1).coerceAtMost(copies), completedRows = 0)
+
+    /**
+     * Sets how many copies there are (at least one). The copy being worked never goes past the last, and a part
+     * that was already finished moves on to the new copy rather than staying "done".
+     */
+    fun withCopies(count: Int): Part {
+        val n = count.coerceAtLeast(1)
+        val resized = copy(copies = n, currentCopy = currentCopy.coerceIn(1, n))
+        val copyFinished = totalRows > 0 && completedRows >= totalSteps
+        return if (copyFinished && resized.hasMoreCopies) resized.startNextCopy() else resized
+    }
 
     /** Normal rows (1..N) already finished, not counting the preparation or final rows. */
     val rowsDone: Int
@@ -96,9 +132,9 @@ data class Part(
 }
 
 fun projectProgress(parts: List<Part>): Float {
-    val total = parts.sumOf { it.totalSteps }
+    val total = parts.sumOf { it.allSteps }
     if (total <= 0) return 0f
-    val completed = parts.sumOf { it.completedRows.coerceAtMost(it.totalSteps) }
+    val completed = parts.sumOf { it.doneSteps }
     return (completed.toFloat() / total).coerceIn(0f, 1f)
 }
 

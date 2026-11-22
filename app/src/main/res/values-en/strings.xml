@@ -391,9 +391,48 @@
     <string name="project_links_invite_text">Link yarn and needles from your stash: I will tell you how many stitches and rows to expect and whether your yarn is enough.</string>
     <string name="project_links_invite_button">Link yarn and needles</string>
     <string name="project_links_edit">Change yarn and needles</string>
-    <string name="part_measures_hint">The measure along the stitches (width or circumference) gives the stitches to cast on; the one along the rows (length or height) gives the rows to knit. It needs a yarn with a swatch linked to the project.</string>
+    <string name="part_measures_hint">The measures are those of the finished piece: the one along the stitches gives the stitches to cast on, the one along the rows gives the rows to knit. It needs a yarn with a swatch linked to the project.</string>
     <string name="measure_gives_stitches">→ stitches to cast on</string>
     <string name="measure_gives_rows">→ rows to knit</string>
+    <string name="part_sideways">Worked sideways</string>
+    <string name="part_sideways_hint">Stitches follow the length or height, rows follow the width or circumference</string>
+    <string name="measure_end">End measure (optional)</string>
+    <string name="measure_end_hint">Where the part ends up at the last row, if it widens or narrows (e.g. a sleeve: cuff → shoulder). Empty = the same width all along.</string>
+    <string name="part_estimate_end">About %1$d stitches at the end</string>
+    <string name="part_copies">Copies</string>
+    <string name="part_copies_hint">How many times you knit this part (two sleeves = 2). The count starts again for each copy.</string>
+    <string name="part_copies_minus">One copy less</string>
+    <string name="part_copies_plus">One copy more</string>
+    <string name="part_copy_current">Copy in hand: %1$d of %2$d</string>
+    <string name="part_copy_current_hint">Moving to another copy puts the count back at row 1.</string>
+    <string name="part_cast_on">Stitches to cast on</string>
+    <string name="part_cast_on_hint">As the pattern says (optional): you will see them in the counter too.</string>
+    <string name="part_use_cast_on">Use %1$d stitches</string>
+    <string name="copy_of">Copy %1$d of %2$d</string>
+    <string name="copy_times">×%1$d</string>
+    <string name="stitches_cast_on">%1$d stitches to cast on</string>
+    <string name="next_copy_title">%1$s: copy %2$d of %3$d finished!</string>
+    <string name="next_copy_message">Start copy %1$d? The count starts again from row 1.</string>
+    <string name="next_copy_go">Start copy %1$d</string>
+    <string name="next_copy_stay">Stay here</string>
+    <string name="voice_reply_ask_next_copy">Copy finished. Say confirm to start copy %1$d</string>
+    <string name="voice_reply_next_copy">Starting copy %1$d</string>
+    <string name="voice_reply_next_copy_cancelled">Staying on this copy</string>
+    <string name="finishing_title">Finishing</string>
+    <string name="finishing_progress">%1$d of %2$d done</string>
+    <string name="finishing_empty">What is left to do once the knitting is done: seams, ends to weave in, washing.</string>
+    <string name="finishing_add">Add a step</string>
+    <string name="finishing_edit">Edit the step</string>
+    <string name="finishing_task_label">What to do</string>
+    <string name="finishing_suggest">Add the usual steps</string>
+    <string name="finishing_delete">Delete the step</string>
+    <string name="finishing_step_sew_shoulders">Sew the shoulders</string>
+    <string name="finishing_step_pick_up_neck">Pick up the stitches around the neck</string>
+    <string name="finishing_step_neck_ribbing">Knit the neck ribbing and bind off</string>
+    <string name="finishing_step_sew_sleeves">Sew the sleeves to the body</string>
+    <string name="finishing_step_sew_sides">Sew the sides and the sleeve seams</string>
+    <string name="finishing_step_weave_ends">Weave in the ends</string>
+    <string name="finishing_step_wash_and_dry">Wash and dry flat</string>
     <string name="yarn_section_yarn">The yarn</string>
     <string name="yarn_section_skein">Skein and stock</string>
     <string name="yarn_section_buy">Purchase, care and notes</string>
@@ -410,6 +449,5 @@
     <string name="yarn_color_other">Other</string>
     <string name="color_pick_title">Pick the shade</string>
     <string name="color_hue">Hue</string>
-    <string name="color_saturation">Saturation</string>
-    <string name="color_brightness">Brightness</string>
+    <string name="color_sv_area">Saturation and brightness</string>
 </resources>

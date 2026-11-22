@@ -1,5 +1,7 @@
 package com.ilsecondodasinistra.majon.ui.stash
 
+import androidx.compose.foundation.layout.imePadding
+import com.ilsecondodasinistra.majon.ui.components.KeyboardBackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -46,6 +48,7 @@ fun NeedleEditScreen(
     onBack: () -> Unit,
     viewModel: NeedleEditViewModel = hiltViewModel(),
 ) {
+    KeyboardBackHandler()
     val form by viewModel.form.collectAsStateWithLifecycle()
     LaunchedEffect(viewModel) { viewModel.saved.collect { onBack() } }
 
@@ -65,6 +68,7 @@ fun NeedleEditScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),

@@ -40,7 +40,8 @@ Il contatore lavora su una **Part** (route `counter/{partId}`), non sul progetto
 - **Enum persistiti come stringhe** con fallback a un default se il valore è sconosciuto (`runCatching { valueOf }`), così file e DB di versioni diverse non crashano.
 - **Backup JSON**: ogni campo nuovo in `BackupCodec` ha un valore di default (i backup vecchi devono restare leggibili); ids e timestamp non si esportano.
 - Ogni metodo nuovo di `MajonRepository` va implementato anche in `app/src/test/.../testutil/FakeMajonRepository.kt`.
-- **Moduli di inserimento = schermate a tutto schermo**, mai dialog (la dialog va bene solo per conferme e per un campo singolo, es. «Ho usato…»). Un form con più sezioni usa `FormSection` (`ui/components/FormSection.kt`) e un ViewModel con `form` (stringhe come digitate) + `save(): Boolean`.
+- **Moduli di inserimento = schermate a tutto schermo**, mai dialog. La dialog va bene solo per conferme e per **un solo** campo (es. «Ho usato…», «Vai alla riga») o per un selettore di un solo valore (color picker). Da 2 campi in su: schermata. Un form con più sezioni usa `FormSection` (`ui/components/FormSection.kt`) e un ViewModel con `form` (stringhe come digitate) + `save(): Boolean`.
+- **Tastiera**: mai deve coprire il campo in scrittura né i suoi suggerimenti (autocomplete): `Modifier.imePadding()` sul contenuto scrollabile; Back con tastiera aperta chiude la tastiera (`KeyboardBackHandler()` in `ui/components/Keyboard.kt`). Da provare a mano.
 - Robolectric non supporta SDK 37: pin a 36 in `app/src/test/resources/robolectric.properties`.
 - Commit e messaggi in inglese; documentazione in italiano.
 

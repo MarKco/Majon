@@ -85,6 +85,193 @@ class PartEditViewModelTest {
         assertEquals(MeasureKey.LENGTH, vm.form.value.rowMeasure)
     }
 
+    // --- worked sideways ---
+
+    @Test
+    fun `a new part is worked the standard way`() = runTest {
+        assertFalse(viewModel().form.value.sideways)
+    }
+
+    @Test
+    fun `working sideways swaps what gives the stitches and the rows, the measures keep their numbers`() = runTest {
+        val vm = viewModel()
+        vm.update { it.copy(stitchMeasure = MeasureKey.WIDTH, stitchCm = "20", rowMeasure = MeasureKey.LENGTH, rowCm = "150") }
+        vm.setSideways(true)
+        val form = vm.form.value
+        assertTrue(form.sideways)
+        assertEquals(MeasureKey.LENGTH, form.stitchMeasure)
+        assertEquals("150", form.stitchCm)
+        assertEquals(MeasureKey.WIDTH, form.rowMeasure)
+        assertEquals("20", form.rowCm)
+        vm.setSideways(false)
+        assertFalse(vm.form.value.sideways)
+        assertEquals(MeasureKey.WIDTH, vm.form.value.stitchMeasure)
+        assertEquals("20", vm.form.value.stitchCm)
+        assertEquals("150", vm.form.value.rowCm)
+    }
+
+    @Test
+    fun `setting the orientation it already has changes nothing`() = runTest {
+        val vm = viewModel()
+        vm.update { it.copy(stitchCm = "20", rowCm = "150") }
+        val before = vm.form.value
+        vm.setSideways(false)
+        assertEquals(before, vm.form.value)
+    }
+
+    @Test
+    fun `the estimate follows the swap`() = runTest {
+        linkYarn()
+        val vm = viewModel()
+        vm.update { it.copy(stitchCm = "20", rowCm = "150") }
+        assertEquals(52, vm.estimate.value.stitches)   // 20 cm at 26 stitches
+        assertEquals(510, vm.estimate.value.rows)       // 150 cm at 34 rows
+        vm.setSideways(true)
+        assertEquals(390, vm.estimate.value.stitches)  // 150 cm at 26 stitches
+        assertEquals(68, vm.estimate.value.rows)        // 20 cm at 34 rows
+    }
+
+    @Test
+    fun `a suggested part keeps the orientation chosen`() = runTest {
+        val vm = viewModel()
+        vm.setSideways(true)
+        vm.applyPreset(PresetPart(PresetPartName.SLEEVE, MeasureKey.CIRCUMFERENCE, MeasureKey.LENGTH), "Manica")
+        assertEquals(MeasureKey.LENGTH, vm.form.value.stitchMeasure)
+        assertEquals(MeasureKey.CIRCUMFERENCE, vm.form.value.rowMeasure)
+        assertTrue(vm.form.value.sideways)
+    }
+
+    @Test
+    fun `the orientation is stored in the measures and comes back when editing`() = runTest {
+        val vm = viewModel()
+        vm.update { it.copy(name = "Sciarpa", rows = "40", stitchCm = "150", rowCm = "20") }
+        vm.setSideways(true)
+        assertTrue(vm.save())
+        val part = parts().single()
+        assertEquals(MeasureKey.LENGTH, part.stitchMeasure)
+        assertEquals(MeasureKey.WIDTH, part.rowMeasure)
+        assertTrue(viewModel(part.id).form.value.sideways)
+    }
+
+    // --- copies, cast-on stitches, end width ---
+
+    @Test
+    fun `a new part has one copy and no cast-on or end width`() = runTest {
+        val form = viewModel().form.value
+        assertEquals("1", form.copies)
+        assertEquals(1, form.currentCopy)
+        assertEquals("", form.castOn)
+        assertEquals("", form.endStitchCm)
+    }
+
+    @Test
+    fun `copies, cast-on stitches and the end width are stored`() = runTest {
+        val vm = viewModel()
+        vm.update { it.copy(name = "Manica", rows = "190", copies = "2", castOn = "64", stitchCm = "21", endStitchCm = "47,5") }
+        assertTrue(vm.save())
+        val part = parts().single()
+        assertEquals(2, part.copies)
+        assertEquals(1, part.currentCopy)
+        assertEquals(64, part.castOnStitches)
+        assertEquals(47.5, part.endStitchCm!!, 0.0)
+    }
+
+    @Test
+    fun `copies out of range are brought back, bad stitches and widths are dropped`() = runTest {
+        val vm = viewModel()
+        vm.update { it.copy(name = "A", rows = "10", copies = "", castOn = "0", endStitchCm = "abc") }
+        assertTrue(vm.save())
+        val part = parts().single()
+        assertEquals(1, part.copies)
+        assertNull(part.castOnStitches)
+        assertNull(part.endStitchCm)
+        val vm2 = viewModel()
+        vm2.update { it.copy(name = "B", rows = "10", copies = "99") }
+        vm2.save()
+        assertEquals(10, parts().last().copies)
+    }
+
+    @Test
+    fun `editing loads the copies, the copy in hand, the stitches and the end width`() = runTest {
+        val id = repository.upsertPart(
+            Part(projectId = projectId, name = "Manica", totalRows = 190, copies = 2, currentCopy = 2, castOnStitches = 64, stitchCm = 21.0, endStitchCm = 47.0),
+        )
+        val form = viewModel(id).form.value
+        assertEquals("2", form.copies)
+        assertEquals(2, form.currentCopy)
+        assertEquals("64", form.castOn)
+        assertEquals("47", form.endStitchCm)
+    }
+
+    @Test
+    fun `changing the copy in hand starts that copy again from the first row`() = runTest {
+        val id = repository.upsertPart(Part(projectId = projectId, name = "Manica", totalRows = 10, completedRows = 4, copies = 2, currentCopy = 2))
+        val vm = viewModel(id)
+        vm.update { it.copy(currentCopy = 1) }
+        assertTrue(vm.save())
+        val part = parts().single()
+        assertEquals(1, part.currentCopy)
+        assertEquals(0, part.completedRows)
+    }
+
+    @Test
+    fun `saving without touching the copies keeps the place`() = runTest {
+        val id = repository.upsertPart(Part(projectId = projectId, name = "Manica", totalRows = 10, completedRows = 4, copies = 2, currentCopy = 2))
+        val vm = viewModel(id)
+        vm.update { it.copy(name = "Manica lunga") }
+        assertTrue(vm.save())
+        val part = parts().single()
+        assertEquals(2, part.currentCopy)
+        assertEquals(4, part.completedRows)
+    }
+
+    @Test
+    fun `more copies for a finished part move on to the next copy`() = runTest {
+        val id = repository.upsertPart(Part(projectId = projectId, name = "Manica", totalRows = 10, completedRows = 10))
+        val vm = viewModel(id)
+        vm.update { it.copy(copies = "2") }
+        assertTrue(vm.save())
+        val part = parts().single()
+        assertEquals(2, part.copies)
+        assertEquals(2, part.currentCopy)
+        assertEquals(0, part.completedRows)
+    }
+
+    @Test
+    fun `fewer rows than done in a copy with more to come starts the next copy`() = runTest {
+        val id = repository.upsertPart(Part(projectId = projectId, name = "Manica", totalRows = 10, completedRows = 8, copies = 2))
+        val vm = viewModel(id)
+        vm.update { it.copy(rows = "5") }
+        assertTrue(vm.save())
+        val part = parts().single()
+        assertEquals(2, part.currentCopy)
+        assertEquals(0, part.completedRows)
+    }
+
+    @Test
+    fun `the end width gives the stitches at the end of the estimate, and sideways clears it`() = runTest {
+        linkYarn()
+        val vm = viewModel()
+        vm.update { it.copy(stitchCm = "21", endStitchCm = "47", rowCm = "56") }
+        assertEquals(55, vm.estimate.value.stitches)     // 21 cm at 26 stitches
+        assertEquals(122, vm.estimate.value.endStitches) // 47 cm at 26 stitches
+        vm.setSideways(true)
+        assertEquals("", vm.form.value.endStitchCm)
+        assertNull(vm.estimate.value.endStitches)
+    }
+
+    @Test
+    fun `the estimated stitches can be copied into the cast-on field`() = runTest {
+        linkYarn()
+        val vm = viewModel()
+        vm.update { it.copy(stitchCm = "20") }
+        vm.useEstimatedCastOn()
+        assertEquals("52", vm.form.value.castOn)
+        val none = viewModel()
+        none.useEstimatedCastOn() // nothing to estimate from
+        assertEquals("", none.form.value.castOn)
+    }
+
     @Test
     fun `a name is required`() = runTest {
         val vm = viewModel()

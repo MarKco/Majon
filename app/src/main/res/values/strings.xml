@@ -391,9 +391,48 @@
     <string name="project_links_invite_text">Collega le lane e i ferri del tuo stash: ti dico quanti punti e righe aspettarti e se la lana ti basta.</string>
     <string name="project_links_invite_button">Collega lane e ferri</string>
     <string name="project_links_edit">Cambia lane e ferri</string>
-    <string name="part_measures_hint">La misura nel senso dei punti (larghezza o giro) dà i punti da avviare; quella nel senso delle righe (lunghezza o altezza) dà le righe da fare. Serve una lana con campione collegata al progetto.</string>
+    <string name="part_measures_hint">Le misure sono quelle del pezzo finito: quella nel senso dei punti dà i punti da avviare, quella nel senso delle righe dà le righe da fare. Serve una lana con campione collegata al progetto.</string>
     <string name="measure_gives_stitches">→ punti da avviare</string>
     <string name="measure_gives_rows">→ righe da fare</string>
+    <string name="part_sideways">Lavorata di lato</string>
+    <string name="part_sideways_hint">I punti seguono la lunghezza o l’altezza, le righe la larghezza o il giro</string>
+    <string name="measure_end">Misura finale (facoltativa)</string>
+    <string name="measure_end_hint">Dove arriva la parte alla fine delle righe, se si allarga o si restringe (es. manica: polsino → spalla). Vuota = larghezza costante.</string>
+    <string name="part_estimate_end">Alla fine circa %1$d punti</string>
+    <string name="part_copies">Copie</string>
+    <string name="part_copies_hint">Quante volte lavori questa parte (due maniche = 2). Il conteggio riparte per ogni copia.</string>
+    <string name="part_copies_minus">Una copia in meno</string>
+    <string name="part_copies_plus">Una copia in più</string>
+    <string name="part_copy_current">Copia in corso: %1$d di %2$d</string>
+    <string name="part_copy_current_hint">Passare a un’altra copia riporta il conteggio alla riga 1.</string>
+    <string name="part_cast_on">Maglie da avviare</string>
+    <string name="part_cast_on_hint">Come dice il modello (facoltativo): le vedrai anche nel contatore.</string>
+    <string name="part_use_cast_on">Usa %1$d maglie</string>
+    <string name="copy_of">Copia %1$d di %2$d</string>
+    <string name="copy_times">×%1$d</string>
+    <string name="stitches_cast_on">%1$d maglie da avviare</string>
+    <string name="next_copy_title">%1$s: copia %2$d di %3$d finita!</string>
+    <string name="next_copy_message">Inizia la copia %1$d? Il conteggio riparte dalla riga 1.</string>
+    <string name="next_copy_go">Inizia la copia %1$d</string>
+    <string name="next_copy_stay">Resta qui</string>
+    <string name="voice_reply_ask_next_copy">Copia finita. Dì conferma per iniziare la copia %1$d</string>
+    <string name="voice_reply_next_copy">Inizio la copia %1$d</string>
+    <string name="voice_reply_next_copy_cancelled">Resto su questa copia</string>
+    <string name="finishing_title">Rifiniture</string>
+    <string name="finishing_progress">%1$d di %2$d fatte</string>
+    <string name="finishing_empty">Cosa resta da fare a maglia finita: cuciture, fili da nascondere, lavaggio.</string>
+    <string name="finishing_add">Aggiungi un passo</string>
+    <string name="finishing_edit">Modifica il passo</string>
+    <string name="finishing_task_label">Cosa devi fare</string>
+    <string name="finishing_suggest">Aggiungi i passi tipici</string>
+    <string name="finishing_delete">Elimina il passo</string>
+    <string name="finishing_step_sew_shoulders">Cucire le spalle</string>
+    <string name="finishing_step_pick_up_neck">Riprendere le maglie attorno al collo</string>
+    <string name="finishing_step_neck_ribbing">Lavorare le coste del collo e chiudere</string>
+    <string name="finishing_step_sew_sleeves">Cucire le maniche al corpo</string>
+    <string name="finishing_step_sew_sides">Cucire i fianchi e i lati delle maniche</string>
+    <string name="finishing_step_weave_ends">Nascondere i fili</string>
+    <string name="finishing_step_wash_and_dry">Lavare e asciugare in piano</string>
     <string name="yarn_section_yarn">La lana</string>
     <string name="yarn_section_skein">Gomitolo e scorta</string>
     <string name="yarn_section_buy">Acquisto, cura e note</string>
@@ -410,6 +449,5 @@
     <string name="yarn_color_other">Altro</string>
     <string name="color_pick_title">Scegli la tinta</string>
     <string name="color_hue">Tonalità</string>
-    <string name="color_saturation">Saturazione</string>
-    <string name="color_brightness">Luminosità</string>
+    <string name="color_sv_area">Saturazione e luminosità</string>
 </resources>

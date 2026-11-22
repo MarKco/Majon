@@ -1,5 +1,9 @@
 package com.ilsecondodasinistra.majon.ui.projectdetail
 
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.foundation.clickable
+import com.ilsecondodasinistra.majon.domain.model.finishingSteps
+import com.ilsecondodasinistra.majon.domain.model.FinishingTask
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -61,6 +65,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.FilterChip
 import com.ilsecondodasinistra.majon.domain.model.MeasureKey
+import com.ilsecondodasinistra.majon.ui.components.SidewaysSwitch
 import com.ilsecondodasinistra.majon.domain.model.PresetPart
 import com.ilsecondodasinistra.majon.domain.model.ProjectIcon
 import com.ilsecondodasinistra.majon.domain.model.Swatch
@@ -105,6 +110,10 @@ fun ProjectDetailScreen(
     var useDialogFor by remember { mutableStateOf<YarnPlan?>(null) }
     var partToDelete by remember { mutableStateOf<Part?>(null) }
     var deleteProjectDialog by rememberSaveable { mutableStateOf(false) }
+    var suggestSideways by rememberSaveable { mutableStateOf(false) }
+    val finishingTasks by viewModel.finishingTasks.collectAsStateWithLifecycle()
+    // null = no dialog; a task to edit it, or a task with id 0 for a new one
+    var taskBeingEdited by remember { mutableStateOf<FinishingTask?>(null) }
 
     LaunchedEffect(uiState) {
         if (uiState is ProjectDetailUiState.Deleted) onBack()
@@ -196,8 +205,14 @@ fun ProjectDetailScreen(
                         val labels = presets.map { stringResource(it.name.labelRes()) }
                         if (presets.isNotEmpty()) {
                             Spacer(Modifier.height(16.dp))
+                            SidewaysSwitch(
+                                checked = suggestSideways,
+                                onCheckedChange = { suggestSideways = it },
+                                modifier = Modifier.padding(horizontal = 24.dp),
+                            )
+                            Spacer(Modifier.height(8.dp))
                             androidx.compose.material3.FilledTonalButton(
-                                onClick = { viewModel.addSuggestedParts(presets.zip(labels)) },
+                                onClick = { viewModel.addSuggestedParts(presets.zip(labels), sideways = suggestSideways) },
                             ) {
                                 Text(stringResource(R.string.parts_suggest_button, labels.joinToString(", ")), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                             }
@@ -232,7 +247,31 @@ fun ProjectDetailScreen(
                     )
                 }
             }
+            item {
+                val suggested = project.icon.finishingSteps().map { it to stringResource(it.labelRes()) }
+                FinishingCard(
+                    tasks = finishingTasks,
+                    canSuggest = suggested.any { (_, label) -> finishingTasks.none { it.title.trim().equals(label, ignoreCase = true) } },
+                    onToggle = viewModel::toggleFinishingTask,
+                    onEdit = { taskBeingEdited = it },
+                    onAdd = { taskBeingEdited = FinishingTask(projectId = project.id, title = "") },
+                    onDelete = viewModel::deleteFinishingTask,
+                    onSuggest = { viewModel.addSuggestedFinishing(suggested.map { it.second }) },
+                )
+            }
         }
+    }
+
+    taskBeingEdited?.let { task ->
+        FinishingTaskDialog(
+            initial = task.title,
+            isNew = task.id == 0L,
+            onDismiss = { taskBeingEdited = null },
+            onConfirm = { title ->
+                if (task.id == 0L) viewModel.addFinishingTask(title) else viewModel.renameFinishingTask(task, title)
+                taskBeingEdited = null
+            },
+        )
     }
 
     useDialogFor?.let { plan ->
@@ -345,7 +384,11 @@ private fun PartCard(
         ) {
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(part.name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                    Text(
+                        if (part.copies > 1) part.name + " " + stringResource(R.string.copy_times, part.copies) else part.name,
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.weight(1f),
+                    )
                     if (part.isComplete) {
                         Text("✓", style = MaterialTheme.typography.titleMedium, color = accentColor)
                     }
@@ -362,6 +405,13 @@ private fun PartCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (part.totalRows == 0) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                val extras = listOfNotNull(
+                    if (part.copies > 1) stringResource(R.string.copy_of, part.currentCopy, part.copies) else null,
+                    part.castOnStitches?.let { stringResource(R.string.stitches_cast_on, it) },
+                )
+                if (extras.isNotEmpty()) {
+                    Text(extras.joinToString(" · "), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
                 if (estimate != null) {
                     Text(estimate, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
                 }
@@ -485,4 +535,87 @@ private fun LinksInviteCard(onLink: () -> Unit) {
             androidx.compose.material3.FilledTonalButton(onClick = onLink) { Text(stringResource(R.string.project_links_invite_button)) }
         }
     }
+}
+
+/** What is left to do once the knitting is done: ticks, a step added or edited by hand, the usual steps on request. */
+@Composable
+private fun FinishingCard(
+    tasks: List<FinishingTask>,
+    canSuggest: Boolean,
+    onToggle: (FinishingTask) -> Unit,
+    onEdit: (FinishingTask) -> Unit,
+    onAdd: () -> Unit,
+    onDelete: (FinishingTask) -> Unit,
+    onSuggest: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(R.string.finishing_title), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                if (tasks.isNotEmpty()) {
+                    Text(
+                        stringResource(R.string.finishing_progress, tasks.count { it.done }, tasks.size),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            if (tasks.isEmpty()) {
+                Text(
+                    stringResource(R.string.finishing_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            tasks.forEach { task ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    androidx.compose.material3.Checkbox(checked = task.done, onCheckedChange = { onToggle(task) })
+                    Text(
+                        task.title,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = if (task.done) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                        textDecoration = if (task.done) androidx.compose.ui.text.style.TextDecoration.LineThrough else null,
+                        modifier = Modifier.weight(1f).clickable { onEdit(task) }.padding(vertical = 8.dp),
+                    )
+                    IconButton(onClick = { onDelete(task) }) {
+                        Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.finishing_delete))
+                    }
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                androidx.compose.material3.TextButton(onClick = onAdd) { Text(stringResource(R.string.finishing_add)) }
+                if (canSuggest) {
+                    androidx.compose.material3.TextButton(onClick = onSuggest) { Text(stringResource(R.string.finishing_suggest)) }
+                }
+            }
+        }
+    }
+}
+
+/** A single field, so a dialog: the text of the step. */
+@Composable
+private fun FinishingTaskDialog(initial: String, isNew: Boolean, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+    var text by rememberSaveable { mutableStateOf(initial) }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(if (isNew) R.string.finishing_add else R.string.finishing_edit)) },
+        text = {
+            androidx.compose.material3.OutlinedTextField(
+                value = text,
+                onValueChange = { text = it },
+                label = { Text(stringResource(R.string.finishing_task_label)) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            androidx.compose.material3.TextButton(onClick = { onConfirm(text) }, enabled = text.isNotBlank()) {
+                Text(stringResource(R.string.save))
+            }
+        },
+        dismissButton = { androidx.compose.material3.TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
+    )
 }

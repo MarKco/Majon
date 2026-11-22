@@ -1,5 +1,6 @@
 package com.ilsecondodasinistra.majon.testutil
 
+import com.ilsecondodasinistra.majon.domain.model.FinishingTask
 import com.ilsecondodasinistra.majon.domain.model.FullPart
 import com.ilsecondodasinistra.majon.domain.model.BackupImportCounts
 import com.ilsecondodasinistra.majon.domain.model.FullProject
@@ -57,6 +58,7 @@ class FakeMajonRepository : MajonRepository {
 
     override suspend fun deleteProject(id: Long) {
         links.value = links.value - id
+        finishing.value = finishing.value.filterNot { it.projectId == id }
         projects.value = projects.value.filterNot { it.id == id }
         val orphanParts = parts.value.filter { it.projectId == id }.map { it.id }.toSet()
         parts.value = parts.value.filterNot { it.projectId == id }
@@ -110,6 +112,27 @@ class FakeMajonRepository : MajonRepository {
 
     override suspend fun deleteNote(id: Long) {
         notes.value = notes.value.filterNot { it.id == id }
+    }
+
+    // --- finishing ---
+
+    private val finishing = MutableStateFlow<List<FinishingTask>>(emptyList())
+
+    override fun observeFinishingTasks(projectId: Long): Flow<List<FinishingTask>> =
+        finishing.map { list -> list.filter { it.projectId == projectId }.sortedWith(compareBy({ it.position }, { it.id })) }
+
+    override suspend fun upsertFinishingTask(task: FinishingTask): Long =
+        if (task.id == 0L) {
+            val id = nextId++
+            finishing.value += task.copy(id = id)
+            id
+        } else {
+            finishing.value = finishing.value.map { if (it.id == task.id) task else it }
+            task.id
+        }
+
+    override suspend fun deleteFinishingTask(id: Long) {
+        finishing.value = finishing.value.filterNot { it.id == id }
     }
 
     // --- stash ---
@@ -227,9 +250,10 @@ class FakeMajonRepository : MajonRepository {
         val source = projects.value.find { it.id == id } ?: return null
         val newId = upsertProject(source.copy(id = 0L, name = copyName))
         parts.value.filter { it.projectId == id }.forEach { part ->
-            val newPartId = upsertPart(part.copy(id = 0L, projectId = newId, completedRows = 0))
+            val newPartId = upsertPart(part.copy(id = 0L, projectId = newId, completedRows = 0, currentCopy = 1))
             notes.value.filter { it.partId == part.id }.forEach { upsertNote(it.copy(id = 0L, partId = newPartId)) }
         }
+        finishing.value.filter { it.projectId == id }.forEach { upsertFinishingTask(it.copy(id = 0L, projectId = newId, done = false)) }
         setProjectLinks(newId, links.value[id] ?: ProjectLinks())
         return newId
     }
@@ -250,6 +274,7 @@ class FakeMajonRepository : MajonRepository {
                 val partId = upsertPart(fp.part.copy(id = 0L, projectId = projectId, swatchId = swatch(fp.part.swatchId)))
                 fp.notes.forEach { upsertNote(it.copy(id = 0L, partId = partId)) }
             }
+            full.finishing.forEach { upsertFinishingTask(it.copy(id = 0L, projectId = projectId)) }
             setProjectLinks(
                 projectId,
                 ProjectLinks(
@@ -271,6 +296,7 @@ class FakeMajonRepository : MajonRepository {
                     FullPart(part, notes.value.filter { it.partId == part.id })
                 },
                 links = links.value[project.id] ?: ProjectLinks(),
+                finishing = finishing.value.filter { it.projectId == project.id }.sortedBy { it.position },
             )
         }
 
@@ -281,6 +307,7 @@ class FakeMajonRepository : MajonRepository {
                 val partId = upsertPart(fp.part.copy(id = 0L, projectId = projectId))
                 fp.notes.forEach { upsertNote(it.copy(id = 0L, partId = partId)) }
             }
+            full.finishing.forEach { upsertFinishingTask(it.copy(id = 0L, projectId = projectId)) }
         }
         return projects.size
     }

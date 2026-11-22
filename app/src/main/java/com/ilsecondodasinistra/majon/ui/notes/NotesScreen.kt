@@ -61,11 +61,10 @@ import kotlinx.coroutines.launch
 @Composable
 fun NotesScreen(
     onBack: () -> Unit,
+    onEditNote: (noteId: Long?) -> Unit,
     viewModel: NotesViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    var editorNote by remember { mutableStateOf<RowNote?>(null) }
-    var editorOpen by rememberSaveable { mutableStateOf(false) }
     var noteToDelete by remember { mutableStateOf<RowNote?>(null) }
 
     val state = uiState as? NotesUiState.Ready ?: return
@@ -83,10 +82,7 @@ fun NotesScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = {
-                    editorNote = null
-                    editorOpen = true
-                },
+                onClick = { onEditNote(null) },
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = { Text(stringResource(R.string.add_note)) },
             )
@@ -111,25 +107,13 @@ fun NotesScreen(
                     NoteItem(
                         note = note,
                         outOfRange = note.rowEnd > state.totalRows,
-                        onClick = {
-                            editorNote = note
-                            editorOpen = true
-                        },
+                        onClick = { onEditNote(note.id) },
                         onDelete = { noteToDelete = note },
                         modifier = Modifier.animateItem(),
                     )
                 }
             }
         }
-    }
-
-    if (editorOpen) {
-        NoteEditorDialog(
-            note = editorNote,
-            totalRows = state.totalRows,
-            viewModel = viewModel,
-            onDismiss = { editorOpen = false },
-        )
     }
 
     noteToDelete?.let { note ->
@@ -148,7 +132,7 @@ fun NotesScreen(
 }
 
 @Composable
-private fun frequencyLabel(frequency: NoteFrequency): String = when (frequency) {
+internal fun frequencyLabel(frequency: NoteFrequency): String = when (frequency) {
     NoteFrequency.EVERY_ROW -> stringResource(R.string.freq_every)
     NoteFrequency.ODD_ROWS -> stringResource(R.string.freq_odd)
     NoteFrequency.EVEN_ROWS -> stringResource(R.string.freq_even)
@@ -209,125 +193,4 @@ private fun NoteItem(
             }
         }
     }
-}
-
-@Composable
-private fun NoteEditorDialog(
-    note: RowNote?,
-    totalRows: Int,
-    viewModel: NotesViewModel,
-    onDismiss: () -> Unit,
-) {
-    var text by rememberSaveable { mutableStateOf(note?.text.orEmpty()) }
-    var startText by rememberSaveable { mutableStateOf(note?.rowStart?.toString().orEmpty()) }
-    var endText by rememberSaveable { mutableStateOf(note?.rowEnd?.toString().orEmpty()) }
-    var frequency by rememberSaveable { mutableStateOf(note?.frequency ?: NoteFrequency.EVERY_ROW) }
-    var error by remember { mutableStateOf<NoteValidationError?>(null) }
-    val scope = rememberCoroutineScope()
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(stringResource(if (note == null) R.string.add_note else R.string.edit_note))
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = {
-                        text = it
-                        error = null
-                    },
-                    label = { Text(stringResource(R.string.note_text)) },
-                    isError = error == NoteValidationError.TEXT_BLANK,
-                )
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    OutlinedTextField(
-                        value = startText,
-                        onValueChange = {
-                            startText = it.filter { c -> c.isDigit() }
-                            // keep single-row notes simple: mirror start into empty end
-                            error = null
-                        },
-                        label = { Text(stringResource(R.string.from_row)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        isError = error == NoteValidationError.START_BELOW_ONE,
-                        modifier = Modifier.weight(1f),
-                    )
-                    OutlinedTextField(
-                        value = endText,
-                        onValueChange = {
-                            endText = it.filter { c -> c.isDigit() }
-                            error = null
-                        },
-                        label = { Text(stringResource(R.string.to_row)) },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        isError = error == NoteValidationError.END_BEFORE_START ||
-                            error == NoteValidationError.OUT_OF_RANGE,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                Column {
-                    Text(stringResource(R.string.frequency), style = MaterialTheme.typography.labelLarge)
-                    Spacer(Modifier.height(6.dp))
-                    Column(Modifier.selectableGroup()) {
-                        NoteFrequency.entries.forEach { freq ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .selectable(
-                                        selected = frequency == freq,
-                                        onClick = { frequency = freq },
-                                        role = Role.RadioButton,
-                                    )
-                                    .padding(vertical = 2.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                RadioButton(selected = frequency == freq, onClick = null)
-                                Spacer(Modifier.width(12.dp))
-                                Text(frequencyLabel(freq), style = MaterialTheme.typography.bodyLarge)
-                            }
-                        }
-                    }
-                }
-                error?.let {
-                    Text(
-                        text = when (it) {
-                            NoteValidationError.START_BELOW_ONE -> stringResource(R.string.note_error_start)
-                            NoteValidationError.END_BEFORE_START -> stringResource(R.string.note_error_end)
-                            NoteValidationError.OUT_OF_RANGE -> stringResource(R.string.note_error_range)
-                            NoteValidationError.TEXT_BLANK -> stringResource(R.string.note_error_text)
-                        },
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val start = startText.toIntOrNull() ?: 0
-                    val end = endText.toIntOrNull() ?: start
-                    scope.launch {
-                        val result = viewModel.saveNote(
-                            id = note?.id ?: 0L,
-                            rowStart = start,
-                            rowEnd = end,
-                            frequency = frequency,
-                            text = text,
-                        )
-                        if (result == null) onDismiss() else error = result
-                    }
-                },
-            ) {
-                Text(stringResource(R.string.save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
-        },
-    )
 }

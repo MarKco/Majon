@@ -3,6 +3,15 @@ package com.ilsecondodasinistra.majon.domain.model
 /** A length a part is planned by. Which one is a width, a length, a height or a circumference depends on the garment. */
 enum class MeasureKey { WIDTH, LENGTH, HEIGHT, CIRCUMFERENCE }
 
+/** Width and circumference are taken across the piece; length and height along it. */
+val MeasureKey.isAcross: Boolean get() = this == MeasureKey.WIDTH || this == MeasureKey.CIRCUMFERENCE
+
+/**
+ * True when the part is worked sideways: its stitches follow the length/height and its rows the
+ * width/circumference (a scarf knitted along its length, say). No measures means the standard way.
+ */
+val Part.worksSideways: Boolean get() = stitchMeasure?.isAcross == false
+
 /** Names of the parts suggested for a project type (the UI shows them translated). */
 enum class PresetPartName {
     MAIN, FRONT, BACK, LEFT_FRONT, RIGHT_FRONT, SLEEVE, LEG, FOOT, CUFF, HAND, BODY, STRAP, SOLE, UPPER
@@ -14,6 +23,10 @@ data class PresetPart(
     val stitchMeasure: MeasureKey,
     val rowMeasure: MeasureKey,
 )
+
+/** This suggestion with the measures turned to the wanted orientation (stitches along the length when [sideways]). */
+fun PresetPart.oriented(sideways: Boolean): PresetPart =
+    if (sideways == !stitchMeasure.isAcross) this else copy(stitchMeasure = rowMeasure, rowMeasure = stitchMeasure)
 
 private fun part(name: PresetPartName, stitch: MeasureKey, row: MeasureKey) = PresetPart(name, stitch, row)
 

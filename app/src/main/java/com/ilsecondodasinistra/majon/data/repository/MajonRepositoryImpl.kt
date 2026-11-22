@@ -13,6 +13,7 @@ import com.ilsecondodasinistra.majon.data.db.YarnDao
 import com.ilsecondodasinistra.majon.data.db.materialEntities
 import com.ilsecondodasinistra.majon.data.db.toDomain
 import com.ilsecondodasinistra.majon.data.db.toEntity
+import com.ilsecondodasinistra.majon.domain.model.FinishingTask
 import com.ilsecondodasinistra.majon.domain.model.FullPart
 import com.ilsecondodasinistra.majon.domain.model.BackupImportCounts
 import com.ilsecondodasinistra.majon.domain.model.FullProject
@@ -97,6 +98,16 @@ class MajonRepositoryImpl @Inject constructor(
         noteDao.upsert(note.toEntity())
 
     override suspend fun deleteNote(id: Long) = noteDao.deleteById(id)
+
+    // --- finishing ---
+
+    override fun observeFinishingTasks(projectId: Long): Flow<List<FinishingTask>> =
+        projectDao.observeFinishingTasks(projectId).map { list -> list.map { it.toDomain() } }
+
+    override suspend fun upsertFinishingTask(task: FinishingTask): Long =
+        projectDao.upsertFinishingTask(task.toEntity())
+
+    override suspend fun deleteFinishingTask(id: Long) = projectDao.deleteFinishingTask(id)
 
     // --- stash ---
 
@@ -197,10 +208,13 @@ class MajonRepositoryImpl @Inject constructor(
         val source = projectDao.getAllWithParts().firstOrNull { it.project.id == id } ?: return@withTransaction null
         val newId = upsertProject(source.project.toDomain().copy(id = 0L, name = copyName))
         source.parts.sortedBy { it.id }.forEach { part ->
-            val newPartId = upsertPart(part.toDomain().copy(id = 0L, projectId = newId, completedRows = 0))
+            val newPartId = upsertPart(part.toDomain().copy(id = 0L, projectId = newId, completedRows = 0, currentCopy = 1))
             noteDao.getByPartId(part.id).forEach { note ->
                 upsertNote(note.toDomain().copy(id = 0L, partId = newPartId))
             }
+        }
+        projectDao.getFinishingTasks(id).forEach { task ->
+            projectDao.upsertFinishingTask(task.copy(id = 0L, projectId = newId, done = false))
         }
         setProjectLinks(newId, currentLinks(id))
         newId
@@ -233,6 +247,7 @@ class MajonRepositoryImpl @Inject constructor(
                     )
                     fp.notes.forEach { upsertNote(it.copy(id = 0L, partId = partId)) }
                 }
+                full.finishing.forEach { upsertFinishingTask(it.copy(id = 0L, projectId = projectId)) }
                 setProjectLinks(
                     projectId,
                     ProjectLinks(
@@ -258,6 +273,7 @@ class MajonRepositoryImpl @Inject constructor(
                         notes = noteDao.getByPartId(partEntity.id).map { it.toDomain() },
                     )
                 },
+                finishing = projectDao.getFinishingTasks(entity.project.id).map { it.toDomain() },
             )
         }
 
@@ -271,6 +287,7 @@ class MajonRepositoryImpl @Inject constructor(
                         upsertNote(note.copy(id = 0L, partId = partId))
                     }
                 }
+                full.finishing.forEach { upsertFinishingTask(it.copy(id = 0L, projectId = projectId)) }
             }
         }
         return projects.size

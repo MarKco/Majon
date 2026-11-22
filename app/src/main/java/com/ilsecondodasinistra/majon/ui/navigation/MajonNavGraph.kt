@@ -53,6 +53,8 @@ import androidx.navigation.navArgument
 import com.ilsecondodasinistra.majon.ui.counter.CounterScreen
 import com.ilsecondodasinistra.majon.ui.editproject.EditProjectScreen
 import com.ilsecondodasinistra.majon.ui.home.HomeScreen
+import com.ilsecondodasinistra.majon.ui.finish.FinishScreen
+import com.ilsecondodasinistra.majon.ui.notes.NoteEditScreen
 import com.ilsecondodasinistra.majon.ui.notes.NotesScreen
 import com.ilsecondodasinistra.majon.ui.projectdetail.ProjectDetailScreen
 import com.ilsecondodasinistra.majon.ui.settings.SettingsScreen
@@ -63,6 +65,8 @@ object Routes {
     const val PROJECT_DETAIL = "project/{projectId}"
     const val COUNTER = "counter/{partId}"
     const val NOTES = "notes/{partId}"
+    const val FINISH = "finish/{projectId}"
+    const val NOTE_EDIT = "note_edit/{partId}?noteId={noteId}"
     const val SETTINGS = "settings"
     const val STASH = "stash"
     const val YARN_DETAIL = "yarn/{yarnId}"
@@ -78,6 +82,8 @@ object Routes {
     fun projectDetail(projectId: Long) = "project/$projectId"
     fun counter(partId: Long) = "counter/$partId"
     fun notes(partId: Long) = "notes/$partId"
+    fun finish(projectId: Long) = "finish/$projectId"
+    fun noteEdit(partId: Long, noteId: Long? = null) = "note_edit/$partId?noteId=${noteId ?: 0}"
     fun yarnDetail(yarnId: Long) = "yarn/$yarnId"
     fun projectLinks(projectId: Long) = "project_links/$projectId"
     fun partEdit(projectId: Long, partId: Long? = null) = "part_edit/$projectId?partId=${partId ?: 0}"
@@ -313,6 +319,7 @@ private fun MajonNavHost(navController: NavHostController, modifier: Modifier) {
             CounterScreen(
                 onBack = { navController.popBackStack() },
                 onNotes = { navController.navigate(Routes.notes(partId)) },
+                onFinish = { navController.navigate(Routes.finish(it)) },
                 onNextPart = { nextId ->
                     // Replace this counter with the next part's, so Back still returns to the project
                     navController.navigate(Routes.counter(nextId)) {
@@ -326,9 +333,28 @@ private fun MajonNavHost(navController: NavHostController, modifier: Modifier) {
             Routes.NOTES,
             arguments = listOf(navArgument("partId") { type = NavType.LongType }),
         ) {
+            val notesPartId = it.arguments?.getLong("partId") ?: return@composable
             NotesScreen(
                 onBack = { navController.popBackStack() },
+                onEditNote = { noteId -> navController.navigate(Routes.noteEdit(notesPartId, noteId)) },
             )
+        }
+
+        composable(
+            Routes.NOTE_EDIT,
+            arguments = listOf(
+                navArgument("partId") { type = NavType.LongType },
+                navArgument("noteId") { type = NavType.LongType; defaultValue = 0L },
+            ),
+        ) {
+            NoteEditScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(
+            Routes.FINISH,
+            arguments = listOf(navArgument("projectId") { type = NavType.LongType }),
+        ) {
+            FinishScreen(onBack = { navController.popBackStack() })
         }
 
         composable(Routes.SETTINGS) {

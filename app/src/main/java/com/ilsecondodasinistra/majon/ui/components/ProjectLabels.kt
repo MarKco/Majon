@@ -2,6 +2,7 @@ package com.ilsecondodasinistra.majon.ui.components
 
 import androidx.annotation.StringRes
 import com.ilsecondodasinistra.majon.R
+import com.ilsecondodasinistra.majon.domain.model.FinishingStep
 import com.ilsecondodasinistra.majon.domain.model.MeasureKey
 import com.ilsecondodasinistra.majon.domain.model.PresetPartName
 import com.ilsecondodasinistra.majon.domain.model.ProjectIcon
@@ -49,4 +50,14 @@ fun PresetPartName.labelRes(): Int = when (this) {
     PresetPartName.STRAP -> R.string.part_name_strap
     PresetPartName.SOLE -> R.string.part_name_sole
     PresetPartName.UPPER -> R.string.part_name_upper
+}
+
+fun FinishingStep.labelRes(): Int = when (this) {
+    FinishingStep.SEW_SHOULDERS -> R.string.finishing_step_sew_shoulders
+    FinishingStep.PICK_UP_NECK -> R.string.finishing_step_pick_up_neck
+    FinishingStep.NECK_RIBBING -> R.string.finishing_step_neck_ribbing
+    FinishingStep.SEW_SLEEVES -> R.string.finishing_step_sew_sleeves
+    FinishingStep.SEW_SIDES -> R.string.finishing_step_sew_sides
+    FinishingStep.WEAVE_ENDS -> R.string.finishing_step_weave_ends
+    FinishingStep.WASH_AND_DRY -> R.string.finishing_step_wash_and_dry
 }

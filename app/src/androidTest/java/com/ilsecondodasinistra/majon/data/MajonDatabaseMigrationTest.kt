@@ -6,6 +6,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.ilsecondodasinistra.majon.data.db.MIGRATION_1_2
 import com.ilsecondodasinistra.majon.data.db.MIGRATION_2_3
 import com.ilsecondodasinistra.majon.data.db.MIGRATION_3_4
+import com.ilsecondodasinistra.majon.data.db.MIGRATION_4_5
 import com.ilsecondodasinistra.majon.data.db.MajonDatabase
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -135,6 +136,45 @@ class MajonDatabaseMigrationTest {
         }
         db.execSQL("DELETE FROM projects WHERE id = 1")
         db.query("SELECT COUNT(*) FROM project_needles").use { c ->
+            c.moveToFirst()
+            assertEquals(0, c.getInt(0))
+        }
+        db.close()
+    }
+
+    @Test
+    fun migrate4To5KeepsPartsAndAddsCopiesStitchesAndFinishingTasks() {
+        helper.createDatabase(TEST_DB, 4).apply {
+            execSQL(
+                "INSERT INTO projects (id, name, icon, color, yarnType, needleSize, createdAt, updatedAt) " +
+                    "VALUES (1, 'Maglione', 'SWEATER', 'SAGE', NULL, NULL, 10, 20)",
+            )
+            execSQL(
+                "INSERT INTO parts (id, projectId, name, totalRows, completedRows, createdAt, hasPrepRow, hasFinalRow) " +
+                    "VALUES (1, 1, 'Manica', 190, 12, 30, 0, 0)",
+            )
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(TEST_DB, 5, true, MIGRATION_4_5)
+        db.query("SELECT completedRows, copies, currentCopy, castOnStitches, endStitchCm FROM parts").use { c ->
+            assertEquals(true, c.moveToFirst())
+            assertEquals(12, c.getInt(0))
+            assertEquals(1, c.getInt(1))
+            assertEquals(1, c.getInt(2))
+            assertEquals(true, c.isNull(3))
+            assertEquals(true, c.isNull(4))
+        }
+        db.execSQL("INSERT INTO finishing_tasks (projectId, title) VALUES (1, 'Fili')")
+        db.query("SELECT done, position FROM finishing_tasks").use { c ->
+            assertEquals(true, c.moveToFirst())
+            assertEquals(0, c.getInt(0))
+            assertEquals(0, c.getInt(1))
+        }
+        // Tasks follow their project
+        db.execSQL("PRAGMA foreign_keys = ON")
+        db.execSQL("DELETE FROM projects WHERE id = 1")
+        db.query("SELECT COUNT(*) FROM finishing_tasks").use { c ->
             c.moveToFirst()
             assertEquals(0, c.getInt(0))
         }

@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilsecondodasinistra.majon.domain.model.MeasureKey
+import com.ilsecondodasinistra.majon.domain.model.isAcross
+import com.ilsecondodasinistra.majon.domain.model.oriented
 import com.ilsecondodasinistra.majon.domain.model.Part
 import com.ilsecondodasinistra.majon.domain.model.PartEstimate
 import com.ilsecondodasinistra.majon.domain.model.PresetPart
@@ -51,7 +53,18 @@ data class PartForm(
     val isEditing: Boolean = false,
     /** Normal rows already finished when editing, to warn when the total drops below them. */
     val rowsDone: Int = 0,
-)
+    /** How many times the part is knitted (digits as typed, at least 1). */
+    val copies: String = "1",
+    /** The copy being worked when editing, 1-based. */
+    val currentCopy: Int = 1,
+    /** The stitches to cast on, as the pattern says. */
+    val castOn: String = "",
+    /** Where the stitch measure ends up at the last row, when the part widens or narrows. */
+    val endStitchCm: String = "",
+) {
+    /** Worked sideways: the stitches follow the length/height, the rows the width/circumference. */
+    val sideways: Boolean get() = !stitchMeasure.isAcross
+}
 
 /** What the editor needs to know about the project the part belongs to. */
 data class PartEditContext(
@@ -107,8 +120,10 @@ class PartEditViewModel @Inject constructor(
     /** Stitches to cast on and rows to knit, from the measures typed and the swatch that applies. */
     val estimate: StateFlow<PartEstimate> = combine(_form, context) { f, c ->
         val swatch = c.swatches.firstOrNull { it.id == f.swatchId } ?: c.defaultSwatch
-        Part(projectId = 0L, name = "", totalRows = 1, stitchCm = parseDecimal(f.stitchCm), rowCm = parseDecimal(f.rowCm))
-            .estimate(swatch)
+        Part(
+            projectId = 0L, name = "", totalRows = 1,
+            stitchCm = parseDecimal(f.stitchCm), endStitchCm = parseDecimal(f.endStitchCm), rowCm = parseDecimal(f.rowCm),
+        ).estimate(swatch)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, PartEstimate(null, null))
 
     init {
@@ -135,7 +150,29 @@ class PartEditViewModel @Inject constructor(
 
     /** Fills the name and the measures of a suggested part. */
     fun applyPreset(preset: PresetPart, label: String) = update {
-        it.copy(name = label, stitchMeasure = preset.stitchMeasure, rowMeasure = preset.rowMeasure)
+        val oriented = preset.oriented(it.sideways)
+        it.copy(name = label, stitchMeasure = oriented.stitchMeasure, rowMeasure = oriented.rowMeasure)
+    }
+
+    /**
+     * Turns the part to be worked sideways (or back): what gives the stitches and what gives the rows trade
+     * places, each measure keeping its own number of centimetres.
+     */
+    fun setSideways(sideways: Boolean) = update {
+        if (it.sideways == sideways) {
+            it
+        } else {
+            // The end width belongs to the old stitch direction, so it goes
+            it.copy(
+                stitchMeasure = it.rowMeasure, stitchCm = it.rowCm, rowMeasure = it.stitchMeasure, rowCm = it.stitchCm,
+                endStitchCm = "",
+            )
+        }
+    }
+
+    /** Copies the stitches estimated from the measures into the cast-on field. */
+    fun useEstimatedCastOn() {
+        estimate.value.stitches?.let { stitches -> update { it.copy(castOn = stitches.toString()) } }
     }
 
     /** Copies the rows estimated from the measures into the rows field. */
@@ -150,6 +187,7 @@ class PartEditViewModel @Inject constructor(
     fun save(): Boolean {
         val f = _form.value
         val rows = f.rows.trim().toIntOrNull()?.takeIf { it > 0 } ?: estimate.value.rows?.takeIf { it > 0 }
+        val copies = f.copies.trim().toIntOrNull()?.coerceIn(1, MAX_COPIES) ?: 1
         val nameError = f.name.isBlank()
         val rowsError = rows == null
         if (nameError || rowsError) {
@@ -167,12 +205,19 @@ class PartEditViewModel @Inject constructor(
                     hasFinalRow = f.finalRow,
                     prepNote = f.prepNote.orNull(),
                     finalNote = f.finalNote.orNull(),
+                    copies = copies,
                 )
             } else {
                 // Toggle the extra rows first (it shifts the count to stay on the same row), then resize
                 base.withRowOptions(prep = f.prepRow, final = f.finalRow, prepNote = f.prepNote.orNull(), finalNote = f.finalNote.orNull())
                     .copy(name = f.name.trim(), totalRows = rows!!)
                     .clampedToTotal()
+                    .withCopies(copies)
+                    .let { resized ->
+                        // Moving to another copy starts it from its first row
+                        if (f.currentCopy == base.currentCopy) resized
+                        else resized.copy(currentCopy = f.currentCopy.coerceIn(1, resized.copies), completedRows = 0)
+                    }
             }
             repository.upsertPart(
                 part.copy(
@@ -180,6 +225,8 @@ class PartEditViewModel @Inject constructor(
                     stitchCm = parseDecimal(f.stitchCm)?.takeIf { it > 0.0 },
                     rowMeasure = f.rowMeasure,
                     rowCm = parseDecimal(f.rowCm)?.takeIf { it > 0.0 },
+                    endStitchCm = parseDecimal(f.endStitchCm)?.takeIf { it > 0.0 },
+                    castOnStitches = f.castOn.trim().toIntOrNull()?.takeIf { it > 0 },
                     swatchId = f.swatchId,
                 ),
             )
@@ -188,6 +235,9 @@ class PartEditViewModel @Inject constructor(
         return true
     }
 }
+
+/** Most copies of a part the editor accepts (two sleeves, a few pockets...). */
+const val MAX_COPIES = 10
 
 private fun String.orNull() = trim().ifEmpty { null }
 
@@ -206,4 +256,8 @@ private fun Part.toForm() = PartForm(
     swatchId = swatchId,
     isEditing = true,
     rowsDone = rowsDone,
+    copies = copies.toString(),
+    currentCopy = currentCopy,
+    castOn = castOnStitches?.toString().orEmpty(),
+    endStitchCm = endStitchCm?.let(::formatDecimalInput).orEmpty(),
 )

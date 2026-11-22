@@ -7,6 +7,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
+import com.ilsecondodasinistra.majon.domain.model.FinishingTask
 import com.ilsecondodasinistra.majon.domain.model.MeasureKey
 import com.ilsecondodasinistra.majon.domain.model.NoteFrequency
 import com.ilsecondodasinistra.majon.domain.model.Part
@@ -59,6 +60,35 @@ data class PartEntity(
     val rowMeasure: String? = null,
     val rowCm: Double? = null,
     val swatchId: Long? = null,
+    @ColumnInfo(defaultValue = "1")
+    val copies: Int = 1,
+    @ColumnInfo(defaultValue = "1")
+    val currentCopy: Int = 1,
+    val castOnStitches: Int? = null,
+    val endStitchCm: Double? = null,
+)
+
+@Entity(
+    tableName = "finishing_tasks",
+    foreignKeys = [
+        ForeignKey(
+            entity = ProjectEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["projectId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index("projectId")],
+)
+data class FinishingTaskEntity(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0L,
+    val projectId: Long,
+    val title: String,
+    @ColumnInfo(defaultValue = "0")
+    val done: Boolean = false,
+    @ColumnInfo(defaultValue = "0")
+    val position: Int = 0,
 )
 
 @Entity(
@@ -129,6 +159,10 @@ fun PartEntity.toDomain() = Part(
     rowMeasure = enumOrNull<MeasureKey>(rowMeasure),
     rowCm = rowCm,
     swatchId = swatchId,
+    copies = copies,
+    currentCopy = currentCopy,
+    castOnStitches = castOnStitches,
+    endStitchCm = endStitchCm,
 )
 
 fun Part.toEntity() = PartEntity(
@@ -147,6 +181,10 @@ fun Part.toEntity() = PartEntity(
     rowMeasure = rowMeasure?.name,
     rowCm = rowCm,
     swatchId = swatchId,
+    copies = copies,
+    currentCopy = currentCopy,
+    castOnStitches = castOnStitches,
+    endStitchCm = endStitchCm,
 )
 
 fun NoteEntity.toDomain() = RowNote(
@@ -166,3 +204,7 @@ fun RowNote.toEntity() = NoteEntity(
     frequency = frequency.name,
     text = text,
 )
+
+fun FinishingTaskEntity.toDomain() = FinishingTask(id = id, projectId = projectId, title = title, done = done, position = position)
+
+fun FinishingTask.toEntity() = FinishingTaskEntity(id = id, projectId = projectId, title = title, done = done, position = position)

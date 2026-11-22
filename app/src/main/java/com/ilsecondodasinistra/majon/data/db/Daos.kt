@@ -30,6 +30,18 @@ interface ProjectDao {
     @Query("SELECT * FROM projects WHERE id = :id")
     suspend fun getById(id: Long): ProjectEntity?
 
+    @Query("SELECT * FROM finishing_tasks WHERE projectId = :projectId ORDER BY position ASC, id ASC")
+    fun observeFinishingTasks(projectId: Long): Flow<List<FinishingTaskEntity>>
+
+    @Query("SELECT * FROM finishing_tasks WHERE projectId = :projectId ORDER BY position ASC, id ASC")
+    suspend fun getFinishingTasks(projectId: Long): List<FinishingTaskEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertFinishingTask(task: FinishingTaskEntity): Long
+
+    @Query("DELETE FROM finishing_tasks WHERE id = :id")
+    suspend fun deleteFinishingTask(id: Long)
+
     @Transaction
     @Query("SELECT * FROM projects ORDER BY createdAt ASC")
     suspend fun getAllWithParts(): List<ProjectWithPartsEntity>

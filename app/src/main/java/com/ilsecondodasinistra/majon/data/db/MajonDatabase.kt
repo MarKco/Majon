@@ -7,9 +7,9 @@ import androidx.room.RoomDatabase
     entities = [
         ProjectEntity::class, PartEntity::class, NoteEntity::class,
         YarnEntity::class, YarnMaterialEntity::class, SwatchEntity::class, NeedleEntity::class,
-        ProjectYarnEntity::class, ProjectNeedleEntity::class,
+        ProjectYarnEntity::class, ProjectNeedleEntity::class, FinishingTaskEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class MajonDatabase : RoomDatabase() {

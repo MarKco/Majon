@@ -1,5 +1,7 @@
 package com.ilsecondodasinistra.majon.ui.editproject
 
+import androidx.compose.foundation.layout.imePadding
+import com.ilsecondodasinistra.majon.ui.components.KeyboardBackHandler
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -62,6 +64,7 @@ fun EditProjectScreen(
     onSaved: (projectId: Long, isNew: Boolean) -> Unit,
     viewModel: EditProjectViewModel = hiltViewModel(),
 ) {
+    KeyboardBackHandler()
     val form by viewModel.form.collectAsStateWithLifecycle()
     val savedEvent by viewModel.savedEvent.collectAsStateWithLifecycle()
 
@@ -87,6 +90,7 @@ fun EditProjectScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .imePadding()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),

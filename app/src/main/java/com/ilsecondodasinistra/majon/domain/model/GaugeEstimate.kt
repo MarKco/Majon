@@ -30,7 +30,7 @@ fun ProjectLinks.normalized(): ProjectLinks {
 }
 
 /** Stitches and rows a part is expected to take, from its measures and a swatch. */
-data class PartEstimate(val stitches: Int?, val rows: Int?)
+data class PartEstimate(val stitches: Int?, val rows: Int?, val endStitches: Int? = null)
 
 private fun scaled(cm: Double?, perTenCm: Int): Int? =
     cm?.takeIf { it > 0.0 }?.let { (it / 10.0 * perTenCm).roundToInt() }
@@ -39,12 +39,15 @@ private fun scaled(cm: Double?, perTenCm: Int): Int? =
 fun Part.estimate(swatch: Swatch?): PartEstimate = PartEstimate(
     stitches = swatch?.let { scaled(stitchCm, it.stitches) },
     rows = swatch?.let { scaled(rowCm, it.rows) },
+    endStitches = swatch?.let { scaled(endStitchCm?.takeIf { cm -> cm > 0.0 }, it.stitches) },
 )
 
 private fun Part.areaCm2(): Double? {
-    val w = stitchCm?.takeIf { it > 0.0 } ?: return null
+    val start = stitchCm?.takeIf { it > 0.0 } ?: return null
     val h = rowCm?.takeIf { it > 0.0 } ?: return null
-    return w * h
+    // A part that widens or narrows is worked out at its mean width; every copy takes its share of yarn
+    val w = endStitchCm?.takeIf { it > 0.0 }?.let { (start + it) / 2.0 } ?: start
+    return w * h * copies.coerceAtLeast(1)
 }
 
 /**
