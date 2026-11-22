@@ -72,7 +72,7 @@ class EditProjectViewModelTest {
         vm.updateNeedleSize("3.5")
         vm.save()
 
-        assertEquals(Unit, vm.savedEvent.value)
+        assertEquals(repository.observeProjects().first().single().project.id, vm.savedEvent.value)
         val saved = repository.observeProjects().first().single().project
         assertEquals("Berretto", saved.name)
         assertEquals(ProjectIcon.HAT, saved.icon)

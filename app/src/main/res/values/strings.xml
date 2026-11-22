@@ -407,4 +407,9 @@
     <string name="finish_skeins_label">Gomitoli di %1$s (ne avevi %2$s)</string>
     <string name="finish_confirm">Scala dallo stash</string>
     <string name="finish_skip">Salta</string>
+    <string name="yarn_color_other">Altro</string>
+    <string name="color_pick_title">Scegli la tinta</string>
+    <string name="color_hue">Tonalità</string>
+    <string name="color_saturation">Saturazione</string>
+    <string name="color_brightness">Luminosità</string>
 </resources>

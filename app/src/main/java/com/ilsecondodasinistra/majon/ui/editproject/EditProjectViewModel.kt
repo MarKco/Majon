@@ -38,8 +38,10 @@ class EditProjectViewModel @Inject constructor(
     private val _form = MutableStateFlow(EditProjectForm())
     val form: StateFlow<EditProjectForm> = _form.asStateFlow()
 
-    private val _savedEvent = MutableStateFlow<Unit?>(null)
-    val savedEvent: StateFlow<Unit?> = _savedEvent.asStateFlow()
+    private val _savedEvent = MutableStateFlow<Long?>(null)
+
+    /** The id of the project once it has been saved (new or edited); null until then. */
+    val savedEvent: StateFlow<Long?> = _savedEvent.asStateFlow()
 
     private var loaded: Project? = null
 
@@ -90,7 +92,7 @@ class EditProjectViewModel @Inject constructor(
         }
         viewModelScope.launch {
             val base = loaded ?: Project(name = "")
-            repository.upsertProject(
+            val savedId = repository.upsertProject(
                 base.copy(
                     id = if (projectId != 0L) projectId else 0L,
                     name = form.name.trim(),
@@ -100,7 +102,7 @@ class EditProjectViewModel @Inject constructor(
                     needleSize = form.needleSize.trim().ifBlank { null },
                 ),
             )
-            _savedEvent.value = Unit
+            _savedEvent.value = savedId
         }
     }
 }

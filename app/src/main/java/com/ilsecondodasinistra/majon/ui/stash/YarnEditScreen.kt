@@ -5,6 +5,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -82,6 +83,17 @@ fun YarnEditScreen(
     val scope = androidx.compose.runtime.rememberCoroutineScope()
 
     LaunchedEffect(viewModel) { viewModel.saved.collect { onSaved() } }
+    var showPicker by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+    if (showPicker) {
+        ColorPickerDialog(
+            initialArgb = form.colorArgb,
+            onDismiss = { showPicker = false },
+            onConfirm = { argb ->
+                viewModel.update { it.copy(colorArgb = argb) }
+                showPicker = false
+            },
+        )
+    }
 
     // The picked picture is copied into the app's own storage, so it survives the source going away
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri: Uri? ->
@@ -140,6 +152,9 @@ fun YarnEditScreen(
                 YarnColorChoices.forEach { argb ->
                     ColorChoice(argb = argb, selected = form.colorArgb == argb) { viewModel.update { it.copy(colorArgb = argb) } }
                 }
+                // Any other colour: a swatch ring that opens the continuous picker; shows the chosen custom colour
+                val custom = form.colorArgb?.takeIf { it !in YarnColorChoices }
+                CustomColorChoice(custom = custom) { showPicker = true }
             }
             TextField2(form.dyeLot, R.string.yarn_dye_lot) { v -> viewModel.update { it.copy(dyeLot = v) } }
 
@@ -240,7 +255,28 @@ private fun ColorChoice(argb: Int?, selected: Boolean, onClick: () -> Unit) {
         Modifier.size(44.dp).border(3.dp, ring, CircleShape).padding(4.dp).clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        ColorDot(argb, size = 34.dp)
+        ColorDot(argb, size = 34.dp, flat = true)
+    }
+}
+
+/** The "other colour" choice: a rainbow ring, with the custom colour inside once one is picked. */
+@Composable
+private fun CustomColorChoice(custom: Int?, onClick: () -> Unit) {
+    val ring = if (custom != null) MaterialTheme.colorScheme.primary else Color.Transparent
+    Box(
+        Modifier.size(44.dp).border(3.dp, ring, CircleShape).padding(4.dp).clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            Modifier
+                .size(34.dp)
+                .clip(CircleShape)
+                .background(androidx.compose.ui.graphics.Brush.sweepGradient((0..6).map { Color(com.ilsecondodasinistra.majon.domain.model.hsvToArgb(it * 60f, 0.9f, 1f)) })),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (custom != null) Box(Modifier.size(18.dp).clip(CircleShape).background(Color(custom)).border(1.dp, Color.White, CircleShape))
+            else Text(stringResource(R.string.yarn_color_other).take(1), style = MaterialTheme.typography.labelSmall, color = Color.White)
+        }
     }
 }
 

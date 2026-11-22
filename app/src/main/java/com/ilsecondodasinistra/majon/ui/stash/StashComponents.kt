@@ -67,19 +67,27 @@ fun needleSizeText(needle: Needle): String =
     needle.sizeMm?.let { stringResource(R.string.diagram_needles, formatMillimeters(it, decimalSeparator())) }
         ?: stringResource(R.string.needle_unknown_size)
 
-/** A round colour dot (the yarn's colour), or a neutral ring when no colour is set. */
+/**
+ * The yarn's colour: a little ball of yarn in that colour (a neutral one when no colour is set), or, with [flat],
+ * a plain round swatch (used for the choices in the colour picker).
+ */
 @Composable
-fun ColorDot(argb: Int?, size: Dp = 40.dp, modifier: Modifier = Modifier) {
-    val outline = MaterialTheme.colorScheme.outlineVariant
-    Box(
-        modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(if (argb != null) Color(argb) else MaterialTheme.colorScheme.surfaceVariant)
-            .border(1.dp, outline, CircleShape),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (argb == null) Text("🧶", style = MaterialTheme.typography.titleMedium)
+fun ColorDot(argb: Int?, size: Dp = 40.dp, modifier: Modifier = Modifier, flat: Boolean = false) {
+    if (flat && argb != null) {
+        Box(
+            modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(Color(argb))
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape),
+        )
+    } else {
+        // Without a colour: a warm neutral, so the ball still reads as yarn
+        com.ilsecondodasinistra.majon.ui.components.YarnBall(
+            color = if (argb != null) Color(argb) else Color(0xFFD9B8A4),
+            modifier = modifier,
+            size = size,
+        )
     }
 }
 

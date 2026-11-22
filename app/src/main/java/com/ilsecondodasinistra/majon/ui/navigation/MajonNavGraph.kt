@@ -276,7 +276,16 @@ private fun MajonNavHost(navController: NavHostController, modifier: Modifier) {
         ) {
             EditProjectScreen(
                 onBack = { navController.popBackStack() },
-                onSaved = { navController.popBackStack() },
+                onSaved = { id, isNew ->
+                    if (isNew) {
+                        // A new project opens on its detail, where parts, yarn and needles are added next
+                        navController.navigate(Routes.projectDetail(id)) {
+                            popUpTo(Routes.EDIT_PROJECT) { inclusive = true }
+                        }
+                    } else {
+                        navController.popBackStack()
+                    }
+                },
             )
         }
 

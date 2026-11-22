@@ -407,4 +407,9 @@
     <string name="finish_skeins_label">Skeins of %1$s (you had %2$s)</string>
     <string name="finish_confirm">Take from stash</string>
     <string name="finish_skip">Skip</string>
+    <string name="yarn_color_other">Other</string>
+    <string name="color_pick_title">Pick the shade</string>
+    <string name="color_hue">Hue</string>
+    <string name="color_saturation">Saturation</string>
+    <string name="color_brightness">Brightness</string>
 </resources>

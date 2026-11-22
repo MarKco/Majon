@@ -58,14 +58,15 @@ import com.ilsecondodasinistra.majon.ui.theme.toColor
 @Composable
 fun EditProjectScreen(
     onBack: () -> Unit,
-    onSaved: () -> Unit,
+    /** Called with the project's id once saved; the flag tells whether it was just created. */
+    onSaved: (projectId: Long, isNew: Boolean) -> Unit,
     viewModel: EditProjectViewModel = hiltViewModel(),
 ) {
     val form by viewModel.form.collectAsStateWithLifecycle()
     val savedEvent by viewModel.savedEvent.collectAsStateWithLifecycle()
 
     LaunchedEffect(savedEvent) {
-        if (savedEvent != null) onSaved()
+        savedEvent?.let { id -> onSaved(id, !form.isEditing) }
     }
 
     Scaffold(
