@@ -19,7 +19,8 @@ CX, CY, R = 52.0, 48.0, 27.0
 BASE, DARK, LIGHT, MID = "#D8664E", "#B4472F", "#F4B7A4", "#E48A72"
 NEEDLE, NEEDLE_D = "#6B9B7F", "#4F7A62"
 BG = "#FBF1E4"
-TAIL = "M57,74 C61,87 72,86 73,76"
+# A thin thread that leaves the windings and lies on the table in a soft S (same thickness as the strands)
+TAIL = "M62,69 C66,76 61,79 64,83 S73,88 69,90"
 NEEDLE_PATH = "M30,72 L74,28"
 f = lambda v: f"{v:.2f}".rstrip("0").rstrip(".")
 
@@ -93,9 +94,9 @@ SHADE = (CX + R * 0.55, CY + R * 0.6, R * 0.9)
 # ------------------------------------------------------------------ SVG master
 svg = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108">\n<rect width="108" height="108" fill="{BG}"/>\n'
 svg += f'<ellipse cx="{f(CX)}" cy="82" rx="21" ry="3.6" fill="#000" opacity=".11"/>\n'
-svg += f'<path d="{TAIL}" fill="none" stroke="{DARK}" stroke-width="4.2" stroke-linecap="round"/>\n<path d="{TAIL}" fill="none" stroke="{BASE}" stroke-width="2.4" stroke-linecap="round"/>\n'
+svg += f'<path d="{TAIL}" fill="none" stroke="{DARK}" stroke-width="3.1" stroke-linecap="round"/>\n<path d="{TAIL}" fill="none" stroke="{BASE}" stroke-width="1.7" stroke-linecap="round"/>\n'
 for d in LOOSE:
-    svg += f'<path d="{d}" fill="none" stroke="{DARK}" stroke-width="3.2" stroke-linecap="round"/><path d="{d}" fill="none" stroke="{MID}" stroke-width="1.8" stroke-linecap="round"/>\n'
+    svg += f'<path d="{d}" fill="none" stroke="{DARK}" stroke-width="2.6" stroke-linecap="round"/><path d="{d}" fill="none" stroke="{MID}" stroke-width="1.3" stroke-linecap="round"/>\n'
 svg += f'<path d="{OUTLINE}" fill="{BASE}"/>\n<clipPath id="b"><path d="{OUTLINE}"/></clipPath>\n<g clip-path="url(#b)">\n'
 for d, c, w, o in STRANDS:
     svg += f'<path d="{d}" fill="none" stroke="{c}" stroke-opacity="{o}" stroke-width="{w}" stroke-linecap="round"/>\n'
@@ -123,9 +124,9 @@ def disc(cx, cy, r, color):
 head = '<?xml version="1.0" encoding="utf-8"?>\n<vector xmlns:android="http://schemas.android.com/apk/res/android"\n    android:width="108dp"\n    android:height="108dp"\n    android:viewportWidth="108"\n    android:viewportHeight="108">\n'
 fg = head + f'\n    <!-- Shadow on the table -->\n    {disc(CX, 82, 21, "#1C000000").replace("a21,21", "a21,3.6").replace("a21,21", "a21,3.6")}\n'
 fg = fg.replace(disc(CX, 82, 21, "#1C000000").replace("a21,21", "a21,3.6"), f'<path android:fillColor="#1C000000" android:pathData="M31,82 a21,3.6 0 1,0 42,0 a21,3.6 0 1,0 -42,0" />')
-fg += "\n    <!-- Loose end of the yarn -->\n" + stroke(TAIL, DARK, 4.2) + stroke(TAIL, BASE, 2.4)
+fg += "\n    <!-- Loose end of the yarn -->\n" + stroke(TAIL, DARK, 3.1) + stroke(TAIL, BASE, 1.7)
 for d in LOOSE:
-    fg += stroke(d, DARK, 3.2) + stroke(d, MID, 1.8)
+    fg += stroke(d, DARK, 2.6) + stroke(d, MID, 1.3)
 fg += f'\n    <!-- The ball: wound strands, shaded and lit -->\n    <path android:fillColor="{BASE}" android:pathData="{OUTLINE}" />\n    <group>\n        <clip-path android:pathData="{OUTLINE}" />\n'
 for d, c, w, o in STRANDS:
     fg += stroke(d, c, w, o, "        ")
@@ -137,7 +138,7 @@ open(os.path.join(RES, "drawable", "ic_launcher_foreground.xml"), "w").write(fg)
 open(os.path.join(RES, "drawable", "ic_launcher_background.xml"), "w").write(
     head + f'    <path\n        android:fillColor="{BG}"\n        android:pathData="M0,0h108v108h-108z" />\n</vector>\n')
 
-mono = head + f'    <path android:pathData="{OUTLINE}" android:strokeColor="#000000" android:strokeWidth="3.4" />\n' + stroke(TAIL, "#000000", 3.4)
+mono = head + f'    <path android:pathData="{OUTLINE}" android:strokeColor="#000000" android:strokeWidth="3.4" />\n' + stroke(TAIL, "#000000", 2.6)
 mono += f'    <group>\n        <clip-path android:pathData="{OUTLINE}" />\n'
 for d, c, w, o in STRANDS[::3]:
     mono += stroke(d, "#000000", 2.2, 1.0, "        ")
