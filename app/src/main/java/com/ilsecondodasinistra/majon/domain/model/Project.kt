@@ -11,8 +11,10 @@ data class Project(
     val updatedAt: Long = 0L,
 )
 
+/** The kind of project; it also decides the icon and which parts and measures are suggested. */
 enum class ProjectIcon {
-    SWEATER, SCARF, HAT, SOCKS, GLOVES, BLANKET, BAG, YARN
+    SWEATER, SCARF, HAT, SOCKS, GLOVES, BLANKET, BAG, YARN,
+    HEADBAND, COWL, SHAWL, CARDIGAN, SLIPPERS, DISHCLOTH,
 }
 
 enum class ProjectColor {

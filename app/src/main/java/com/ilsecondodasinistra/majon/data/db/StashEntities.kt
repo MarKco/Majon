@@ -10,6 +10,7 @@ import com.ilsecondodasinistra.majon.domain.model.MaterialShare
 import com.ilsecondodasinistra.majon.domain.model.Needle
 import com.ilsecondodasinistra.majon.domain.model.NeedleMaterial
 import com.ilsecondodasinistra.majon.domain.model.NeedleType
+import com.ilsecondodasinistra.majon.domain.model.ProjectYarnLink
 import com.ilsecondodasinistra.majon.domain.model.StitchPattern
 import com.ilsecondodasinistra.majon.domain.model.Swatch
 import com.ilsecondodasinistra.majon.domain.model.Yarn
@@ -106,7 +107,7 @@ data class YarnWithMaterialsEntity(
 
 // --- mappers (unknown enum names fall back, so newer data never crashes an older app) ---
 
-private inline fun <reified E : Enum<E>> enumOrNull(name: String?): E? =
+internal inline fun <reified E : Enum<E>> enumOrNull(name: String?): E? =
     name?.let { n -> enumValues<E>().firstOrNull { it.name == n } }
 
 fun YarnWithMaterialsEntity.toDomain() = Yarn(
@@ -208,4 +209,72 @@ fun Needle.toEntity() = NeedleEntity(
     quantity = quantity,
     brand = brand,
     notes = notes,
+)
+
+// --- links between a project and the stash ---
+
+@Entity(
+    tableName = "project_yarns",
+    primaryKeys = ["projectId", "yarnId"],
+    foreignKeys = [
+        ForeignKey(
+            entity = ProjectEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["projectId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+        ForeignKey(
+            entity = YarnEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["yarnId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index("yarnId")],
+)
+data class ProjectYarnEntity(
+    val projectId: Long,
+    val yarnId: Long,
+    val isPrimary: Boolean,
+    val swatchId: Long?,
+    val plannedSkeins: Double?,
+)
+
+@Entity(
+    tableName = "project_needles",
+    primaryKeys = ["projectId", "needleId"],
+    foreignKeys = [
+        ForeignKey(
+            entity = ProjectEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["projectId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+        ForeignKey(
+            entity = NeedleEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["needleId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index("needleId")],
+)
+data class ProjectNeedleEntity(
+    val projectId: Long,
+    val needleId: Long,
+)
+
+fun ProjectYarnEntity.toDomain() = ProjectYarnLink(
+    yarnId = yarnId,
+    isPrimary = isPrimary,
+    swatchId = swatchId,
+    plannedSkeins = plannedSkeins,
+)
+
+fun ProjectYarnLink.toEntity(projectId: Long) = ProjectYarnEntity(
+    projectId = projectId,
+    yarnId = yarnId,
+    isPrimary = isPrimary,
+    swatchId = swatchId,
+    plannedSkeins = plannedSkeins,
 )

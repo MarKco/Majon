@@ -1,11 +1,14 @@
 package com.ilsecondodasinistra.majon.testutil
 
 import com.ilsecondodasinistra.majon.domain.model.FullPart
+import com.ilsecondodasinistra.majon.domain.model.BackupImportCounts
 import com.ilsecondodasinistra.majon.domain.model.FullProject
 import com.ilsecondodasinistra.majon.domain.model.FullYarn
 import com.ilsecondodasinistra.majon.domain.model.Needle
 import com.ilsecondodasinistra.majon.domain.model.Part
 import com.ilsecondodasinistra.majon.domain.model.Project
+import com.ilsecondodasinistra.majon.domain.model.ProjectLinks
+import com.ilsecondodasinistra.majon.domain.model.normalized
 import com.ilsecondodasinistra.majon.domain.model.ProjectWithParts
 import com.ilsecondodasinistra.majon.domain.model.RowNote
 import com.ilsecondodasinistra.majon.domain.model.StashImportCounts
@@ -53,6 +56,7 @@ class FakeMajonRepository : MajonRepository {
     }
 
     override suspend fun deleteProject(id: Long) {
+        links.value = links.value - id
         projects.value = projects.value.filterNot { it.id == id }
         val orphanParts = parts.value.filter { it.projectId == id }.map { it.id }.toSet()
         parts.value = parts.value.filterNot { it.projectId == id }
@@ -130,6 +134,7 @@ class FakeMajonRepository : MajonRepository {
         }
 
     override suspend fun deleteYarn(id: Long) {
+        links.value = links.value.mapValues { (_, l) -> l.copy(yarns = l.yarns.filterNot { it.yarnId == id }) }
         yarns.value = yarns.value.filterNot { it.id == id }
         swatches.value = swatches.value.filterNot { it.yarnId == id }
     }
@@ -171,6 +176,7 @@ class FakeMajonRepository : MajonRepository {
         }
 
     override suspend fun deleteNeedle(id: Long) {
+        links.value = links.value.mapValues { (_, l) -> l.copy(needleIds = l.needleIds - id) }
         needles.value = needles.value.filterNot { it.id == id }
     }
 
@@ -188,6 +194,67 @@ class FakeMajonRepository : MajonRepository {
         return StashImportCounts(stash.yarns.size, stash.needles.size)
     }
 
+    // --- what a project is made with ---
+
+    private val links = MutableStateFlow<Map<Long, ProjectLinks>>(emptyMap())
+
+    override fun observeProjectLinks(projectId: Long): Flow<ProjectLinks> =
+        links.map { it[projectId] ?: ProjectLinks() }
+
+    override suspend fun setProjectLinks(projectId: Long, links: ProjectLinks) {
+        this.links.value = this.links.value + (projectId to links.normalized())
+    }
+
+    override fun observeNeedleUsage(): Flow<Map<Long, List<String>>> =
+        kotlinx.coroutines.flow.combine(projects, parts, links) { projectList, partList, linkMap ->
+            val unfinished = projectList.filter { p ->
+                val ps = partList.filter { it.projectId == p.id }
+                ps.isEmpty() || ps.any { !it.isComplete }
+            }
+            unfinished.flatMap { p -> (linkMap[p.id]?.needleIds.orEmpty()).map { it to p.name } }
+                .groupBy({ it.first }, { it.second })
+        }
+
+    override suspend fun duplicateProject(id: Long, copyName: String): Long? {
+        val source = projects.value.find { it.id == id } ?: return null
+        val newId = upsertProject(source.copy(id = 0L, name = copyName))
+        parts.value.filter { it.projectId == id }.forEach { part ->
+            val newPartId = upsertPart(part.copy(id = 0L, projectId = newId, completedRows = 0))
+            notes.value.filter { it.partId == part.id }.forEach { upsertNote(it.copy(id = 0L, partId = newPartId)) }
+        }
+        setProjectLinks(newId, links.value[id] ?: ProjectLinks())
+        return newId
+    }
+
+    override suspend fun importBackup(projects: List<FullProject>, stash: StashSnapshot): BackupImportCounts {
+        val yarnIds = mutableListOf<Long>()
+        val swatchIds = mutableListOf<Long>()
+        stash.yarns.forEach { full ->
+            val yarnId = upsertYarn(full.yarn.copy(id = 0L))
+            yarnIds += yarnId
+            full.swatches.forEach { swatchIds += upsertSwatch(it.copy(id = 0L, yarnId = yarnId)) }
+        }
+        val needleIds = stash.needles.map { upsertNeedle(it.copy(id = 0L)) }
+        fun swatch(position: Long?) = position?.let { swatchIds.getOrNull(it.toInt()) }
+        projects.forEach { full ->
+            val projectId = upsertProject(full.project.copy(id = 0L))
+            full.parts.forEach { fp ->
+                val partId = upsertPart(fp.part.copy(id = 0L, projectId = projectId, swatchId = swatch(fp.part.swatchId)))
+                fp.notes.forEach { upsertNote(it.copy(id = 0L, partId = partId)) }
+            }
+            setProjectLinks(
+                projectId,
+                ProjectLinks(
+                    yarns = full.links.yarns.mapNotNull { l ->
+                        yarnIds.getOrNull(l.yarnId.toInt())?.let { l.copy(yarnId = it, swatchId = swatch(l.swatchId)) }
+                    },
+                    needleIds = full.links.needleIds.mapNotNull { needleIds.getOrNull(it.toInt()) },
+                ),
+            )
+        }
+        return BackupImportCounts(projects.size, stash.yarns.size, stash.needles.size)
+    }
+
     override suspend fun getFullProjects(): List<FullProject> =
         projects.value.map { project ->
             FullProject(
@@ -195,6 +262,7 @@ class FakeMajonRepository : MajonRepository {
                 parts = parts.value.filter { it.projectId == project.id }.map { part ->
                     FullPart(part, notes.value.filter { it.partId == part.id })
                 },
+                links = links.value[project.id] ?: ProjectLinks(),
             )
         }
 

@@ -29,16 +29,31 @@ tratto colorato ondeggia leggermente, come un filo.
 
 1. Tocca **Nuovo progetto**.
 2. Dai un nome (es. "Maglione rosso").
-3. Scegli un'**icona** (maglione, sciarpa, berretto, calzini, guanti, coperta,
-   borsa, gomitolo) e un **colore**: così distingui a colpo d'occhio più
-   progetti uguali (tre sciarpe? tre colori diversi). L'icona decide anche la
-   forma del capo che si colora nel contatore.
-4. Facoltativo: annota **filato** (es. "lana merino 100%") e **ferri**
-   (es. "4,5"). Ti serviranno quando vorrai rifare il lavoro.
+3. Scegli un'**icona**: è anche il **tipo di progetto** (maglione, cardigan,
+   sciarpa, scaldacollo, scialle, cappello, fascia per capelli, calze, guanti,
+   pantofole, coperta, borsa, presina o quadrato, altro) e un **colore**: così
+   distingui a colpo d'occhio più progetti uguali (tre sciarpe? tre colori
+   diversi). L'icona decide la forma del capo che si colora nel contatore e le
+   **parti suggerite** (vedi sotto).
+4. Facoltativo: scegli dallo **stash** le **lane** e i **ferri** che userai
+   (vedi il capitolo sullo stash). La lana **principale** (la stellina) è
+   quella su cui l'app fa i calcoli; per ogni lana puoi scegliere il
+   **campione** da usare e, se lo conosci, i **gomitoli richiesti dal
+   modello**. I ferri già usati in un altro lavoro non finito sono segnati
+   «In uso in: …», così non li prometti due volte. I vecchi appunti di testo su
+   filato e ferri, se li avevi, restano modificabili.
 5. **Salva**.
 
 Per modificare o eliminare un progetto: menu **⋮** sulla sua scheda, oppure
 menu in alto a destra dentro il progetto.
+
+### Nuovo progetto simile
+
+Dal menu **⋮** (sulla scheda o dentro il progetto) scegli **Nuovo progetto
+simile**: l'app crea una copia, con le stesse parti (misure, righe 0 e finale,
+note per riga), le stesse lane e gli stessi ferri, ma con i conteggi a zero, e
+la apre subito nel modulo di modifica: cambia nome, misure, lana o ferri e hai
+già il nuovo lavoro pronto.
 
 ## 2. Aggiungere le parti
 
@@ -49,6 +64,21 @@ Un progetto si divide in parti: davanti, dietro, maniche, collo…
 
 1. Apri il progetto e tocca **Aggiungi parte**.
 2. Scegli un nome (es. "Davanti") e le **righe totali** previste (es. 120).
+
+### Misure e parti suggerite (facoltativo)
+
+Se aggiungendo una parte hai già le **righe**, scrivile e basta: le misure non
+servono. Se invece parti dalle **misure**, il modulo ti propone le **parti
+tipiche** del tipo di progetto (es. per un maglione Davanti, Dietro, Manica;
+per una fascia un pezzo unico) e i campi giusti: **larghezza** o **giro** nel
+senso dei punti, **lunghezza** o **altezza** nel senso delle righe, in cm.
+
+Con una lana collegata al progetto (e il suo campione) l'app stima **quanti
+punti avviare e quante righe fare** («Circa 52 punti da avviare e 510 righe»);
+il pulsante **Usa 510 righe come totale** le copia nel campo delle righe. La
+stima compare anche sulla scheda della parte (~52 punti · ~510 righe). Se per
+una parte vuoi un campione diverso da quello della lana principale, sceglilo
+nell'elenco **Campione per questa parte**.
 
 Le righe totali servono per la percentuale di avanzamento: in alto trovi il
 progresso complessivo del progetto, ogni parte ha il suo. Una parte finita
@@ -213,6 +243,23 @@ scrivi. Se pesi il campione puoi segnare anche il **peso** (grammi): servirà
 a stimare quanta lana serve per un progetto.
 
 Una lana può avere più campioni: la resa cambia con i ferri e con il punto.
+
+### «Ce la faccio con questa lana?»
+
+Nel progetto, la scheda **Lane e ferri** confronta quello che serve con quello
+che hai:
+
+- **Servono circa 1,2 · ne hai 2½ — Ce la fai con quello che hai**, oppure
+  **Te ne mancano circa ¾** (arrotondato al quarto di gomitolo, come
+  compreresti).
+- Il fabbisogno si stima dalle **misure delle parti** e dal **peso del
+  campione** (area ÷ 100 cm² × peso del campione, diviso il peso del gomitolo).
+  Se il modello indica i gomitoli richiesti, vale quello. Solo la lana
+  principale si stima da sola; per le altre serve il dato del modello.
+- Se manca qualcosa (misure, peso del campione, peso del gomitolo) l'app lo
+  dice e non inventa numeri.
+- **Ho usato…** scala dallo stash i gomitoli che hai consumato (già
+  proposti dalla stima): lo stock non cala mai da solo.
 
 ### I ferri
 

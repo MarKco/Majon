@@ -73,8 +73,7 @@ class SettingsViewModel @Inject constructor(
 
     suspend fun importData(content: String): Result<ImportSummary> =
         backupCodec.decodeAll(content).mapCatching { data ->
-            val projects = majonRepository.importProjects(data.projects)
-            val stash = majonRepository.importStash(data.stash)
-            ImportSummary(projects = projects, yarns = stash.yarns, needles = stash.needles)
+            val counts = majonRepository.importBackup(data.projects, data.stash)
+            ImportSummary(projects = counts.projects, yarns = counts.yarns, needles = counts.needles)
         }
 }

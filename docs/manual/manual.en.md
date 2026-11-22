@@ -31,16 +31,31 @@ like a thread.
 
 1. Tap **New project**.
 2. Give it a name (e.g. "Red sweater").
-3. Pick an **icon** (sweater, scarf, hat, socks, gloves, blanket, bag, yarn
-   ball) and a **color** — handy when you knit several similar things at
-   once (three scarves? three colors). The icon also decides the shape of
-   the garment that fills with color in the counter.
-4. Optional: note the **yarn** (e.g. "100% merino wool") and the **needles**
-   (e.g. "4.5"). Future-you will be grateful when re-knitting it.
+3. Pick an **icon**: it is also the **project type** (sweater, cardigan,
+   scarf, cowl, shawl, hat, headband, socks, gloves, slippers, blanket, bag,
+   dishcloth or square, other) — and a **color**, handy when you knit several
+   similar things at once (three scarves? three colors). The icon decides the
+   shape of the garment that fills with color in the counter and the
+   **suggested parts** (see below).
+4. Optional: choose from your **stash** the **yarns** and **needles** you will
+   use (see the stash chapter). The **main** yarn (the star) is the one the app
+   calculates with; for each yarn you can pick the **swatch** to use and, if
+   you know it, the **skeins the pattern asks for**. Needles already used by
+   another unfinished project are marked “In use in: …”, so you don't promise
+   them twice. Old free-text notes on yarn and needles, if you had any, stay
+   editable.
 5. **Save**.
 
 To edit or delete a project: **⋮** menu on its card, or the top-right menu
 inside the project.
+
+### New similar project
+
+From the **⋮** menu (on the card or inside the project) choose **New similar
+project**: the app makes a copy with the same parts (measures, row 0 and final
+row, row notes), the same yarns and needles, but with the counts back at zero,
+and opens it in the edit form right away: change the name, measures, yarn or
+needles and the new project is ready.
 
 ## 2. Add the parts
 
@@ -51,6 +66,20 @@ A project splits into parts: front, back, sleeves, collar…
 
 1. Open the project and tap **Add part**.
 2. Enter a name (e.g. "Front") and the expected **total rows** (e.g. 120).
+
+### Measures and suggested parts (optional)
+
+If you already have the **rows** when adding a part, just type them: measures
+are not needed. If you start from **measures** instead, the form suggests the
+**typical parts** of the project type (a sweater: Front, Back, Sleeve; a
+headband: a single piece) and the right fields: **width** or **circumference**
+along the stitches, **length** or **height** along the rows, in cm.
+
+With a yarn linked to the project (and its swatch) the app estimates **how many
+stitches to cast on and how many rows to knit** (“About 52 stitches to cast on
+and 510 rows”); **Use 510 as the total rows** copies it into the rows field. The
+estimate also shows on the part's card (~52 sts · ~510 rows). If a part needs a
+different swatch from the main yarn's, pick it in **Swatch for this part**.
 
 Total rows drive the progress percentage: the top card shows the whole
 project's progress, every part has its own. A finished part shows a ✓.
@@ -213,6 +242,22 @@ much yarn a project needs.
 
 A yarn can have several swatches: the gauge changes with the needles and the
 stitch pattern.
+
+### “Do I have enough of this yarn?”
+
+In the project, the **Yarn and needles** card compares what is needed with what
+you have:
+
+- **About 1.2 needed · you have 2½ — You have enough**, or **You are short by
+  about ¾** (rounded up to a quarter skein, as you would buy it).
+- The amount is estimated from the **parts' measures** and the **swatch
+  weight** (area ÷ 100 cm² × swatch weight, over the skein weight). If the
+  pattern gives the skeins required, that is used instead. Only the main yarn is
+  estimated by itself; the others need the pattern's figure.
+- If something is missing (measures, swatch weight, skein weight) the app says
+  so and does not make up numbers.
+- **I used…** takes the skeins you have used off the stash (suggested from the
+  estimate): the stock never goes down by itself.
 
 ### Needles
 

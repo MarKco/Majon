@@ -51,6 +51,7 @@ import com.ilsecondodasinistra.majon.R
 import com.ilsecondodasinistra.majon.domain.model.ProjectColor
 import com.ilsecondodasinistra.majon.domain.model.ProjectIcon
 import com.ilsecondodasinistra.majon.ui.components.emoji
+import com.ilsecondodasinistra.majon.ui.components.typeLabelRes
 import com.ilsecondodasinistra.majon.ui.theme.toColor
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -116,6 +117,12 @@ fun EditProjectScreen(
                         )
                     }
                 }
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    stringResource(form.icon.typeLabelRes()),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
             }
 
             Column {
@@ -132,24 +139,30 @@ fun EditProjectScreen(
                 }
             }
 
-            OutlinedTextField(
-                value = form.yarnType,
-                onValueChange = viewModel::updateYarnType,
-                label = { Text(stringResource(R.string.yarn_type)) },
-                placeholder = { Text(stringResource(R.string.yarn_type_hint)) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            ProjectStashSection(viewModel)
 
-            OutlinedTextField(
-                value = form.needleSize,
-                onValueChange = viewModel::updateNeedleSize,
-                label = { Text(stringResource(R.string.needle_size)) },
-                placeholder = { Text(stringResource(R.string.needle_size_hint)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.fillMaxWidth(),
-            )
+            if (form.hasLegacyText) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(stringResource(R.string.project_legacy_title), style = MaterialTheme.typography.titleMedium)
+                    OutlinedTextField(
+                        value = form.yarnType,
+                        onValueChange = viewModel::updateYarnType,
+                        label = { Text(stringResource(R.string.yarn_type)) },
+                        placeholder = { Text(stringResource(R.string.yarn_type_hint)) },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = form.needleSize,
+                        onValueChange = viewModel::updateNeedleSize,
+                        label = { Text(stringResource(R.string.needle_size)) },
+                        placeholder = { Text(stringResource(R.string.needle_size_hint)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
 
             Button(
                 onClick = viewModel::save,

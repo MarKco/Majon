@@ -5,6 +5,9 @@ import com.ilsecondodasinistra.majon.domain.model.FullPart
 import com.ilsecondodasinistra.majon.domain.model.FullProject
 import com.ilsecondodasinistra.majon.domain.model.FullYarn
 import com.ilsecondodasinistra.majon.domain.model.MaterialShare
+import com.ilsecondodasinistra.majon.domain.model.MeasureKey
+import com.ilsecondodasinistra.majon.domain.model.ProjectLinks
+import com.ilsecondodasinistra.majon.domain.model.ProjectYarnLink
 import com.ilsecondodasinistra.majon.domain.model.Needle
 import com.ilsecondodasinistra.majon.domain.model.NeedleMaterial
 import com.ilsecondodasinistra.majon.domain.model.NeedleType
@@ -267,6 +270,91 @@ class BackupCodecTest {
         assertEquals(null, needle.material)
         assertEquals(1, needle.quantity)
         assertEquals(null, needle.sizeMm)
+    }
+
+    private fun projectWithLinks(): FullProject = FullProject(
+        project = Project(name = "Sciarpa"),
+        parts = listOf(
+            FullPart(
+                part = Part(
+                    projectId = 1L, name = "Corpo", totalRows = 510,
+                    stitchMeasure = MeasureKey.WIDTH, stitchCm = 20.0,
+                    rowMeasure = MeasureKey.LENGTH, rowCm = 150.0, swatchId = 8L,
+                ),
+                notes = emptyList(),
+            ),
+        ),
+        // real ids as they come from the database: yarn 5, swatch 8, needle 3
+        links = ProjectLinks(
+            yarns = listOf(ProjectYarnLink(yarnId = 5L, isPrimary = true, swatchId = 8L, plannedSkeins = 3.5)),
+            needleIds = listOf(3L),
+        ),
+    )
+
+    @Test
+    fun `measures and links round-trip as positions in the stash`() {
+        val json = codec.encode(listOf(projectWithLinks()), exportedAt = 1L, stash = stash())
+        val project = codec.decodeAll(json).getOrThrow().projects.single()
+
+        val part = project.parts.single().part
+        assertEquals(MeasureKey.WIDTH, part.stitchMeasure)
+        assertEquals(20.0, part.stitchCm!!, 0.0)
+        assertEquals(MeasureKey.LENGTH, part.rowMeasure)
+        assertEquals(150.0, part.rowCm!!, 0.0)
+        // swatch 8 is the first (and only) swatch of the stash: position 0
+        assertEquals(0L, part.swatchId)
+
+        val link = project.links.yarns.single()
+        assertEquals(0L, link.yarnId)          // yarn 5 is the first yarn of the stash
+        assertTrue(link.isPrimary)
+        assertEquals(0L, link.swatchId)
+        assertEquals(3.5, link.plannedSkeins!!, 0.0)
+        assertEquals(listOf(0L), project.links.needleIds)   // needle 3 is the first needle
+    }
+
+    @Test
+    fun `links to things that are not in the stash are left out`() {
+        val orphan = projectWithLinks().copy(
+            links = ProjectLinks(yarns = listOf(ProjectYarnLink(yarnId = 99L)), needleIds = listOf(77L)),
+        )
+        val json = codec.encode(listOf(orphan), exportedAt = 1L, stash = stash())
+        val project = codec.decodeAll(json).getOrThrow().projects.single()
+        assertTrue(project.links.yarns.isEmpty())
+        assertTrue(project.links.needleIds.isEmpty())
+    }
+
+    @Test
+    fun `a swatch that is not exported is dropped from the part`() {
+        val json = codec.encode(listOf(projectWithLinks()), exportedAt = 1L, stash = StashSnapshot(emptyList(), emptyList()))
+        val project = codec.decodeAll(json).getOrThrow().projects.single()
+        assertEquals(null, project.parts.single().part.swatchId)
+        assertEquals(20.0, project.parts.single().part.stitchCm!!, 0.0)
+    }
+
+    @Test
+    fun `an old file without measures or links still decodes`() {
+        val json = """{"app":"majon","version":2,"exportedAt":1,"projects":[{"name":"X","parts":[{"name":"P","totalRows":10}]}]}"""
+        val project = codec.decodeAll(json).getOrThrow().projects.single()
+        assertEquals(null, project.parts.single().part.stitchMeasure)
+        assertEquals(ProjectLinks(), project.links)
+    }
+
+    @Test
+    fun `bad measures are sanitized`() {
+        val json = """{"app":"majon","version":2,"exportedAt":1,"projects":[{"name":"X",
+          "parts":[{"name":"P","totalRows":10,"stitchMeasure":"DEPTH","stitchCm":-4,"rowMeasure":"HEIGHT","rowCm":0}],
+          "yarns":[{"yarn":-1},{"yarn":2,"swatch":-3,"plannedSkeins":-1}],"needles":[-5,1]}]}"""
+        val project = codec.decodeAll(json).getOrThrow().projects.single()
+        val part = project.parts.single().part
+        assertEquals(null, part.stitchMeasure)
+        assertEquals(null, part.stitchCm)
+        assertEquals(MeasureKey.HEIGHT, part.rowMeasure)
+        assertEquals(null, part.rowCm)
+        val link = project.links.yarns.single()
+        assertEquals(2L, link.yarnId)
+        assertEquals(null, link.swatchId)
+        assertEquals(null, link.plannedSkeins)
+        assertEquals(listOf(1L), project.links.needleIds)
     }
 
     @Test

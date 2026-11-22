@@ -23,6 +23,14 @@ data class Part(
     val hasFinalRow: Boolean = false,
     val prepNote: String? = null,
     val finalNote: String? = null,
+    /** What [stitchCm] measures (the direction of the stitches), if the part is planned by measures. */
+    val stitchMeasure: MeasureKey? = null,
+    val stitchCm: Double? = null,
+    /** What [rowCm] measures (the direction of the rows). */
+    val rowMeasure: MeasureKey? = null,
+    val rowCm: Double? = null,
+    /** The gauge swatch this part is estimated with; null = the project's main yarn swatch. */
+    val swatchId: Long? = null,
 ) {
     private val prepOffset: Int get() = if (hasPrepRow) 1 else 0
 

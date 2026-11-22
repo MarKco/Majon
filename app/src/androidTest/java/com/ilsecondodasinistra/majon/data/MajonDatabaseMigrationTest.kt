@@ -5,6 +5,7 @@ import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ilsecondodasinistra.majon.data.db.MIGRATION_1_2
 import com.ilsecondodasinistra.majon.data.db.MIGRATION_2_3
+import com.ilsecondodasinistra.majon.data.db.MIGRATION_3_4
 import com.ilsecondodasinistra.majon.data.db.MajonDatabase
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -94,6 +95,46 @@ class MajonDatabaseMigrationTest {
         db.execSQL("PRAGMA foreign_keys = ON")
         db.execSQL("DELETE FROM yarns WHERE id = 1")
         db.query("SELECT COUNT(*) FROM swatches").use { c ->
+            c.moveToFirst()
+            assertEquals(0, c.getInt(0))
+        }
+        db.close()
+    }
+
+    @Test
+    fun migrate3To4KeepsPartsAndAddsMeasuresAndLinks() {
+        helper.createDatabase(TEST_DB, 3).apply {
+            execSQL(
+                "INSERT INTO projects (id, name, icon, color, yarnType, needleSize, createdAt, updatedAt) " +
+                    "VALUES (1, 'Sciarpa', 'SCARF', 'SAGE', NULL, NULL, 10, 20)",
+            )
+            execSQL(
+                "INSERT INTO parts (id, projectId, name, totalRows, completedRows, createdAt, hasPrepRow, hasFinalRow) " +
+                    "VALUES (1, 1, 'Unica', 200, 12, 30, 0, 0)",
+            )
+            execSQL("INSERT INTO yarns (id, name, stockSkeins, createdAt, updatedAt) VALUES (1, 'Bamboo', 2.5, 1, 1)")
+            execSQL("INSERT INTO needles (id, type, quantity) VALUES (1, 'CIRCULAR', 1)")
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(TEST_DB, 4, true, MIGRATION_3_4)
+        db.query("SELECT completedRows, stitchMeasure, stitchCm, rowMeasure, rowCm, swatchId FROM parts").use { c ->
+            assertEquals(true, c.moveToFirst())
+            assertEquals(12, c.getInt(0))
+            for (i in 1..5) assertEquals(true, c.isNull(i))
+        }
+        db.execSQL("UPDATE parts SET stitchMeasure = 'WIDTH', stitchCm = 20.0, rowMeasure = 'LENGTH', rowCm = 150.0 WHERE id = 1")
+        db.execSQL("INSERT INTO project_yarns (projectId, yarnId, isPrimary) VALUES (1, 1, 1)")
+        db.execSQL("INSERT INTO project_needles (projectId, needleId) VALUES (1, 1)")
+        // Links follow their project and their yarn / needle when those are deleted
+        db.execSQL("PRAGMA foreign_keys = ON")
+        db.execSQL("DELETE FROM yarns WHERE id = 1")
+        db.query("SELECT COUNT(*) FROM project_yarns").use { c ->
+            c.moveToFirst()
+            assertEquals(0, c.getInt(0))
+        }
+        db.execSQL("DELETE FROM projects WHERE id = 1")
+        db.query("SELECT COUNT(*) FROM project_needles").use { c ->
             c.moveToFirst()
             assertEquals(0, c.getInt(0))
         }

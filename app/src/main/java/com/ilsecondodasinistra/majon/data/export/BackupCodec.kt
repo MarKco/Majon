@@ -4,6 +4,9 @@ import com.ilsecondodasinistra.majon.domain.model.FullPart
 import com.ilsecondodasinistra.majon.domain.model.FullProject
 import com.ilsecondodasinistra.majon.domain.model.FullYarn
 import com.ilsecondodasinistra.majon.domain.model.MaterialShare
+import com.ilsecondodasinistra.majon.domain.model.MeasureKey
+import com.ilsecondodasinistra.majon.domain.model.ProjectLinks
+import com.ilsecondodasinistra.majon.domain.model.ProjectYarnLink
 import com.ilsecondodasinistra.majon.domain.model.Needle
 import com.ilsecondodasinistra.majon.domain.model.NeedleMaterial
 import com.ilsecondodasinistra.majon.domain.model.NeedleType
@@ -42,6 +45,18 @@ private data class BackupProject(
     val yarnType: String? = null,
     val needleSize: String? = null,
     val parts: List<BackupPart> = emptyList(),
+    // What the project is made with: positions in this file's `yarns` / `needles` lists
+    val yarns: List<BackupYarnLink> = emptyList(),
+    val needles: List<Int> = emptyList(),
+)
+
+@Serializable
+private data class BackupYarnLink(
+    val yarn: Int,
+    val primary: Boolean = false,
+    /** Position of the swatch in the flattened list of every swatch of every yarn, in file order. */
+    val swatch: Int? = null,
+    val plannedSkeins: Double? = null,
 )
 
 @Serializable
@@ -53,6 +68,11 @@ private data class BackupPart(
     val hasFinalRow: Boolean = false,
     val prepNote: String? = null,
     val finalNote: String? = null,
+    val stitchMeasure: String? = null,
+    val stitchCm: Double? = null,
+    val rowMeasure: String? = null,
+    val rowCm: Double? = null,
+    val swatch: Int? = null,
     val notes: List<BackupNote> = emptyList(),
 )
 
@@ -127,12 +147,22 @@ class BackupCodec @Inject constructor() {
         exportedAt: Long,
         stash: StashSnapshot = StashSnapshot(emptyList(), emptyList()),
     ): String {
+        // Links in the file are positions in the stash lists, not database ids
+        val yarnPosition = stash.yarns.withIndex().associate { (i, y) -> y.yarn.id to i }
+        val swatchPosition = stash.yarns.flatMap { it.swatches }.withIndex().associate { (i, sw) -> sw.id to i }
+        val needlePosition = stash.needles.withIndex().associate { (i, n) -> n.id to i }
         val file = BackupFile(
             exportedAt = exportedAt,
             yarns = stash.yarns.map { it.toBackup() },
             needles = stash.needles.map { it.toBackup() },
             projects = projects.map { full ->
                 BackupProject(
+                    yarns = full.links.yarns.mapNotNull { link ->
+                        yarnPosition[link.yarnId]?.let { y ->
+                            BackupYarnLink(y, link.isPrimary, link.swatchId?.let(swatchPosition::get), link.plannedSkeins)
+                        }
+                    },
+                    needles = full.links.needleIds.mapNotNull(needlePosition::get),
                     name = full.project.name,
                     icon = full.project.icon.name,
                     color = full.project.color.name,
@@ -147,6 +177,11 @@ class BackupCodec @Inject constructor() {
                             hasFinalRow = fp.part.hasFinalRow,
                             prepNote = fp.part.prepNote,
                             finalNote = fp.part.finalNote,
+                            stitchMeasure = fp.part.stitchMeasure?.name,
+                            stitchCm = fp.part.stitchCm,
+                            rowMeasure = fp.part.rowMeasure?.name,
+                            rowCm = fp.part.rowCm,
+                            swatch = fp.part.swatchId?.let(swatchPosition::get),
                             notes = fp.notes.map { n ->
                                 BackupNote(
                                     rowStart = n.rowStart,
@@ -202,6 +237,12 @@ class BackupCodec @Inject constructor() {
                             hasFinalRow = part.hasFinalRow,
                             prepNote = part.prepNote?.takeIf { it.isNotBlank() },
                             finalNote = part.finalNote?.takeIf { it.isNotBlank() },
+                            stitchMeasure = enumOrNull<MeasureKey>(part.stitchMeasure),
+                            stitchCm = part.stitchCm?.takeIf { it > 0.0 },
+                            rowMeasure = enumOrNull<MeasureKey>(part.rowMeasure),
+                            rowCm = part.rowCm?.takeIf { it > 0.0 },
+                            // A position in the stash, turned into an id when the backup is imported
+                            swatchId = part.swatch?.takeIf { it >= 0 }?.toLong(),
                         ),
                         notes = part.notes.filter { it.text.isNotBlank() }.map { n ->
                             val rowStart = n.rowStart.coerceAtLeast(1)
@@ -216,6 +257,18 @@ class BackupCodec @Inject constructor() {
                         },
                     )
                 },
+                // Positions in the stash of the same file; the repository turns them into ids on import
+                links = ProjectLinks(
+                    yarns = bp.yarns.filter { it.yarn >= 0 }.map {
+                        ProjectYarnLink(
+                            yarnId = it.yarn.toLong(),
+                            isPrimary = it.primary,
+                            swatchId = it.swatch?.takeIf { s -> s >= 0 }?.toLong(),
+                            plannedSkeins = it.plannedSkeins?.takeIf { n -> n > 0.0 },
+                        )
+                    },
+                    needleIds = bp.needles.filter { it >= 0 }.map { it.toLong() },
+                ),
             )
         }
     }

@@ -25,5 +25,23 @@ val MIGRATION_2_3 = object : Migration(2, 3) {
     }
 }
 
+/**
+ * v3 -> v4: what a project is made with (yarns and needles from the stash) and the measures a part is
+ * planned by (stitch and row direction, in cm) with the swatch used to turn them into stitches and rows.
+ */
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE parts ADD COLUMN stitchMeasure TEXT")
+        db.execSQL("ALTER TABLE parts ADD COLUMN stitchCm REAL")
+        db.execSQL("ALTER TABLE parts ADD COLUMN rowMeasure TEXT")
+        db.execSQL("ALTER TABLE parts ADD COLUMN rowCm REAL")
+        db.execSQL("ALTER TABLE parts ADD COLUMN swatchId INTEGER")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `project_yarns` (`projectId` INTEGER NOT NULL, `yarnId` INTEGER NOT NULL, `isPrimary` INTEGER NOT NULL, `swatchId` INTEGER, `plannedSkeins` REAL, PRIMARY KEY(`projectId`, `yarnId`), FOREIGN KEY(`projectId`) REFERENCES `projects`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`yarnId`) REFERENCES `yarns`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_project_yarns_yarnId` ON `project_yarns` (`yarnId`)")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `project_needles` (`projectId` INTEGER NOT NULL, `needleId` INTEGER NOT NULL, PRIMARY KEY(`projectId`, `needleId`), FOREIGN KEY(`projectId`) REFERENCES `projects`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`needleId`) REFERENCES `needles`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )")
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_project_needles_needleId` ON `project_needles` (`needleId`)")
+    }
+}
+
 /** Every migration, in order. Register new ones here (see CLAUDE.md). */
-val MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
+val MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)

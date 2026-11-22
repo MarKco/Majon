@@ -13,7 +13,7 @@ partenza (`starting-docs/`).
 | Linguaggio | Kotlin 2.4.20 |
 | UI | Jetpack Compose + Material 3 |
 | Build | Gradle 9.8.0, AGP 9.4.1 (Kotlin built-in) |
-| Test | 199 unit test, 0 falliti |
+| Test | 273 unit test, 0 falliti |
 
 ## Stack
 
@@ -149,7 +149,7 @@ Test scritti prima dell'implementazione, per layer:
 | `ui/*ViewModelTest` | tutti i 6 ViewModel con `FakeMajonRepository` + Turbine |
 
 ```bash
-./gradlew :app:testDebugUnitTest   # unit test (199)
+./gradlew :app:testDebugUnitTest   # unit test (273)
 ./gradlew :app:lintDebug           # 0 errori
 ./gradlew :app:assembleDebug       # APK
 ```
@@ -182,6 +182,42 @@ Needle                         tipo, materiale, mm, cm, quantità, marca
   `swatches`) e `needles`; i file v1 si leggono (stash vuoto). Foto e id non si esportano.
   `decode()` restituisce ancora solo i progetti.
 - Migrazione `MIGRATION_2_3`: SQL copiato dallo schema generato `3.json`.
+
+## Progetti: collegamenti allo stash, misure, stime, duplicazione (schema DB v4)
+
+```
+Project ──< project_yarns (yarn, isPrimary, swatchId?, plannedSkeins?)     cascade da progetto e lana
+        ──< project_needles (needle)                                        cascade da progetto e ferro
+Part: + stitchMeasure/stitchCm, rowMeasure/rowCm, swatchId?                 (colonne, senza tabelle)
+```
+
+- **Tipo di progetto = `ProjectIcon`** (14 valori: gli 8 originali + HEADBAND, COWL, SHAWL,
+  CARDIGAN, SLIPPERS, DISHCLOTH). `ProjectIcon.presetParts()` (`domain/model/ProjectPresets.kt`)
+  dà le parti suggerite con le due misure che guidano punti e righe (`MeasureKey`:
+  WIDTH/CIRCUMFERENCE nel senso dei punti, LENGTH/HEIGHT nel senso delle righe). I nomi
+  sono enum (`PresetPartName`); le traduzioni stanno in `ui/components/ProjectLabels.kt`.
+- **Stime** (`domain/model/GaugeEstimate.kt`, pure): `punti = round(cm/10 × punti_campione)`,
+  `righe = round(cm/10 × righe_campione)`; lana = `Σ area parti / 100 × peso campione`;
+  gomitoli = grammi / peso gomitolo, oppure `plannedSkeins` del modello se c'è (vince).
+  `yarnCheck` → `Enough | Missing(missingRoundedUp al quarto) | Unknown`. Solo la lana
+  **principale** si stima; `planYarns` costruisce un `YarnPlan` per ogni lana collegata.
+  Il campione di un collegamento è quello scelto, altrimenti il primo con peso, altrimenti
+  il primo (`defaultSwatch` per le misure del progetto).
+- `ProjectLinks.normalized()`: una sola lana principale, niente doppioni.
+- `MajonRepository`: `observeProjectLinks/setProjectLinks`, `observeNeedleUsage` (ferro →
+  nomi dei progetti **non finiti** che lo usano), `duplicateProject(id, copyName)` (copia
+  parti con misure, note per riga, extra rows e collegamenti, progresso a 0),
+  `importBackup(projects, stash)`.
+- **Backup**: nel file i collegamenti sono **posizioni** nelle liste `yarns`/`needles` (e
+  nell'elenco piatto dei campioni, in ordine di file), non id del DB. `encode` converte
+  id → posizioni usando lo stash passato; `importBackup` importa prima lo stash e poi
+  rimappa le posizioni sugli id appena creati, scartando i collegamenti orfani.
+  `FullProject.links` contiene id reali se letto dal DB e posizioni se letto da un file.
+- UI: sezione `ProjectStashSection` nell'editor progetto; scheda `YarnPlanCard` e riga di
+  stima su ogni parte nel dettaglio; editor parte con parti suggerite, misure, stima e
+  «Usa N righe come totale»; «Nuovo progetto simile» in Home e nel dettaglio (la copia si
+  apre in modifica).
+- Migrazione `MIGRATION_3_4` (SQL copiato da `4.json`), testata su dispositivo.
 
 ## Contatore: numero della riga, righe extra, parte successiva
 

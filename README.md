@@ -9,7 +9,9 @@ a knitted garment shaped like your project fills with color stitch by stitch.
 Progress bars that wave like a thread, confetti when a part is finished,
 English/Italian with in-app switching, light/dark craft theme (Material 3
 Expressive), JSON export/import. A stash of your yarns (blend, fractional skeins left, gauge
-swatch drawn like the label) and needles. Optional hands-free control with voice
+swatch drawn like the label) and needles, linked to projects: plan a piece by
+its measures, see how many stitches and rows to expect and whether your yarn is
+enough, and start a new project from a finished one. Optional hands-free control with voice
 commands and the volume keys. No network use and no ads: data stays on the
 device; the microphone permission is only requested if you turn voice
 commands on.
@@ -24,7 +26,7 @@ commands on.
 |---|---|
 | Stack | Kotlin 2.4, Compose + Material 3 (1.5 alpha, for Expressive), Room, Hilt, DataStore |
 | Build | Gradle 9.8, AGP 9.4, minSdk 24, targetSdk 37 |
-| Tests | 199 unit tests (TDD), Robolectric + Turbine |
+| Tests | 273 unit tests (TDD), Robolectric + Turbine |
 
 ## Build
 

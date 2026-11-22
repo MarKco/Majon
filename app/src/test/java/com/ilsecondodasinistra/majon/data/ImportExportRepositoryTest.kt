@@ -33,7 +33,7 @@ class ImportExportRepositoryTest {
             .build()
         repository = MajonRepositoryImpl(
             db, db.projectDao(), db.partDao(), db.noteDao(),
-            db.yarnDao(), db.swatchDao(), db.needleDao(), clock = { 1L },
+            db.yarnDao(), db.swatchDao(), db.needleDao(), db.projectLinkDao(), clock = { 1L },
         )
     }
 

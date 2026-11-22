@@ -75,3 +75,33 @@ interface NeedleDao {
     @Query("SELECT * FROM needles ORDER BY id ASC")
     suspend fun getAll(): List<NeedleEntity>
 }
+
+@Dao
+interface ProjectLinkDao {
+    @Query("SELECT * FROM project_yarns WHERE projectId = :projectId ORDER BY isPrimary DESC, yarnId ASC")
+    fun observeYarnLinks(projectId: Long): Flow<List<ProjectYarnEntity>>
+
+    @Query("SELECT * FROM project_needles WHERE projectId = :projectId ORDER BY needleId ASC")
+    fun observeNeedleLinks(projectId: Long): Flow<List<ProjectNeedleEntity>>
+
+    @Query("SELECT * FROM project_needles")
+    fun observeAllNeedleLinks(): Flow<List<ProjectNeedleEntity>>
+
+    @Query("SELECT * FROM project_yarns WHERE projectId = :projectId ORDER BY isPrimary DESC, yarnId ASC")
+    suspend fun getYarnLinks(projectId: Long): List<ProjectYarnEntity>
+
+    @Query("SELECT * FROM project_needles WHERE projectId = :projectId ORDER BY needleId ASC")
+    suspend fun getNeedleLinks(projectId: Long): List<ProjectNeedleEntity>
+
+    @Insert
+    suspend fun insertYarnLinks(links: List<ProjectYarnEntity>)
+
+    @Insert
+    suspend fun insertNeedleLinks(links: List<ProjectNeedleEntity>)
+
+    @Query("DELETE FROM project_yarns WHERE projectId = :projectId")
+    suspend fun deleteYarnLinks(projectId: Long)
+
+    @Query("DELETE FROM project_needles WHERE projectId = :projectId")
+    suspend fun deleteNeedleLinks(projectId: Long)
+}

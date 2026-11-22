@@ -6,17 +6,22 @@ import com.ilsecondodasinistra.majon.data.db.NeedleDao
 import com.ilsecondodasinistra.majon.data.db.NoteDao
 import com.ilsecondodasinistra.majon.data.db.PartDao
 import com.ilsecondodasinistra.majon.data.db.ProjectDao
+import com.ilsecondodasinistra.majon.data.db.ProjectLinkDao
+import com.ilsecondodasinistra.majon.data.db.ProjectNeedleEntity
 import com.ilsecondodasinistra.majon.data.db.SwatchDao
 import com.ilsecondodasinistra.majon.data.db.YarnDao
 import com.ilsecondodasinistra.majon.data.db.materialEntities
 import com.ilsecondodasinistra.majon.data.db.toDomain
 import com.ilsecondodasinistra.majon.data.db.toEntity
 import com.ilsecondodasinistra.majon.domain.model.FullPart
+import com.ilsecondodasinistra.majon.domain.model.BackupImportCounts
 import com.ilsecondodasinistra.majon.domain.model.FullProject
 import com.ilsecondodasinistra.majon.domain.model.FullYarn
 import com.ilsecondodasinistra.majon.domain.model.Needle
 import com.ilsecondodasinistra.majon.domain.model.Part
 import com.ilsecondodasinistra.majon.domain.model.Project
+import com.ilsecondodasinistra.majon.domain.model.ProjectLinks
+import com.ilsecondodasinistra.majon.domain.model.normalized
 import com.ilsecondodasinistra.majon.domain.model.ProjectWithParts
 import com.ilsecondodasinistra.majon.domain.model.RowNote
 import com.ilsecondodasinistra.majon.domain.model.StashImportCounts
@@ -27,6 +32,8 @@ import com.ilsecondodasinistra.majon.domain.repository.MajonRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 @Singleton
@@ -38,6 +45,7 @@ class MajonRepositoryImpl @Inject constructor(
     private val yarnDao: YarnDao,
     private val swatchDao: SwatchDao,
     private val needleDao: NeedleDao,
+    private val projectLinkDao: ProjectLinkDao,
     private val clock: () -> Long,
 ) : MajonRepository {
 
@@ -151,9 +159,93 @@ class MajonRepositoryImpl @Inject constructor(
         return StashImportCounts(yarns = stash.yarns.size, needles = stash.needles.size)
     }
 
+    // --- what a project is made with ---
+
+    override fun observeProjectLinks(projectId: Long): Flow<ProjectLinks> =
+        combine(
+            projectLinkDao.observeYarnLinks(projectId),
+            projectLinkDao.observeNeedleLinks(projectId),
+        ) { yarns, needles ->
+            ProjectLinks(yarns = yarns.map { it.toDomain() }, needleIds = needles.map { it.needleId })
+        }
+
+    override suspend fun setProjectLinks(projectId: Long, links: ProjectLinks) {
+        val clean = links.normalized()
+        db.withTransaction {
+            projectLinkDao.deleteYarnLinks(projectId)
+            projectLinkDao.deleteNeedleLinks(projectId)
+            projectLinkDao.insertYarnLinks(clean.yarns.map { it.toEntity(projectId) })
+            projectLinkDao.insertNeedleLinks(clean.needleIds.map { ProjectNeedleEntity(projectId, it) })
+        }
+    }
+
+    override fun observeNeedleUsage(): Flow<Map<Long, List<String>>> =
+        combine(projectDao.observeAllWithParts(), projectLinkDao.observeAllNeedleLinks()) { projects, links ->
+            val unfinished = projects
+                .filter { p -> p.parts.isEmpty() || p.parts.any { !it.toDomain().isComplete } }
+                .associate { it.project.id to it.project.name }
+            links.mapNotNull { link -> unfinished[link.projectId]?.let { link.needleId to it } }
+                .groupBy({ it.first }, { it.second })
+        }
+
+    override suspend fun duplicateProject(id: Long, copyName: String): Long? = db.withTransaction {
+        val source = projectDao.getAllWithParts().firstOrNull { it.project.id == id } ?: return@withTransaction null
+        val newId = upsertProject(source.project.toDomain().copy(id = 0L, name = copyName))
+        source.parts.sortedBy { it.id }.forEach { part ->
+            val newPartId = upsertPart(part.toDomain().copy(id = 0L, projectId = newId, completedRows = 0))
+            noteDao.getByPartId(part.id).forEach { note ->
+                upsertNote(note.toDomain().copy(id = 0L, partId = newPartId))
+            }
+        }
+        setProjectLinks(newId, currentLinks(id))
+        newId
+    }
+
+    private suspend fun currentLinks(projectId: Long) = ProjectLinks(
+        yarns = projectLinkDao.getYarnLinks(projectId).map { it.toDomain() },
+        needleIds = projectLinkDao.getNeedleLinks(projectId).map { it.needleId },
+    )
+
+    override suspend fun importBackup(projects: List<FullProject>, stash: StashSnapshot): BackupImportCounts {
+        db.withTransaction {
+            // Ids of the new records, in the order of the snapshot (links in the file are positions in it)
+            val yarnIds = mutableListOf<Long>()
+            val swatchIds = mutableListOf<Long>()
+            stash.yarns.forEach { full ->
+                val yarnId = upsertYarn(full.yarn.copy(id = 0L))
+                yarnIds += yarnId
+                full.swatches.forEach { swatchIds += upsertSwatch(it.copy(id = 0L, yarnId = yarnId)) }
+            }
+            val needleIds = stash.needles.map { upsertNeedle(it.copy(id = 0L)) }
+
+            fun swatch(position: Long?) = position?.let { swatchIds.getOrNull(it.toInt()) }
+
+            projects.forEach { full ->
+                val projectId = upsertProject(full.project.copy(id = 0L))
+                full.parts.forEach { fp ->
+                    val partId = upsertPart(
+                        fp.part.copy(id = 0L, projectId = projectId, swatchId = swatch(fp.part.swatchId)),
+                    )
+                    fp.notes.forEach { upsertNote(it.copy(id = 0L, partId = partId)) }
+                }
+                setProjectLinks(
+                    projectId,
+                    ProjectLinks(
+                        yarns = full.links.yarns.mapNotNull { link ->
+                            yarnIds.getOrNull(link.yarnId.toInt())?.let { link.copy(yarnId = it, swatchId = swatch(link.swatchId)) }
+                        },
+                        needleIds = full.links.needleIds.mapNotNull { needleIds.getOrNull(it.toInt()) },
+                    ),
+                )
+            }
+        }
+        return BackupImportCounts(projects.size, stash.yarns.size, stash.needles.size)
+    }
+
     override suspend fun getFullProjects(): List<FullProject> =
         projectDao.getAllWithParts().map { entity ->
             FullProject(
+                links = currentLinks(entity.project.id),
                 project = entity.project.toDomain(),
                 parts = entity.parts.map { partEntity ->
                     FullPart(
@@ -169,7 +261,7 @@ class MajonRepositoryImpl @Inject constructor(
             projects.forEach { full ->
                 val projectId = upsertProject(full.project.copy(id = 0L))
                 full.parts.forEach { fp ->
-                    val partId = upsertPart(fp.part.copy(id = 0L, projectId = projectId))
+                    val partId = upsertPart(fp.part.copy(id = 0L, projectId = projectId, swatchId = null))
                     fp.notes.forEach { note ->
                         upsertNote(note.copy(id = 0L, partId = partId))
                     }

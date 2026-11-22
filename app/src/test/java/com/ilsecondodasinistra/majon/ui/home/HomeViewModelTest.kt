@@ -6,6 +6,7 @@ import com.ilsecondodasinistra.majon.domain.model.Project
 import com.ilsecondodasinistra.majon.testutil.FakeMajonRepository
 import com.ilsecondodasinistra.majon.testutil.MainDispatcherRule
 import com.ilsecondodasinistra.majon.ui.counter.awaitItemOfType
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -52,6 +53,19 @@ class HomeViewModelTest {
             vm.deleteProject(projectId)
             assertTrue(awaitItemOfType<HomeUiState.Ready>().projects.isEmpty())
             cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `duplicateProject announces the copy with the given name`() = runTest {
+        val repository = FakeMajonRepository()
+        val projectId = repository.upsertProject(Project(name = "Sciarpa"))
+        val vm = HomeViewModel(repository)
+        vm.duplicated.test {
+            vm.duplicateProject(projectId, "Sciarpa (copia)")
+            val newId = awaitItem()
+            assertEquals("Sciarpa (copia)", repository.observeProject(newId).first()!!.project.name)
+            assertEquals(2, repository.observeProjects().first().size)
         }
     }
 }

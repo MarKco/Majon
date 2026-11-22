@@ -54,6 +54,30 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilsecondodasinistra.majon.R
 import com.ilsecondodasinistra.majon.domain.model.Part
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material3.FilterChip
+import com.ilsecondodasinistra.majon.domain.model.MeasureKey
+import com.ilsecondodasinistra.majon.domain.model.PresetPart
+import com.ilsecondodasinistra.majon.domain.model.ProjectIcon
+import com.ilsecondodasinistra.majon.domain.model.Swatch
+import com.ilsecondodasinistra.majon.domain.model.YarnCheck
+import com.ilsecondodasinistra.majon.domain.model.YarnPlan
+import com.ilsecondodasinistra.majon.domain.model.Needle
+import com.ilsecondodasinistra.majon.domain.model.estimate
+import com.ilsecondodasinistra.majon.domain.model.formatDecimalInput
+import com.ilsecondodasinistra.majon.domain.model.formatMillimeters
+import com.ilsecondodasinistra.majon.domain.model.formatSkeins
+import com.ilsecondodasinistra.majon.domain.model.parseDecimal
+import com.ilsecondodasinistra.majon.domain.model.presetParts
+import com.ilsecondodasinistra.majon.ui.components.labelRes
+import com.ilsecondodasinistra.majon.ui.stash.ColorDot
+import com.ilsecondodasinistra.majon.ui.stash.UseSkeinsDialog
+import com.ilsecondodasinistra.majon.ui.stash.decimalSeparator
+import com.ilsecondodasinistra.majon.ui.stash.labelRes as stashLabelRes
 import com.ilsecondodasinistra.majon.ui.components.AnimatedProgressBar
 import com.ilsecondodasinistra.majon.ui.components.ConfirmDialog
 import com.ilsecondodasinistra.majon.ui.components.EmptyState
@@ -68,9 +92,13 @@ fun ProjectDetailScreen(
     onPartClick: (Long) -> Unit,
     onPartNotes: (Long) -> Unit,
     onEditProject: (Long) -> Unit,
+    onDuplicated: (Long) -> Unit = {},
     viewModel: ProjectDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val openCopy by rememberUpdatedState(onDuplicated)
+    LaunchedEffect(viewModel) { viewModel.duplicated.collect { openCopy(it) } }
+    var useDialogFor by remember { mutableStateOf<YarnPlan?>(null) }
     var partDialog by remember { mutableStateOf<PartDialogState?>(null) }
     var partToDelete by remember { mutableStateOf<Part?>(null) }
     var deleteProjectDialog by rememberSaveable { mutableStateOf(false) }
@@ -82,6 +110,7 @@ fun ProjectDetailScreen(
     val state = uiState as? ProjectDetailUiState.Ready ?: return
     val project = state.projectWithParts.project
     val parts = state.projectWithParts.parts
+    val copyName = stringResource(R.string.duplicate_copy_name, project.name)
 
     Scaffold(
         topBar = {
@@ -104,6 +133,13 @@ fun ProjectDetailScreen(
                                 onClick = {
                                     menuOpen = false
                                     onEditProject(project.id)
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.duplicate_project)) },
+                                onClick = {
+                                    menuOpen = false
+                                    viewModel.duplicateProject(copyName)
                                 },
                             )
                             DropdownMenuItem(
@@ -136,6 +172,9 @@ fun ProjectDetailScreen(
                     state = state,
                 )
             }
+            if (state.plans.isNotEmpty() || state.needles.isNotEmpty()) {
+                item { YarnPlanCard(state.plans, state.needles, onUse = { useDialogFor = it }) }
+            }
             if (parts.isEmpty()) {
                 item {
                     Box(Modifier.fillMaxWidth().padding(vertical = 48.dp), contentAlignment = Alignment.Center) {
@@ -148,8 +187,15 @@ fun ProjectDetailScreen(
                 }
             } else {
                 items(parts, key = { it.id }) { part ->
+                    val swatch = state.swatches.firstOrNull { it.id == part.swatchId } ?: state.defaultSwatch
+                    val estimate = part.estimate(swatch)
                     PartCard(
                         part = part,
+                        estimate = if (estimate.stitches != null && estimate.rows != null) {
+                            stringResource(R.string.part_estimate_line, estimate.stitches, estimate.rows)
+                        } else {
+                            null
+                        },
                         accentColor = project.color.toColor(),
                         onClick = { onPartClick(part.id) },
                         onEdit = { partDialog = PartDialogState(part) },
@@ -165,15 +211,31 @@ fun ProjectDetailScreen(
     partDialog?.let { dialog ->
         PartEditorDialog(
             state = dialog,
+            projectIcon = project.icon,
+            swatches = state.swatches,
+            yarnNames = state.plans.associate { it.yarn.id to it.yarn.name },
+            defaultSwatch = state.defaultSwatch,
             onDismiss = { partDialog = null },
-            onSave = { name, rows, extras ->
+            onSave = { name, rows, extras, measures ->
                 val ok = if (dialog.part == null) {
-                    viewModel.addPart(name, rows, extras)
+                    viewModel.addPart(name, rows, extras, measures)
                 } else {
-                    viewModel.updatePart(dialog.part.id, name, rows, extras)
+                    viewModel.updatePart(dialog.part.id, name, rows, extras, measures)
                 }
                 if (ok) partDialog = null
                 ok
+            },
+        )
+    }
+
+    useDialogFor?.let { plan ->
+        UseSkeinsDialog(
+            yarnName = plan.yarn.name,
+            initial = plan.neededSkeins?.let { formatDecimalInput(kotlin.math.ceil(it * 4) / 4) }.orEmpty(),
+            onDismiss = { useDialogFor = null },
+            onConfirm = { amount ->
+                viewModel.useSkeins(plan.yarn.id, amount)
+                useDialogFor = null
             },
         )
     }
@@ -255,6 +317,7 @@ private fun ProjectHeader(state: ProjectDetailUiState.Ready) {
 @Composable
 private fun PartCard(
     part: Part,
+    estimate: String?,
     accentColor: androidx.compose.ui.graphics.Color,
     onClick: () -> Unit,
     onEdit: () -> Unit,
@@ -288,6 +351,9 @@ private fun PartCard(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (estimate != null) {
+                    Text(estimate, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
+                }
             }
             Box {
                 IconButton(onClick = { menuOpen = true }) {
@@ -321,23 +387,115 @@ private fun PartCard(
     }
 }
 
+@Composable
+private fun YarnPlanCard(plans: List<YarnPlan>, needles: List<Needle>, onUse: (YarnPlan) -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(stringResource(R.string.project_stash_title), style = MaterialTheme.typography.titleMedium)
+            val separator = decimalSeparator()
+            plans.forEach { plan ->
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        ColorDot(plan.yarn.colorArgb, size = 28.dp)
+                        Spacer(Modifier.width(10.dp))
+                        Text(plan.yarn.name, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                        if (plans.size > 1 && plan.link.isPrimary) {
+                            Text(stringResource(R.string.plan_main_yarn), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                    val have = formatSkeins(plan.yarn.stockSkeins, separator)
+                    when (val check = plan.check) {
+                        is YarnCheck.Enough -> {
+                            Text(
+                                stringResource(R.string.plan_need_have, formatSkeins(check.needed, separator), have),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            Text(stringResource(R.string.plan_enough), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
+                        }
+                        is YarnCheck.Missing -> {
+                            Text(
+                                stringResource(R.string.plan_need_have, formatSkeins(check.needed, separator), have),
+                                style = MaterialTheme.typography.bodyMedium,
+                            )
+                            Text(
+                                stringResource(R.string.plan_missing, formatSkeins(check.missingRoundedUp, separator)),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                        }
+                        YarnCheck.Unknown -> {
+                            Text(stringResource(R.string.plan_have, have), style = MaterialTheme.typography.bodyMedium)
+                            Text(stringResource(R.string.plan_unknown), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    if (plan.neededSkeins != null) {
+                        Text(
+                            stringResource(if (plan.link.plannedSkeins != null) R.string.plan_planned_note else R.string.plan_estimate_note),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.outline,
+                        )
+                    }
+                    androidx.compose.material3.TextButton(onClick = { onUse(plan) }, enabled = plan.yarn.stockSkeins > 0) {
+                        Text(stringResource(R.string.plan_use))
+                    }
+                }
+            }
+            if (needles.isNotEmpty()) {
+                Text(
+                    "🪡 " + needles.joinToString(" · ") { n ->
+                        listOfNotNull(
+                            n.sizeMm?.let { formatMillimeters(it, separator) + " mm" },
+                            null,
+                        ).joinToString(" ").ifEmpty { "-" }
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        }
+    }
+}
+
 private data class PartDialogState(val part: Part? = null)
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun PartEditorDialog(
     state: PartDialogState,
+    projectIcon: ProjectIcon,
+    swatches: List<Swatch>,
+    yarnNames: Map<Long, String>,
+    defaultSwatch: Swatch?,
     onDismiss: () -> Unit,
-    onSave: (String, Int, RowExtras) -> Boolean,
+    onSave: (String, Int, RowExtras, PartMeasures) -> Boolean,
 ) {
+    val presets = remember(projectIcon) { projectIcon.presetParts() }
+    val firstPreset = presets.firstOrNull()
     var name by rememberSaveable { mutableStateOf(state.part?.name.orEmpty()) }
+    var rowsText by rememberSaveable { mutableStateOf(state.part?.totalRows?.toString().orEmpty()) }
     var prepRow by rememberSaveable { mutableStateOf(state.part?.hasPrepRow ?: false) }
     var prepNote by rememberSaveable { mutableStateOf(state.part?.prepNote.orEmpty()) }
     var finalRow by rememberSaveable { mutableStateOf(state.part?.hasFinalRow ?: false) }
     var finalNote by rememberSaveable { mutableStateOf(state.part?.finalNote.orEmpty()) }
-    var rowsText by rememberSaveable { mutableStateOf(state.part?.totalRows?.toString().orEmpty()) }
+    var stitchKey by rememberSaveable { mutableStateOf((state.part?.stitchMeasure ?: firstPreset?.stitchMeasure ?: MeasureKey.WIDTH).name) }
+    var stitchCm by rememberSaveable { mutableStateOf(state.part?.stitchCm?.let(::formatDecimalInput).orEmpty()) }
+    var rowKey by rememberSaveable { mutableStateOf((state.part?.rowMeasure ?: firstPreset?.rowMeasure ?: MeasureKey.LENGTH).name) }
+    var rowCm by rememberSaveable { mutableStateOf(state.part?.rowCm?.let(::formatDecimalInput).orEmpty()) }
+    var swatchId by rememberSaveable { mutableStateOf(state.part?.swatchId) }
     var showError by rememberSaveable { mutableStateOf(false) }
     val rows = rowsText.toIntOrNull() ?: 0
     val reduceWarning = state.part != null && rows in 1 until state.part.rowsDone
+
+    val swatch = swatches.firstOrNull { it.id == swatchId } ?: defaultSwatch
+    val estimate = remember(stitchCm, rowCm, swatch) {
+        com.ilsecondodasinistra.majon.domain.model.Part(
+            projectId = 0L, name = "", totalRows = 1,
+            stitchCm = parseDecimal(stitchCm), rowCm = parseDecimal(rowCm),
+        ).estimate(swatch)
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -345,7 +503,28 @@ private fun PartEditorDialog(
             Text(stringResource(if (state.part == null) R.string.add_part else R.string.edit_part))
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                if (state.part == null && presets.isNotEmpty()) {
+                    Text(stringResource(R.string.part_suggested), style = MaterialTheme.typography.labelLarge)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        presets.forEach { preset ->
+                            val label = stringResource(preset.name.labelRes())
+                            FilterChip(
+                                selected = name == label,
+                                onClick = {
+                                    name = label
+                                    stitchKey = preset.stitchMeasure.name
+                                    rowKey = preset.rowMeasure.name
+                                    showError = false
+                                },
+                                label = { Text(label) },
+                            )
+                        }
+                    }
+                }
                 OutlinedTextField(
                     value = name,
                     onValueChange = {
@@ -371,6 +550,68 @@ private fun PartEditorDialog(
                         null
                     },
                 )
+
+                Text(stringResource(R.string.part_measures_title), style = MaterialTheme.typography.labelLarge)
+                MeasureField(
+                    keys = listOf(MeasureKey.WIDTH, MeasureKey.CIRCUMFERENCE),
+                    selected = MeasureKey.valueOf(stitchKey),
+                    value = stitchCm,
+                    onKey = { stitchKey = it.name },
+                    onValue = { stitchCm = it },
+                )
+                MeasureField(
+                    keys = listOf(MeasureKey.LENGTH, MeasureKey.HEIGHT),
+                    selected = MeasureKey.valueOf(rowKey),
+                    value = rowCm,
+                    onKey = { rowKey = it.name },
+                    onValue = { rowCm = it },
+                )
+                if (swatches.size > 1) {
+                    Text(stringResource(R.string.part_swatch), style = MaterialTheme.typography.labelMedium)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(
+                            selected = swatchId == null,
+                            onClick = { swatchId = null },
+                            label = { Text(stringResource(R.string.part_swatch_default)) },
+                        )
+                        swatches.forEach { sw ->
+                            FilterChip(
+                                selected = swatchId == sw.id,
+                                onClick = { swatchId = sw.id },
+                                label = { Text(listOfNotNull(yarnNames[sw.yarnId], "${sw.stitches}×${sw.rows}").joinToString(" · ")) },
+                            )
+                        }
+                    }
+                }
+                val measured = parseDecimal(stitchCm) != null || parseDecimal(rowCm) != null
+                when {
+                    estimate.stitches != null && estimate.rows != null -> Text(
+                        stringResource(R.string.part_estimate, estimate.stitches, estimate.rows),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    estimate.stitches != null -> Text(
+                        stringResource(R.string.part_estimate_stitches, estimate.stitches),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    estimate.rows != null -> Text(
+                        stringResource(R.string.part_estimate_rows, estimate.rows),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                    measured && swatch == null -> Text(
+                        stringResource(R.string.part_estimate_needs_swatch),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (estimate.rows != null && estimate.rows != rows) {
+                    androidx.compose.material3.TextButton(onClick = { rowsText = estimate.rows.toString(); showError = false }) {
+                        Text(stringResource(R.string.part_use_rows, estimate.rows))
+                    }
+                }
+
                 ExtraRowOption(
                     label = stringResource(R.string.prep_row_toggle),
                     checked = prepRow,
@@ -399,7 +640,12 @@ private fun PartEditorDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    val ok = onSave(name, rows, RowExtras(prepRow, prepNote, finalRow, finalNote))
+                    val ok = onSave(
+                        name,
+                        rows,
+                        RowExtras(prepRow, prepNote, finalRow, finalNote),
+                        PartMeasures(MeasureKey.valueOf(stitchKey), stitchCm, MeasureKey.valueOf(rowKey), rowCm, swatchId),
+                    )
                     if (!ok) showError = true
                 },
             ) {
@@ -410,6 +656,37 @@ private fun PartEditorDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
     )
+}
+
+/** One measure of a part: the choice of what is measured (a width or a circumference...) and the cm. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun MeasureField(
+    keys: List<MeasureKey>,
+    selected: MeasureKey,
+    value: String,
+    onKey: (MeasureKey) -> Unit,
+    onValue: (String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            keys.forEach { key ->
+                FilterChip(
+                    selected = key == selected,
+                    onClick = { onKey(key) },
+                    label = { Text(stringResource(key.labelRes()).substringBefore(" (")) },
+                )
+            }
+        }
+        OutlinedTextField(
+            value = value,
+            onValueChange = { onValue(it.filter { c -> c.isDigit() || c == '.' || c == ',' }) },
+            label = { Text(stringResource(selected.labelRes())) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
 }
 
 /** A switch for an optional extra row (preparation / final) with its note shown while it is on. */

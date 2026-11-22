@@ -33,6 +33,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,6 +66,9 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    // A copy of a project opens in the editor, so it can be varied right away
+    val openCopy by rememberUpdatedState(onEditProject)
+    LaunchedEffect(viewModel) { viewModel.duplicated.collect { openCopy(it) } }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     var projectToDelete by remember { mutableStateOf<ProjectWithParts?>(null) }
 
@@ -116,10 +121,12 @@ fun HomeScreen(
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         items(state.projects, key = { it.project.id }) { item ->
+                            val copyName = stringResource(R.string.duplicate_copy_name, item.project.name)
                             ProjectCard(
                                 item = item,
                                 onClick = { onProjectClick(item.project.id) },
                                 onEdit = { onEditProject(item.project.id) },
+                                onDuplicate = { viewModel.duplicateProject(item.project.id, copyName) },
                                 onDelete = { projectToDelete = item },
                                 modifier = Modifier.animateItem(),
                             )
@@ -150,6 +157,7 @@ private fun ProjectCard(
     item: ProjectWithParts,
     onClick: () -> Unit,
     onEdit: () -> Unit,
+    onDuplicate: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -194,6 +202,13 @@ private fun ProjectCard(
                         onClick = {
                             menuOpen = false
                             onEdit()
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.duplicate_project)) },
+                        onClick = {
+                            menuOpen = false
+                            onDuplicate()
                         },
                     )
                     DropdownMenuItem(

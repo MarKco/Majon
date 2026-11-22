@@ -1,9 +1,11 @@
 package com.ilsecondodasinistra.majon.domain.repository
 
+import com.ilsecondodasinistra.majon.domain.model.BackupImportCounts
 import com.ilsecondodasinistra.majon.domain.model.FullProject
 import com.ilsecondodasinistra.majon.domain.model.Needle
 import com.ilsecondodasinistra.majon.domain.model.Part
 import com.ilsecondodasinistra.majon.domain.model.Project
+import com.ilsecondodasinistra.majon.domain.model.ProjectLinks
 import com.ilsecondodasinistra.majon.domain.model.ProjectWithParts
 import com.ilsecondodasinistra.majon.domain.model.RowNote
 import com.ilsecondodasinistra.majon.domain.model.StashImportCounts
@@ -56,6 +58,28 @@ interface MajonRepository {
 
     /** Adds the snapshot's yarns (with swatches) and needles as new records. */
     suspend fun importStash(stash: StashSnapshot): StashImportCounts
+
+    // --- what a project is made with ---
+
+    fun observeProjectLinks(projectId: Long): Flow<ProjectLinks>
+
+    /** Replaces the project's yarns and needles (normalized: one primary yarn, no duplicates). */
+    suspend fun setProjectLinks(projectId: Long, links: ProjectLinks)
+
+    /** For each needle in use, the names of the unfinished projects it is linked to. */
+    fun observeNeedleUsage(): Flow<Map<Long, List<String>>>
+
+    /**
+     * Copies a project (its parts with measures, row notes and extra rows, and its yarns and needles)
+     * under [copyName], with every part's progress back at zero. Returns the new id, null if [id] is unknown.
+     */
+    suspend fun duplicateProject(id: Long, copyName: String): Long?
+
+    /**
+     * Imports a whole backup: the stash first, then the projects, whose links (positions in [stash])
+     * are turned into the ids of the records just created. Links pointing nowhere are dropped.
+     */
+    suspend fun importBackup(projects: List<FullProject>, stash: StashSnapshot): BackupImportCounts
 
     suspend fun getFullProjects(): List<FullProject>
     suspend fun importProjects(projects: List<FullProject>): Int

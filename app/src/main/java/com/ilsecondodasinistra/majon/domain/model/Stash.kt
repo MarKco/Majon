@@ -127,6 +127,9 @@ data class StashSnapshot(val yarns: List<FullYarn>, val needles: List<Needle>)
 /** How many records an import added. */
 data class StashImportCounts(val yarns: Int, val needles: Int)
 
+/** How many records a full backup import added. */
+data class BackupImportCounts(val projects: Int, val yarns: Int, val needles: Int)
+
 /** Reads a number the way people type it: "2,5" or "2.5". Null when blank or not a number. */
 fun parseDecimal(text: String): Double? {
     val t = text.trim().replace(',', '.')

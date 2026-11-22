@@ -348,13 +348,19 @@ private fun SwatchCard(swatch: Swatch, onEdit: () -> Unit, onDelete: () -> Unit)
     }
 }
 
+/** Asks how many skeins were used; [initial] is a suggested starting value (e.g. what the project needs). */
 @Composable
-private fun UseSkeinsDialog(onDismiss: () -> Unit, onConfirm: (Double) -> Unit) {
-    var text by rememberSaveable { mutableStateOf("") }
+fun UseSkeinsDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (Double) -> Unit,
+    yarnName: String? = null,
+    initial: String = "",
+) {
+    var text by rememberSaveable { mutableStateOf(initial) }
     val amount = parseDecimal(text)?.takeIf { it > 0 }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.yarn_use_title)) },
+        title = { Text(if (yarnName == null) stringResource(R.string.yarn_use_title) else "$yarnName · " + stringResource(R.string.yarn_use_title)) },
         text = {
             OutlinedTextField(
                 value = text,

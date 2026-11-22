@@ -241,6 +241,7 @@ private fun MajonNavHost(navController: NavHostController, modifier: Modifier) {
                 onPartClick = { navController.navigate(Routes.counter(it)) },
                 onPartNotes = { navController.navigate(Routes.notes(it)) },
                 onEditProject = { navController.navigate(Routes.editProject(it)) },
+                onDuplicated = { navController.navigate(Routes.editProject(it)) },
             )
         }
 

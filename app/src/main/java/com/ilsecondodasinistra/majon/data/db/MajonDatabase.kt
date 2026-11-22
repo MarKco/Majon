@@ -7,8 +7,9 @@ import androidx.room.RoomDatabase
     entities = [
         ProjectEntity::class, PartEntity::class, NoteEntity::class,
         YarnEntity::class, YarnMaterialEntity::class, SwatchEntity::class, NeedleEntity::class,
+        ProjectYarnEntity::class, ProjectNeedleEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 abstract class MajonDatabase : RoomDatabase() {
@@ -18,4 +19,5 @@ abstract class MajonDatabase : RoomDatabase() {
     abstract fun yarnDao(): YarnDao
     abstract fun swatchDao(): SwatchDao
     abstract fun needleDao(): NeedleDao
+    abstract fun projectLinkDao(): ProjectLinkDao
 }

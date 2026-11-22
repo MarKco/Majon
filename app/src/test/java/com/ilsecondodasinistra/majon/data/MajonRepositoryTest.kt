@@ -43,6 +43,7 @@ class MajonRepositoryTest {
             yarnDao = db.yarnDao(),
             swatchDao = db.swatchDao(),
             needleDao = db.needleDao(),
+            projectLinkDao = db.projectLinkDao(),
             clock = { now },
         )
     }

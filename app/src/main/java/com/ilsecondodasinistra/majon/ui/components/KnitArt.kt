@@ -164,6 +164,61 @@ private fun partsFor(icon: ProjectIcon): List<Part> = when (icon) {
             exclude = listOf(Oval(0.5f, 0.36f, 0.15f, 0.22f), Box(0f, 0.36f, 1f, 1f)),
         ),
     )
+    ProjectIcon.HEADBAND -> listOf(
+        // A band seen from the front: a ring, thicker at the sides, ribbed
+        Part(
+            include = listOf(Oval(0.5f, 0.5f, 0.44f, 0.3f)),
+            exclude = listOf(Oval(0.5f, 0.5f, 0.35f, 0.16f)),
+            ribbed = true,
+        ),
+    )
+    ProjectIcon.COWL -> listOf(
+        // A tube: the body, and a ribbed ring for the open top
+        Part(listOf(Box(0.2f, 0.3f, 0.8f, 0.76f), Oval(0.5f, 0.76f, 0.3f, 0.08f))),
+        Part(
+            include = listOf(Oval(0.5f, 0.3f, 0.3f, 0.1f)),
+            exclude = listOf(Oval(0.5f, 0.3f, 0.21f, 0.05f)),
+            ribbed = true,
+        ),
+    )
+    ProjectIcon.SHAWL -> listOf(
+        // A triangle, knitted from the top edge down to the point
+        Part(listOf(Poly(listOf(0.06f to 0.22f, 0.94f to 0.22f, 0.5f to 0.92f)))),
+        Part(listOf(Box(0.06f, 0.12f, 0.94f, 0.22f)), ribbed = true),
+    )
+    ProjectIcon.CARDIGAN -> {
+        // A sweater with the front open and a ribbed band down each side
+        val sleeve = listOf(0.27f to 0.14f, 0.076f to 0.578f, 0.206f to 0.648f, 0.27f to 0.46f)
+        val cuff = listOf(0.076f to 0.578f, 0.206f to 0.648f, 0.17f to 0.73f, 0.04f to 0.66f)
+        listOf(
+            Part(
+                include = listOf(Box(0.26f, 0.1f, 0.74f, 0.95f), Poly(sleeve), Poly(mirrored(sleeve))),
+                exclude = listOf(Oval(0.5f, 0.08f, 0.11f, 0.1f), Box(0.46f, 0.1f, 0.54f, 0.96f)),
+            ),
+            Part(listOf(Box(0.4f, 0.1f, 0.46f, 0.95f), Box(0.54f, 0.1f, 0.6f, 0.95f)), ribbed = true),
+            Part(listOf(Poly(cuff), Poly(mirrored(cuff))), ribbed = true),
+        )
+    }
+    ProjectIcon.SLIPPERS -> listOf(
+        // A slipper from the side: low heel, rounded toe, ribbed sole edge
+        Part(
+            listOf(
+                Poly(listOf(0.12f to 0.32f, 0.4f to 0.32f, 0.5f to 0.52f, 0.8f to 0.54f)),
+                Box(0.12f, 0.32f, 0.5f, 0.82f),
+                Box(0.4f, 0.5f, 0.82f, 0.82f),
+                Oval(0.82f, 0.66f, 0.12f, 0.16f),
+            ),
+        ),
+        Part(listOf(Box(0.1f, 0.82f, 0.92f, 0.92f)), ribbed = true),
+    )
+    ProjectIcon.DISHCLOTH -> listOf(
+        Part(listOf(Box(0.28f, 0.28f, 0.72f, 0.72f))),
+        Part(
+            include = listOf(Box(0.18f, 0.18f, 0.82f, 0.82f)),
+            exclude = listOf(Box(0.28f, 0.28f, 0.72f, 0.72f)),
+            ribbed = true,
+        ),
+    )
     ProjectIcon.YARN -> listOf(
         // A wound ball: diagonal gaps suggest the strands, a loose end trails off
         Part(

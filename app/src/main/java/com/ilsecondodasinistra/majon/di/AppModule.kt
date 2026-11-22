@@ -11,6 +11,7 @@ import com.ilsecondodasinistra.majon.data.db.NeedleDao
 import com.ilsecondodasinistra.majon.data.db.NoteDao
 import com.ilsecondodasinistra.majon.data.db.PartDao
 import com.ilsecondodasinistra.majon.data.db.ProjectDao
+import com.ilsecondodasinistra.majon.data.db.ProjectLinkDao
 import com.ilsecondodasinistra.majon.data.db.SwatchDao
 import com.ilsecondodasinistra.majon.data.db.YarnDao
 import com.ilsecondodasinistra.majon.data.repository.MajonRepositoryImpl
@@ -53,6 +54,9 @@ object AppModule {
 
     @Provides
     fun provideNeedleDao(db: MajonDatabase): NeedleDao = db.needleDao()
+
+    @Provides
+    fun provideProjectLinkDao(db: MajonDatabase): ProjectLinkDao = db.projectLinkDao()
 
     @Provides
     @Singleton

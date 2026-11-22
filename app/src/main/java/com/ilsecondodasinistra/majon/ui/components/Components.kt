@@ -52,6 +52,12 @@ val ProjectIcon.emoji: String
         ProjectIcon.BLANKET -> "🛏️"
         ProjectIcon.BAG -> "👜"
         ProjectIcon.YARN -> "🧶"
+        ProjectIcon.HEADBAND -> "🎀"
+        ProjectIcon.COWL -> "🌀"
+        ProjectIcon.SHAWL -> "🔺"
+        ProjectIcon.CARDIGAN -> "🥼"
+        ProjectIcon.SLIPPERS -> "🥿"
+        ProjectIcon.DISHCLOTH -> "🧽"
     }
 
 @Composable

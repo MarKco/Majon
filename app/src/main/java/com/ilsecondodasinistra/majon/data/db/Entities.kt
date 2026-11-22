@@ -7,6 +7,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
+import com.ilsecondodasinistra.majon.domain.model.MeasureKey
 import com.ilsecondodasinistra.majon.domain.model.NoteFrequency
 import com.ilsecondodasinistra.majon.domain.model.Part
 import com.ilsecondodasinistra.majon.domain.model.Project
@@ -53,6 +54,11 @@ data class PartEntity(
     val hasFinalRow: Boolean = false,
     val prepNote: String? = null,
     val finalNote: String? = null,
+    val stitchMeasure: String? = null,
+    val stitchCm: Double? = null,
+    val rowMeasure: String? = null,
+    val rowCm: Double? = null,
+    val swatchId: Long? = null,
 )
 
 @Entity(
@@ -118,6 +124,11 @@ fun PartEntity.toDomain() = Part(
     hasFinalRow = hasFinalRow,
     prepNote = prepNote,
     finalNote = finalNote,
+    stitchMeasure = enumOrNull<MeasureKey>(stitchMeasure),
+    stitchCm = stitchCm,
+    rowMeasure = enumOrNull<MeasureKey>(rowMeasure),
+    rowCm = rowCm,
+    swatchId = swatchId,
 )
 
 fun Part.toEntity() = PartEntity(
@@ -131,6 +142,11 @@ fun Part.toEntity() = PartEntity(
     hasFinalRow = hasFinalRow,
     prepNote = prepNote,
     finalNote = finalNote,
+    stitchMeasure = stitchMeasure?.name,
+    stitchCm = stitchCm,
+    rowMeasure = rowMeasure?.name,
+    rowCm = rowCm,
+    swatchId = swatchId,
 )
 
 fun NoteEntity.toDomain() = RowNote(
