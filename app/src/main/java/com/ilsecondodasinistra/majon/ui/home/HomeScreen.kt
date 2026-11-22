@@ -46,6 +46,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilsecondodasinistra.majon.R
 import com.ilsecondodasinistra.majon.domain.model.ProjectWithParts
+import com.ilsecondodasinistra.majon.ui.components.LocalBottomBarHeight
 import com.ilsecondodasinistra.majon.ui.components.AnimatedProgressBar
 import com.ilsecondodasinistra.majon.ui.components.ConfirmDialog
 import com.ilsecondodasinistra.majon.ui.components.EmptyState
@@ -81,6 +82,7 @@ fun HomeScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
+                modifier = Modifier.padding(bottom = LocalBottomBarHeight.current),
                 onClick = onAddProject,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = { Text(stringResource(R.string.add_project)) },
@@ -107,7 +109,10 @@ fun HomeScreen(
                 } else {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize().padding(padding),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        contentPadding = PaddingValues(
+                            start = 16.dp, end = 16.dp, top = 8.dp,
+                            bottom = 8.dp + LocalBottomBarHeight.current,
+                        ),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         items(state.projects, key = { it.project.id }) { item ->

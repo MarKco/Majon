@@ -1,10 +1,47 @@
 package com.ilsecondodasinistra.majon.ui.navigation
 
 import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Folder
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.ilsecondodasinistra.majon.R
+import com.ilsecondodasinistra.majon.ui.components.LocalBottomBarHeight
+import com.ilsecondodasinistra.majon.ui.components.LocalHazeState
+import com.ilsecondodasinistra.majon.ui.components.glass
+import com.ilsecondodasinistra.majon.ui.stash.StashScreen
+import com.ilsecondodasinistra.majon.ui.stash.YarnDetailScreen
+import com.ilsecondodasinistra.majon.ui.stash.YarnEditScreen
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -23,6 +60,9 @@ object Routes {
     const val COUNTER = "counter/{partId}"
     const val NOTES = "notes/{partId}"
     const val SETTINGS = "settings"
+    const val STASH = "stash"
+    const val YARN_DETAIL = "yarn/{yarnId}"
+    const val YARN_EDIT = "yarn_edit?yarnId={yarnId}"
 
     fun editProject(projectId: Long? = null) =
         if (projectId == null) "edit_project?projectId=0" else "edit_project?projectId=$projectId"
@@ -30,12 +70,78 @@ object Routes {
     fun projectDetail(projectId: Long) = "project/$projectId"
     fun counter(partId: Long) = "counter/$partId"
     fun notes(partId: Long) = "notes/$partId"
+    fun yarnDetail(yarnId: Long) = "yarn/$yarnId"
+    fun yarnEdit(yarnId: Long? = null) =
+        if (yarnId == null) "yarn_edit?yarnId=0" else "yarn_edit?yarnId=$yarnId"
 }
+
+/** The two destinations of the bottom bar. */
+private val TAB_ROUTES = listOf(Routes.HOME, Routes.STASH)
+
+private fun NavBackStackEntry.isTab() = destination.route in TAB_ROUTES
+
+/** Switching between bottom-bar tabs fades instead of sliding. */
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.betweenTabs() =
+    initialState.isTab() && targetState.isTab()
 
 @Composable
 fun MajonNavGraph(navController: NavHostController) {
+    val entry by navController.currentBackStackEntryAsState()
+    val route = entry?.destination?.route
+    val showBar = route in TAB_ROUTES
+    val haze = rememberHazeState()
+    val density = LocalDensity.current
+    var barHeight by remember { mutableStateOf(0.dp) }
+
+    CompositionLocalProvider(
+        LocalHazeState provides haze,
+        LocalBottomBarHeight provides (if (showBar) barHeight else 0.dp),
+    ) {
+        Box(Modifier.fillMaxSize()) {
+            MajonNavHost(navController, Modifier.fillMaxSize().hazeSource(haze))
+            AnimatedVisibility(
+                visible = showBar,
+                modifier = Modifier.align(Alignment.BottomCenter),
+                enter = slideInVertically(tween(250)) { it } + fadeIn(tween(250)),
+                exit = slideOutVertically(tween(200)) { it } + fadeOut(tween(200)),
+            ) {
+                NavigationBar(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onSizeChanged { barHeight = with(density) { it.height.toDp() } }
+                        .glass(haze),
+                    containerColor = Color.Transparent,
+                    tonalElevation = 0.dp,
+                ) {
+                    NavigationBarItem(
+                        selected = route == Routes.HOME,
+                        onClick = {
+                            if (route != Routes.HOME) navController.popBackStack(Routes.HOME, inclusive = false)
+                        },
+                        icon = { Icon(Icons.Outlined.Folder, contentDescription = null) },
+                        label = { Text(stringResource(R.string.tab_projects)) },
+                    )
+                    NavigationBarItem(
+                        selected = route == Routes.STASH,
+                        onClick = {
+                            if (route != Routes.STASH) {
+                                navController.navigate(Routes.STASH) { launchSingleTop = true }
+                            }
+                        },
+                        icon = { Icon(Icons.Outlined.Inventory2, contentDescription = null) },
+                        label = { Text(stringResource(R.string.tab_stash)) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MajonNavHost(navController: NavHostController, modifier: Modifier) {
     NavHost(
         navController = navController,
+        modifier = modifier,
         startDestination = Routes.HOME,
         enterTransition = {
             slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start) + fadeIn()
@@ -50,12 +156,64 @@ fun MajonNavGraph(navController: NavHostController) {
             slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End) + fadeOut()
         },
     ) {
-        composable(Routes.HOME) {
+        composable(
+            Routes.HOME,
+            enterTransition = {
+                if (betweenTabs()) fadeIn(tween(300)) else slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Start) + fadeIn()
+            },
+            exitTransition = {
+                if (betweenTabs()) fadeOut(tween(200)) else slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Start) + fadeOut()
+            },
+            popEnterTransition = {
+                if (betweenTabs()) fadeIn(tween(300)) else slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.End) + fadeIn()
+            },
+            popExitTransition = {
+                if (betweenTabs()) fadeOut(tween(200)) else slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.End) + fadeOut()
+            },
+        ) {
             HomeScreen(
                 onProjectClick = { navController.navigate(Routes.projectDetail(it)) },
                 onAddProject = { navController.navigate(Routes.editProject()) },
                 onEditProject = { navController.navigate(Routes.editProject(it)) },
                 onSettings = { navController.navigate(Routes.SETTINGS) },
+            )
+        }
+
+        composable(
+            Routes.STASH,
+            enterTransition = { if (betweenTabs()) fadeIn(tween(300)) else fadeIn() },
+            exitTransition = { if (betweenTabs()) fadeOut(tween(200)) else fadeOut() },
+            popEnterTransition = { if (betweenTabs()) fadeIn(tween(300)) else fadeIn() },
+            popExitTransition = { if (betweenTabs()) fadeOut(tween(200)) else fadeOut() },
+        ) {
+            StashScreen(
+                onYarnClick = { navController.navigate(Routes.yarnDetail(it)) },
+                onAddYarn = { navController.navigate(Routes.yarnEdit()) },
+            )
+        }
+
+        composable(
+            Routes.YARN_DETAIL,
+            arguments = listOf(navArgument("yarnId") { type = NavType.LongType }),
+        ) {
+            YarnDetailScreen(
+                onBack = { navController.popBackStack() },
+                onEdit = { navController.navigate(Routes.yarnEdit(it)) },
+            )
+        }
+
+        composable(
+            Routes.YARN_EDIT,
+            arguments = listOf(
+                navArgument("yarnId") {
+                    type = NavType.LongType
+                    defaultValue = 0L
+                },
+            ),
+        ) {
+            YarnEditScreen(
+                onBack = { navController.popBackStack() },
+                onSaved = { navController.popBackStack() },
             )
         }
 

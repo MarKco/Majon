@@ -7,9 +7,12 @@ import androidx.datastore.preferences.preferencesDataStore
 import androidx.room.Room
 import com.ilsecondodasinistra.majon.data.db.MIGRATIONS
 import com.ilsecondodasinistra.majon.data.db.MajonDatabase
+import com.ilsecondodasinistra.majon.data.db.NeedleDao
 import com.ilsecondodasinistra.majon.data.db.NoteDao
 import com.ilsecondodasinistra.majon.data.db.PartDao
 import com.ilsecondodasinistra.majon.data.db.ProjectDao
+import com.ilsecondodasinistra.majon.data.db.SwatchDao
+import com.ilsecondodasinistra.majon.data.db.YarnDao
 import com.ilsecondodasinistra.majon.data.repository.MajonRepositoryImpl
 import com.ilsecondodasinistra.majon.domain.repository.MajonRepository
 import dagger.Binds
@@ -41,6 +44,15 @@ object AppModule {
 
     @Provides
     fun provideNoteDao(db: MajonDatabase): NoteDao = db.noteDao()
+
+    @Provides
+    fun provideYarnDao(db: MajonDatabase): YarnDao = db.yarnDao()
+
+    @Provides
+    fun provideSwatchDao(db: MajonDatabase): SwatchDao = db.swatchDao()
+
+    @Provides
+    fun provideNeedleDao(db: MajonDatabase): NeedleDao = db.needleDao()
 
     @Provides
     @Singleton

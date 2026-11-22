@@ -3,6 +3,17 @@ package com.ilsecondodasinistra.majon.data
 import com.ilsecondodasinistra.majon.data.export.BackupCodec
 import com.ilsecondodasinistra.majon.domain.model.FullPart
 import com.ilsecondodasinistra.majon.domain.model.FullProject
+import com.ilsecondodasinistra.majon.domain.model.FullYarn
+import com.ilsecondodasinistra.majon.domain.model.MaterialShare
+import com.ilsecondodasinistra.majon.domain.model.Needle
+import com.ilsecondodasinistra.majon.domain.model.NeedleMaterial
+import com.ilsecondodasinistra.majon.domain.model.NeedleType
+import com.ilsecondodasinistra.majon.domain.model.StashSnapshot
+import com.ilsecondodasinistra.majon.domain.model.StitchPattern
+import com.ilsecondodasinistra.majon.domain.model.Swatch
+import com.ilsecondodasinistra.majon.domain.model.Yarn
+import com.ilsecondodasinistra.majon.domain.model.YarnMaterial
+import com.ilsecondodasinistra.majon.domain.model.YarnWeight
 import com.ilsecondodasinistra.majon.domain.model.NoteFrequency
 import com.ilsecondodasinistra.majon.domain.model.Part
 import com.ilsecondodasinistra.majon.domain.model.Project
@@ -155,6 +166,107 @@ class BackupCodecTest {
         assertEquals(false, part.hasFinalRow)
         assertEquals(null, part.prepNote)
         assertEquals(4, part.completedRows)
+    }
+
+    private fun stash() = StashSnapshot(
+        yarns = listOf(
+            FullYarn(
+                yarn = Yarn(
+                    id = 5L, name = "Bamboo", brand = "WAK", colorName = "Mustard", colorArgb = 0xFFE0A800.toInt(),
+                    dyeLot = "L42", weight = YarnWeight.DK,
+                    materials = listOf(MaterialShare(YarnMaterial.BAMBOO, percent = 100)),
+                    skeinWeightG = 100, skeinLengthM = 350, stockSkeins = 2.5, pricePerSkein = 6.9,
+                    shop = "Negozio", care = "30°", notes = "morbida", photoPath = "/data/foto.jpg",
+                ),
+                swatches = listOf(
+                    Swatch(id = 8L, yarnId = 5L, stitches = 26, rows = 34, needleSizeMm = 3.0,
+                        pattern = StitchPattern.GARTER, weightG = 4.2, notes = "lavato"),
+                ),
+            ),
+        ),
+        needles = listOf(
+            Needle(id = 3L, type = NeedleType.CIRCULAR, material = NeedleMaterial.BAMBOO, sizeMm = 4.5,
+                lengthCm = 80, quantity = 2, brand = "KnitPro", notes = "n"),
+        ),
+    )
+
+    @Test
+    fun `stash round-trips with yarns, blend, swatches and needles`() {
+        val json = codec.encode(emptyList(), exportedAt = 1L, stash = stash())
+        val data = codec.decodeAll(json).getOrThrow()
+        val yarn = data.stash.yarns.single()
+        assertEquals("Bamboo", yarn.yarn.name)
+        assertEquals("WAK", yarn.yarn.brand)
+        assertEquals(YarnWeight.DK, yarn.yarn.weight)
+        assertEquals(listOf(MaterialShare(YarnMaterial.BAMBOO, percent = 100)), yarn.yarn.materials)
+        assertEquals(2.5, yarn.yarn.stockSkeins, 0.0)
+        assertEquals(6.9, yarn.yarn.pricePerSkein!!, 0.0)
+        val swatch = yarn.swatches.single()
+        assertEquals(26, swatch.stitches)
+        assertEquals(StitchPattern.GARTER, swatch.pattern)
+        assertEquals(4.2, swatch.weightG!!, 0.0)
+        val needle = data.stash.needles.single()
+        assertEquals(NeedleType.CIRCULAR, needle.type)
+        assertEquals(NeedleMaterial.BAMBOO, needle.material)
+        assertEquals(2, needle.quantity)
+    }
+
+    @Test
+    fun `photos and ids are not exported`() {
+        val json = codec.encode(emptyList(), exportedAt = 1L, stash = stash())
+        assertTrue(!json.contains("foto.jpg"))
+        val yarn = codec.decodeAll(json).getOrThrow().stash.yarns.single()
+        assertEquals(0L, yarn.yarn.id)
+        assertEquals(null, yarn.yarn.photoPath)
+        assertEquals(0L, yarn.swatches.single().id)
+    }
+
+    @Test
+    fun `export is version 2`() {
+        assertTrue(codec.encode(emptyList(), exportedAt = 1L).contains("\"version\": 2"))
+    }
+
+    @Test
+    fun `a version 1 file has an empty stash`() {
+        val json = """{"app":"majon","version":1,"exportedAt":1,"projects":[{"name":"X"}]}"""
+        val data = codec.decodeAll(json).getOrThrow()
+        assertEquals(1, data.projects.size)
+        assertTrue(data.stash.yarns.isEmpty())
+        assertTrue(data.stash.needles.isEmpty())
+    }
+
+    @Test
+    fun `decode still returns only the projects`() {
+        val json = codec.encode(sample(), exportedAt = 1L, stash = stash())
+        assertEquals(1, codec.decode(json).getOrThrow().size)
+    }
+
+    @Test
+    fun `stash values are sanitized and unknown enums fall back`() {
+        val json = """{"app":"majon","version":2,"exportedAt":1,"projects":[],
+          "yarns":[{"name":"  Lana ","weight":"WEIRD","stockSkeins":-3,
+            "materials":[{"material":"UNOBTAINIUM","percent":250},{"material":"WOOL","percent":-5}],
+            "swatches":[{"stitches":0,"rows":-4,"pattern":"MYSTERY","weightG":-1}]},
+            {"name":"   "}],
+          "needles":[{"type":"LASER","material":"PLASMA","quantity":0,"sizeMm":-2}]}"""
+        val data = codec.decodeAll(json).getOrThrow()
+        val yarn = data.stash.yarns.single() // the blank one is dropped
+        assertEquals("Lana", yarn.yarn.name)
+        assertEquals(null, yarn.yarn.weight)
+        assertEquals(0.0, yarn.yarn.stockSkeins, 0.0)
+        assertEquals(YarnMaterial.OTHER, yarn.yarn.materials[0].material)
+        assertEquals(100, yarn.yarn.materials[0].percent)
+        assertEquals(0, yarn.yarn.materials[1].percent)
+        val swatch = yarn.swatches.single()
+        assertEquals(1, swatch.stitches)
+        assertEquals(1, swatch.rows)
+        assertEquals(StitchPattern.OTHER, swatch.pattern)
+        assertEquals(null, swatch.weightG)
+        val needle = data.stash.needles.single()
+        assertEquals(NeedleType.CIRCULAR, needle.type)
+        assertEquals(null, needle.material)
+        assertEquals(1, needle.quantity)
+        assertEquals(null, needle.sizeMm)
     }
 
     @Test

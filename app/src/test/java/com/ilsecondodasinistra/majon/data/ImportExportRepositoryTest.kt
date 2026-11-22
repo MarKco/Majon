@@ -31,7 +31,10 @@ class ImportExportRepositoryTest {
         db = Room.inMemoryDatabaseBuilder(context, MajonDatabase::class.java)
             .allowMainThreadQueries()
             .build()
-        repository = MajonRepositoryImpl(db, db.projectDao(), db.partDao(), db.noteDao(), clock = { 1L })
+        repository = MajonRepositoryImpl(
+            db, db.projectDao(), db.partDao(), db.noteDao(),
+            db.yarnDao(), db.swatchDao(), db.needleDao(), clock = { 1L },
+        )
     }
 
     @After

@@ -16,6 +16,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+/** What an import added. */
+data class ImportSummary(val projects: Int, val yarns: Int, val needles: Int)
+
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
@@ -62,9 +65,16 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch { settingsRepository.setVolumeKeys(enabled) }
     }
 
-    suspend fun exportData(): String =
-        backupCodec.encode(majonRepository.getFullProjects(), exportedAt = System.currentTimeMillis())
+    suspend fun exportData(): String = backupCodec.encode(
+        majonRepository.getFullProjects(),
+        exportedAt = System.currentTimeMillis(),
+        stash = majonRepository.getStash(),
+    )
 
-    suspend fun importData(content: String): Result<Int> =
-        backupCodec.decode(content).mapCatching { majonRepository.importProjects(it) }
+    suspend fun importData(content: String): Result<ImportSummary> =
+        backupCodec.decodeAll(content).mapCatching { data ->
+            val projects = majonRepository.importProjects(data.projects)
+            val stash = majonRepository.importStash(data.stash)
+            ImportSummary(projects = projects, yarns = stash.yarns, needles = stash.needles)
+        }
 }

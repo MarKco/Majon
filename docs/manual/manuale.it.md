@@ -13,9 +13,10 @@ speciali al momento giusto e ti mostra quanto manca alla fine.
 2. [Aggiungere le parti](#2-aggiungere-le-parti)
 3. [Contare le righe](#3-contare-le-righe)
 4. [Le note: istruzioni al momento giusto](#4-le-note--istruzioni-al-momento-giusto)
-5. [Impostazioni](#5-impostazioni)
-6. [Backup dei dati](#6-backup-dei-dati)
-7. [Domande frequenti](#domande-frequenti)
+5. [Lo stash: lane e ferri](#5-lo-stash-lane-e-ferri)
+6. [Impostazioni](#6-impostazioni)
+7. [Backup dei dati](#7-backup-dei-dati)
+8. [Domande frequenti](#domande-frequenti)
 
 ## 1. Creare un progetto
 
@@ -180,7 +181,46 @@ All'inizio del lavoro inserisci tutte le istruzioni del modello: poi pensi
 solo a premere **+**. Tocca una nota per modificarla, il cestino per
 eliminarla.
 
-## 5. Impostazioni
+## 5. Lo stash: lane e ferri
+
+Nella barra in basso, **Stash** raccoglie tutto quello che hai: due schede,
+**Lane** e **Ferri**. Tutto è facoltativo: inserisci solo quello che ti serve.
+
+### Le lane
+
+Tocca **Nuova lana** (il nome basta; il resto è facoltativo):
+
+- **Marca, colore** (nome e tinta), **lotto di tintura**, **spessore**
+  (lace, fingering, DK, worsted…).
+- **Composizione**: una o più fibre, ognuna con la sua percentuale (anche
+  senza percentuale: «lana e seta»). Il totale non può superare il 100%.
+- **Peso e metri del gomitolo** (es. 100 g, 350 m, come sul cartellino).
+- **Gomitoli che hai**: anche a metà o a quarti (2,5; il **−** e il **+**
+  muovono di un quarto). L'app ricava da sola i grammi e i metri rimasti.
+- Prezzo, dove l'hai comprata, cura e lavaggio, note e una **foto**.
+
+Aprendo una lana vedi la scorta e puoi aggiornarla: **−** / **+** a quarti,
+oppure **Ho usato…** per scalare quanti gomitoli hai consumato. Lo stock non
+scende mai da solo e non va sotto zero.
+
+### La resa: il campione 10×10 cm
+
+Sul cartellino dei gomitoli c'è il quadrato 10×10 cm con i punti, le righe e i
+ferri usati. Lo ritrovi uguale nell'app: in una lana tocca **Aggiungi
+campione** e inserisci **punti** e **righe** in 10 cm, i **ferri** e il
+**punto** (maglia rasata, legaccio, coste…). Vedi il disegno comporsi mentre
+scrivi. Se pesi il campione puoi segnare anche il **peso** (grammi): servirà
+a stimare quanta lana serve per un progetto.
+
+Una lana può avere più campioni: la resa cambia con i ferri e con il punto.
+
+### I ferri
+
+Nella scheda **Ferri**, **Nuovi ferri**: **tipo** (circolari, dritti, doppia
+punta, intercambiabili), **materiale**, **misura** in mm, **lunghezza** in cm,
+**quantità** (quante paia o set), marca e note. Sono ordinati per misura.
+
+## 6. Impostazioni
 
 Si aprono dall'ingranaggio nella schermata principale.
 
@@ -202,15 +242,16 @@ Si aprono dall'ingranaggio nella schermata principale.
 
 <img src="images/it/11-settings-more.png" width="260" alt="Altre impostazioni">
 
-## 6. Backup dei dati
+## 7. Backup dei dati
 
 I dati vivono solo sul tuo telefono. Per non perderli, in Impostazioni →
 **I tuoi dati**:
 
-- **Esporta dati**: salva tutto (progetti, parti, conteggi, note) in un file
-  JSON dove preferisci (Drive, Download…).
+- **Esporta dati**: salva tutto (progetti, parti, conteggi, note, lane con i loro
+  campioni, ferri) in un file JSON dove preferisci (Drive, Download…).
 - **Importa dati**: ricarica un backup. I progetti importati si **aggiungono**
-  a quelli esistenti, niente viene sovrascritto. L'importazione è tutto o
+  a quelli esistenti, niente viene sovrascritto. Le foto delle lane non
+  vengono incluse nel file. L'importazione è tutto o
   niente: se il file non è valido non cambia nulla.
 
 Utile per cambiare telefono o per sicurezza prima di fare pulizia.

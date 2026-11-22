@@ -13,7 +13,7 @@ partenza (`starting-docs/`).
 | Linguaggio | Kotlin 2.4.20 |
 | UI | Jetpack Compose + Material 3 |
 | Build | Gradle 9.8.0, AGP 9.4.1 (Kotlin built-in) |
-| Test | 103 unit test, 0 falliti |
+| Test | 199 unit test, 0 falliti |
 
 ## Stack
 
@@ -31,7 +31,7 @@ MVVM + Clean Architecture leggera, package singolo modulo `:app`:
 
 ```
 domain/          modelli puri + logica (zero dipendenze Android)
-  model/         Project, Part, RowNote, FullProject, validazioni, progresso
+  model/         Project, Part, RowNote, FullProject, Stash (Yarn, Swatch, Needle), validazioni, progresso
   repository/    interfaccia MajonRepository
 data/
   db/            Room: entities, DAO, MajonDatabase, mapper entity<->domain
@@ -41,9 +41,10 @@ data/
 di/              AppModule + RepositoryModule (Hilt)
 ui/
   theme/         palette craft (Cheerful default, Classic terracotta/salvia/crema, Forest), dark, dynamic color
-  components/    ProjectIconBadge, AnimatedProgressBar, ConfirmDialog, EmptyState
+  components/    ProjectIconBadge, AnimatedProgressBar, ConfirmDialog, EmptyState,
+                 GaugeSwatchDiagram, Glass (barra vetro), LocalImage
   navigation/    MajonNavGraph (route + transizioni slide/fade)
-  home/ editproject/ projectdetail/ counter/ notes/ settings/
+  home/ editproject/ projectdetail/ counter/ notes/ settings/ stash/
                  una coppia Screen + ViewModel per schermata
 MajonApplication applica la lingua salvata prima di ogni Activity
 MainActivity     AppCompatActivity (necessaria per per-app locales) + Compose
@@ -148,13 +149,39 @@ Test scritti prima dell'implementazione, per layer:
 | `ui/*ViewModelTest` | tutti i 6 ViewModel con `FakeMajonRepository` + Turbine |
 
 ```bash
-./gradlew :app:testDebugUnitTest   # unit test (103)
+./gradlew :app:testDebugUnitTest   # unit test (199)
 ./gradlew :app:lintDebug           # 0 errori
 ./gradlew :app:assembleDebug       # APK
 ```
 
 Nota: Robolectric non supporta ancora SDK 37 → pin a 36 in
 `app/src/test/resources/robolectric.properties`.
+
+## Stash: lane, campioni, ferri (schema DB v3)
+
+```
+Yarn (1) ──< YarnMaterial      blend: fibra + % opzionale + posizione
+     (1) ──< Swatch            campione 10x10 cm: punti, righe, ferri, punto, peso
+Needle                         tipo, materiale, mm, cm, quantità, marca
+```
+
+- Tutto è opzionale tranne il nome della lana e il tipo dei ferri. `stockSkeins` è
+  `Double` (frazioni); grammi e metri rimasti derivano da peso/metraggio del gomitolo
+  (`Yarn.stockGrams/stockMeters`). Lo stock cala solo con un'azione dell'utente
+  (`adjustYarnStock`, clamp a 0 in SQL).
+- `MajonRepository` espone osservazione/CRUD per lane, campioni, ferri e
+  `getStash()/importStash()` per il backup. `upsertYarn` sostituisce il blend in transazione.
+- UI (`ui/stash/`): `StashScreen` (schede Lane/Ferri, editor ferri a dialog),
+  `YarnDetailScreen` (scorta, campioni col `GaugeSwatchDiagram`), `YarnEditScreen`
+  (editor a schermo intero, foto da Photo Picker copiata in `filesDir`).
+  Gli input numerici restano testo nei ViewModel (`parseDecimal` accetta "2,5" e "2.5").
+- **Barra inferiore** Progetti | Stash in `MajonNavGraph`: `NavigationBar` trasparente
+  sovrapposta ai contenuti con effetto vetro **Haze** (`ui/components/Glass.kt`, stessa
+  idea di Discography). I contenuti leggono `LocalBottomBarHeight` per lasciare spazio.
+- **Backup v2** (`BackupCodec.encode/decodeAll`): aggiunge `yarns` (con `materials` e
+  `swatches`) e `needles`; i file v1 si leggono (stash vuoto). Foto e id non si esportano.
+  `decode()` restituisce ancora solo i progetti.
+- Migrazione `MIGRATION_2_3`: SQL copiato dallo schema generato `3.json`.
 
 ## Contatore: numero della riga, righe extra, parte successiva
 

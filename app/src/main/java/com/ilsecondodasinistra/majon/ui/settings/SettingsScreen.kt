@@ -99,8 +99,14 @@ fun SettingsScreen(
                 } ?: error("Cannot open input stream")
                 viewModel.importData(content).getOrThrow()
             }
-            result.onSuccess { count ->
-                snackbar.showSnackbar(resources.getString(R.string.import_done, count))
+            result.onSuccess { summary ->
+                snackbar.showSnackbar(
+                    if (summary.yarns + summary.needles == 0) {
+                        resources.getString(R.string.import_done, summary.projects)
+                    } else {
+                        resources.getString(R.string.import_done_stash, summary.projects, summary.yarns, summary.needles)
+                    },
+                )
             }.onFailure {
                 snackbar.showSnackbar(importErrorMsg)
             }

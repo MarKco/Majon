@@ -15,9 +15,10 @@ the finish line.
 2. [Add the parts](#2-add-the-parts)
 3. [Count rows](#3-count-rows)
 4. [Notes: instructions at the right moment](#4-notes--instructions-at-the-right-moment)
-5. [Settings](#5-settings)
-6. [Data backup](#6-data-backup)
-7. [FAQ](#faq)
+5. [The stash: yarn and needles](#5-the-stash-yarn-and-needles)
+6. [Settings](#6-settings)
+7. [Data backup](#7-data-backup)
+8. [FAQ](#faq)
 
 ## 1. Create a project
 
@@ -179,7 +180,47 @@ Real-life examples:
 At the start of the project enter all of the pattern's instructions: after
 that you only press **+**. Tap a note to edit it, the trash icon to delete it.
 
-## 5. Settings
+## 5. The stash: yarn and needles
+
+In the bottom bar, **Stash** holds everything you own, in two tabs: **Yarns**
+and **Needles**. Everything is optional: fill in only what is useful to you.
+
+### Yarns
+
+Tap **New yarn** (a name is enough; the rest is optional):
+
+- **Brand, colour** (name and shade), **dye lot**, **weight** (lace,
+  fingering, DK, worsted…).
+- **Composition**: one or more fibres, each with its percentage (or none:
+  “wool and silk”). The total cannot exceed 100%.
+- **Skein weight and length** (e.g. 100 g, 350 m, as on the label).
+- **Skeins you have**: halves and quarters too (2.5; **−** and **+** move by a
+  quarter). The app works out the grams and metres left by itself.
+- Price, where you bought it, care, notes and a **photo**.
+
+Opening a yarn shows the stock and lets you update it: **−** / **+** by
+quarters, or **I used…** to take off the skeins you have used. The stock never
+goes down by itself and never below zero.
+
+### Gauge: the 10×10 cm swatch
+
+Yarn labels show the 10×10 cm square with the stitches, rows and needles used.
+The app draws the same: in a yarn, tap **Add swatch** and enter the **stitches**
+and **rows** in 10 cm, the **needles** and the **stitch pattern** (stockinette,
+garter, rib…). You see the drawing take shape as you type. If you weigh the
+swatch you can also enter its **weight** (grams): it will be used to estimate how
+much yarn a project needs.
+
+A yarn can have several swatches: the gauge changes with the needles and the
+stitch pattern.
+
+### Needles
+
+In the **Needles** tab, **New needles**: **type** (circular, straight,
+double-pointed, interchangeable), **material**, **size** in mm, **length** in cm,
+**quantity** (pairs or sets), brand and notes. They are sorted by size.
+
+## 6. Settings
 
 Open them from the gear on the home screen.
 
@@ -201,15 +242,16 @@ Open them from the gear on the home screen.
 
 <img src="images/en/11-settings-more.png" width="260" alt="More settings">
 
-## 6. Data backup
+## 7. Data backup
 
 Your data lives only on your phone. To keep it safe, in Settings →
 **Your data**:
 
-- **Export data**: saves everything (projects, parts, counts, notes) to a
-  JSON file wherever you like (Drive, Downloads…).
+- **Export data**: saves everything (projects, parts, counts, notes, yarns with their
+  swatches, needles) to a JSON file wherever you like (Drive, Downloads…).
 - **Import data**: loads a backup. Imported projects are **added** to the
-  existing ones, nothing is overwritten. The import is all-or-nothing: an
+  existing ones, nothing is overwritten. Yarn photos are not included in
+  the file. The import is all-or-nothing: an
   invalid file changes nothing.
 
 Handy when changing phones, or as a safety net before a cleanup.

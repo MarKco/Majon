@@ -2,17 +2,27 @@ package com.ilsecondodasinistra.majon.data.repository
 
 import androidx.room.withTransaction
 import com.ilsecondodasinistra.majon.data.db.MajonDatabase
+import com.ilsecondodasinistra.majon.data.db.NeedleDao
 import com.ilsecondodasinistra.majon.data.db.NoteDao
 import com.ilsecondodasinistra.majon.data.db.PartDao
 import com.ilsecondodasinistra.majon.data.db.ProjectDao
+import com.ilsecondodasinistra.majon.data.db.SwatchDao
+import com.ilsecondodasinistra.majon.data.db.YarnDao
+import com.ilsecondodasinistra.majon.data.db.materialEntities
 import com.ilsecondodasinistra.majon.data.db.toDomain
 import com.ilsecondodasinistra.majon.data.db.toEntity
 import com.ilsecondodasinistra.majon.domain.model.FullPart
 import com.ilsecondodasinistra.majon.domain.model.FullProject
+import com.ilsecondodasinistra.majon.domain.model.FullYarn
+import com.ilsecondodasinistra.majon.domain.model.Needle
 import com.ilsecondodasinistra.majon.domain.model.Part
 import com.ilsecondodasinistra.majon.domain.model.Project
 import com.ilsecondodasinistra.majon.domain.model.ProjectWithParts
 import com.ilsecondodasinistra.majon.domain.model.RowNote
+import com.ilsecondodasinistra.majon.domain.model.StashImportCounts
+import com.ilsecondodasinistra.majon.domain.model.StashSnapshot
+import com.ilsecondodasinistra.majon.domain.model.Swatch
+import com.ilsecondodasinistra.majon.domain.model.Yarn
 import com.ilsecondodasinistra.majon.domain.repository.MajonRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -25,6 +35,9 @@ class MajonRepositoryImpl @Inject constructor(
     private val projectDao: ProjectDao,
     private val partDao: PartDao,
     private val noteDao: NoteDao,
+    private val yarnDao: YarnDao,
+    private val swatchDao: SwatchDao,
+    private val needleDao: NeedleDao,
     private val clock: () -> Long,
 ) : MajonRepository {
 
@@ -76,6 +89,67 @@ class MajonRepositoryImpl @Inject constructor(
         noteDao.upsert(note.toEntity())
 
     override suspend fun deleteNote(id: Long) = noteDao.deleteById(id)
+
+    // --- stash ---
+
+    override fun observeYarns(): Flow<List<Yarn>> =
+        yarnDao.observeAllWithMaterials().map { list -> list.map { it.toDomain() } }
+
+    override fun observeYarn(id: Long): Flow<Yarn?> =
+        yarnDao.observeWithMaterials(id).map { it?.toDomain() }
+
+    override suspend fun upsertYarn(yarn: Yarn): Long = db.withTransaction {
+        val now = clock()
+        val id = if (yarn.id == 0L) {
+            yarnDao.insert(yarn.copy(createdAt = now, updatedAt = now).toEntity())
+        } else {
+            yarnDao.update(yarn.copy(updatedAt = now).toEntity())
+            yarn.id
+        }
+        yarnDao.deleteMaterials(id)
+        yarnDao.insertMaterials(yarn.materialEntities(id))
+        id
+    }
+
+    override suspend fun deleteYarn(id: Long) = yarnDao.deleteById(id)
+
+    override suspend fun adjustYarnStock(id: Long, deltaSkeins: Double) =
+        yarnDao.adjustStock(id, deltaSkeins, clock())
+
+    override fun observeSwatches(yarnId: Long): Flow<List<Swatch>> =
+        swatchDao.observeByYarn(yarnId).map { list -> list.map { it.toDomain() } }
+
+    override suspend fun upsertSwatch(swatch: Swatch): Long = swatchDao.upsert(swatch.toEntity())
+
+    override suspend fun deleteSwatch(id: Long) = swatchDao.deleteById(id)
+
+    override fun observeNeedles(): Flow<List<Needle>> =
+        needleDao.observeAll().map { list -> list.map { it.toDomain() } }
+
+    override suspend fun upsertNeedle(needle: Needle): Long = needleDao.upsert(needle.toEntity())
+
+    override suspend fun deleteNeedle(id: Long) = needleDao.deleteById(id)
+
+    override suspend fun getStash(): StashSnapshot = StashSnapshot(
+        yarns = yarnDao.getAllWithMaterials().map { entity ->
+            FullYarn(
+                yarn = entity.toDomain(),
+                swatches = swatchDao.getByYarn(entity.yarn.id).map { it.toDomain() },
+            )
+        },
+        needles = needleDao.getAll().map { it.toDomain() },
+    )
+
+    override suspend fun importStash(stash: StashSnapshot): StashImportCounts {
+        db.withTransaction {
+            stash.yarns.forEach { full ->
+                val yarnId = upsertYarn(full.yarn.copy(id = 0L))
+                full.swatches.forEach { upsertSwatch(it.copy(id = 0L, yarnId = yarnId)) }
+            }
+            stash.needles.forEach { upsertNeedle(it.copy(id = 0L)) }
+        }
+        return StashImportCounts(yarns = stash.yarns.size, needles = stash.needles.size)
+    }
 
     override suspend fun getFullProjects(): List<FullProject> =
         projectDao.getAllWithParts().map { entity ->

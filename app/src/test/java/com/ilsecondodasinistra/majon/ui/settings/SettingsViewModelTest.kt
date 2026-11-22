@@ -84,8 +84,23 @@ class SettingsViewModelTest {
         assertTrue(repository.observeProjects().first().isEmpty())
 
         val result = vm.importData(json)
-        assertEquals(1, result.getOrThrow())
+        assertEquals(1, result.getOrThrow().projects)
         assertEquals("Sciarpa", repository.observeProjects().first().single().project.name)
+    }
+
+    @Test
+    fun `export and import carry the stash too`() = runTest {
+        val yarnId = repository.upsertYarn(com.ilsecondodasinistra.majon.domain.model.Yarn(name = "Merino", stockSkeins = 3.0))
+        repository.upsertSwatch(com.ilsecondodasinistra.majon.domain.model.Swatch(yarnId = yarnId, stitches = 22, rows = 30))
+        repository.upsertNeedle(com.ilsecondodasinistra.majon.domain.model.Needle(type = com.ilsecondodasinistra.majon.domain.model.NeedleType.DPN, sizeMm = 2.5))
+
+        val vm = viewModel()
+        val json = vm.exportData()
+        val summary = vm.importData(json).getOrThrow()
+        assertEquals(1, summary.yarns)
+        assertEquals(1, summary.needles)
+        assertEquals(2, repository.observeYarns().first().size)
+        assertEquals(2, repository.observeNeedles().first().size)
     }
 
     @Test
