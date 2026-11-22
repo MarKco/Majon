@@ -3,14 +3,11 @@ package com.ilsecondodasinistra.majon.ui.projectdetail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.ilsecondodasinistra.majon.domain.model.MeasureKey
 import com.ilsecondodasinistra.majon.domain.model.Needle
-import com.ilsecondodasinistra.majon.domain.model.Part
 import com.ilsecondodasinistra.majon.domain.model.ProjectWithParts
 import com.ilsecondodasinistra.majon.domain.model.Swatch
 import com.ilsecondodasinistra.majon.domain.model.YarnPlan
 import com.ilsecondodasinistra.majon.domain.model.defaultSwatch
-import com.ilsecondodasinistra.majon.domain.model.parseDecimal
 import com.ilsecondodasinistra.majon.domain.model.planYarns
 import com.ilsecondodasinistra.majon.domain.repository.MajonRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -43,23 +40,6 @@ sealed interface ProjectDetailUiState {
         val swatches: List<Swatch> = emptyList(),
     ) : ProjectDetailUiState
 }
-
-/** The optional preparation (row 0) and final joining rows of a part, with their notes. */
-data class RowExtras(
-    val prepRow: Boolean = false,
-    val prepNote: String? = null,
-    val finalRow: Boolean = false,
-    val finalNote: String? = null,
-)
-
-/** The two measures a part is planned by, as typed (cm), and the swatch to use for it. */
-data class PartMeasures(
-    val stitchMeasure: MeasureKey?,
-    val stitchCm: String,
-    val rowMeasure: MeasureKey?,
-    val rowCm: String,
-    val swatchId: Long? = null,
-)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -113,43 +93,6 @@ class ProjectDetailViewModel @Inject constructor(
         viewModelScope.launch { repository.adjustYarnStock(yarnId, -skeins) }
     }
 
-    fun addPart(name: String, totalRows: Int, extras: RowExtras? = null, measures: PartMeasures? = null): Boolean {
-        if (name.isBlank() || totalRows <= 0) return false
-        viewModelScope.launch {
-            repository.upsertPart(
-                Part(
-                    projectId = projectId,
-                    name = name.trim(),
-                    totalRows = totalRows,
-                    hasPrepRow = extras?.prepRow ?: false,
-                    hasFinalRow = extras?.finalRow ?: false,
-                    prepNote = extras?.prepNote?.trim()?.takeIf { it.isNotEmpty() },
-                    finalNote = extras?.finalNote?.trim()?.takeIf { it.isNotEmpty() },
-                ).withMeasures(measures),
-            )
-        }
-        return true
-    }
-
-    /** [extras] / [measures] = null leave the preparation / final rows and the measures as they are. */
-    fun updatePart(partId: Long, name: String, totalRows: Int, extras: RowExtras? = null, measures: PartMeasures? = null): Boolean {
-        if (name.isBlank() || totalRows <= 0) return false
-        viewModelScope.launch {
-            val part = repository.observePart(partId).first() ?: return@launch
-            // Toggle the extra rows first (it shifts the count to stay on the same row), then resize
-            val withExtras = if (extras == null) part else part.withRowOptions(
-                prep = extras.prepRow,
-                final = extras.finalRow,
-                prepNote = extras.prepNote?.trim()?.takeIf { it.isNotEmpty() },
-                finalNote = extras.finalNote?.trim()?.takeIf { it.isNotEmpty() },
-            )
-            repository.upsertPart(
-                withExtras.copy(name = name.trim(), totalRows = totalRows).clampedToTotal().withMeasures(measures),
-            )
-        }
-        return true
-    }
-
     fun deletePart(partId: Long) {
         viewModelScope.launch { repository.deletePart(partId) }
     }
@@ -161,12 +104,3 @@ class ProjectDetailViewModel @Inject constructor(
         }
     }
 }
-
-/** Applies typed measures to a part; empty or invalid numbers mean "no measure". Null leaves the part as it is. */
-private fun Part.withMeasures(measures: PartMeasures?): Part = if (measures == null) this else copy(
-    stitchMeasure = measures.stitchMeasure,
-    stitchCm = parseDecimal(measures.stitchCm)?.takeIf { it > 0.0 },
-    rowMeasure = measures.rowMeasure,
-    rowCm = parseDecimal(measures.rowCm)?.takeIf { it > 0.0 },
-    swatchId = measures.swatchId,
-)

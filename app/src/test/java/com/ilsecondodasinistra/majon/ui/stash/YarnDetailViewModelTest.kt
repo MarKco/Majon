@@ -58,44 +58,9 @@ class YarnDetailViewModelTest {
     }
 
     @Test
-    fun `a swatch needs positive stitches and rows`() = runTest {
-        val vm = viewModel()
-        assertFalse(vm.saveSwatch(null, "0", "34", "", StitchPattern.STOCKINETTE, "", ""))
-        assertFalse(vm.saveSwatch(null, "26", "", "", StitchPattern.STOCKINETTE, "", ""))
-        assertFalse(vm.saveSwatch(null, "abc", "34", "", StitchPattern.STOCKINETTE, "", ""))
-        assertTrue(repository.observeSwatches(yarnId).first().isEmpty())
-    }
-
-    @Test
-    fun `a swatch is saved with comma decimals and optional fields`() = runTest {
-        val vm = viewModel()
-        assertTrue(vm.saveSwatch(null, "26", "34", "3,5", StitchPattern.GARTER, "4,2", " lavato "))
-        val swatch = repository.observeSwatches(yarnId).first().single()
-        assertEquals(26, swatch.stitches)
-        assertEquals(34, swatch.rows)
-        assertEquals(3.5, swatch.needleSizeMm!!, 0.0)
-        assertEquals(StitchPattern.GARTER, swatch.pattern)
-        assertEquals(4.2, swatch.weightG!!, 0.0)
-        assertEquals("lavato", swatch.notes)
-    }
-
-    @Test
-    fun `optional swatch fields can stay empty`() = runTest {
-        assertTrue(viewModel().saveSwatch(null, "20", "28", "", StitchPattern.STOCKINETTE, "", ""))
-        val swatch = repository.observeSwatches(yarnId).first().single()
-        assertEquals(null, swatch.needleSizeMm)
-        assertEquals(null, swatch.weightG)
-        assertEquals(null, swatch.notes)
-    }
-
-    @Test
-    fun `a swatch can be edited and deleted`() = runTest {
-        val vm = viewModel()
-        vm.saveSwatch(null, "20", "28", "", StitchPattern.STOCKINETTE, "", "")
-        val id = repository.observeSwatches(yarnId).first().single().id
-        assertTrue(vm.saveSwatch(id, "22", "30", "", StitchPattern.RIB, "", ""))
-        assertEquals(22, repository.observeSwatches(yarnId).first().single().stitches)
-        vm.deleteSwatch(id)
+    fun `a swatch can be deleted`() = runTest {
+        val id = repository.upsertSwatch(Swatch(yarnId = yarnId, stitches = 20, rows = 28))
+        viewModel().deleteSwatch(id)
         assertTrue(repository.observeSwatches(yarnId).first().isEmpty())
     }
 

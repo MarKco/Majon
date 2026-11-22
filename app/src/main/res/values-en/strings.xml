@@ -374,4 +374,12 @@
     <string name="plan_planned_note">As the pattern asks</string>
     <string name="duplicate_project">New similar project</string>
     <string name="duplicate_copy_name">%1$s (copy)</string>
+    <string name="rows_from_measures">Left empty, %1$d rows will be used, worked out from the measures</string>
+    <string name="swatch_rows_caption">rows</string>
+    <string name="swatch_stitches_caption">stitches</string>
+    <string name="swatch_tap_hint">Tap the numbers on the square to type them, like on the skein\'s label.</string>
+    <string name="part_section_rows">Rows</string>
+    <string name="part_section_extra">Extra rows</string>
+    <string name="needle_quantity_minus">One less</string>
+    <string name="needle_quantity_plus">One more</string>
 </resources>

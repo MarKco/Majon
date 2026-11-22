@@ -70,7 +70,8 @@ A project splits into parts: front, back, sleeves, collar…
 ### Measures and suggested parts (optional)
 
 If you already have the **rows** when adding a part, just type them: measures
-are not needed. If you start from **measures** instead, the form suggests the
+are not needed. If you have the measures instead, you can **leave the rows
+empty**: the app uses the estimated ones. If you start from **measures** instead, the form suggests the
 **typical parts** of the project type (a sweater: Front, Back, Sleeve; a
 headband: a single piece) and the right fields: **width** or **circumference**
 along the stitches, **length** or **height** along the rows, in cm.
@@ -236,7 +237,8 @@ goes down by itself and never below zero.
 Yarn labels show the 10×10 cm square with the stitches, rows and needles used.
 The app draws the same: in a yarn, tap **Add swatch** and enter the **stitches**
 and **rows** in 10 cm, the **needles** and the **stitch pattern** (stockinette,
-garter, rib…). You see the drawing take shape as you type. If you weigh the
+garter, rib…). The square is the form: type the numbers right where they sit on the label
+(rows on the left, stitches below, needles in the middle). If you weigh the
 swatch you can also enter its **weight** (grams): it will be used to estimate how
 much yarn a project needs.
 

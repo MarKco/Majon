@@ -374,4 +374,12 @@
     <string name="plan_planned_note">Come richiesto dal modello</string>
     <string name="duplicate_project">Nuovo progetto simile</string>
     <string name="duplicate_copy_name">%1$s (copia)</string>
+    <string name="rows_from_measures">Se lo lasci vuoto uso %1$d righe, calcolate dalle misure</string>
+    <string name="swatch_rows_caption">righe</string>
+    <string name="swatch_stitches_caption">punti</string>
+    <string name="swatch_tap_hint">Tocca i numeri del quadrato per scriverli, come sul cartellino del gomitolo.</string>
+    <string name="part_section_rows">Righe</string>
+    <string name="part_section_extra">Righe in più</string>
+    <string name="needle_quantity_minus">Una in meno</string>
+    <string name="needle_quantity_plus">Una in più</string>
 </resources>

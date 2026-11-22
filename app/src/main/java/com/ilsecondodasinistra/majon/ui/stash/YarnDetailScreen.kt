@@ -65,20 +65,19 @@ import com.ilsecondodasinistra.majon.ui.components.ConfirmDialog
 import com.ilsecondodasinistra.majon.ui.components.GaugeSwatchDiagram
 import com.ilsecondodasinistra.majon.ui.components.rememberLocalImage
 
-private data class SwatchDialogState(val swatch: Swatch? = null)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun YarnDetailScreen(
     onBack: () -> Unit,
     onEdit: (Long) -> Unit,
+    /** Opens the swatch editor: a swatch id to edit it, null for a new swatch. */
+    onEditSwatch: (yarnId: Long, swatchId: Long?) -> Unit,
     viewModel: YarnDetailViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var menu by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var useDialog by remember { mutableStateOf(false) }
-    var swatchDialog by remember { mutableStateOf<SwatchDialogState?>(null) }
     var swatchToDelete by remember { mutableStateOf<Swatch?>(null) }
 
     LaunchedEffect(state) {
@@ -164,8 +163,8 @@ fun YarnDetailScreen(
             }
             SwatchesSection(
                 swatches = ready.swatches,
-                onAdd = { swatchDialog = SwatchDialogState() },
-                onEdit = { swatchDialog = SwatchDialogState(it) },
+                onAdd = { onEditSwatch(ready.yarn.id, null) },
+                onEdit = { onEditSwatch(ready.yarn.id, it.id) },
                 onDelete = { swatchToDelete = it },
             )
             Spacer(Modifier.height(24.dp))
@@ -178,17 +177,6 @@ fun YarnDetailScreen(
             onConfirm = { amount ->
                 viewModel.adjustStock(-amount)
                 useDialog = false
-            },
-        )
-    }
-    swatchDialog?.let { dialog ->
-        SwatchEditorDialog(
-            swatch = dialog.swatch,
-            onDismiss = { swatchDialog = null },
-            onSave = { stitches, rows, needle, pattern, weight, notes ->
-                val ok = viewModel.saveSwatch(dialog.swatch?.id, stitches, rows, needle, pattern, weight, notes)
-                if (ok) swatchDialog = null
-                ok
             },
         )
     }
@@ -374,103 +362,6 @@ fun UseSkeinsDialog(
             TextButton(onClick = { amount?.let(onConfirm) }, enabled = amount != null) {
                 Text(stringResource(R.string.yarn_use_confirm))
             }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
-}
-
-@Composable
-private fun SwatchEditorDialog(
-    swatch: Swatch?,
-    onDismiss: () -> Unit,
-    onSave: (String, String, String, StitchPattern, String, String) -> Boolean,
-) {
-    var stitches by rememberSaveable { mutableStateOf(swatch?.stitches?.toString().orEmpty()) }
-    var rows by rememberSaveable { mutableStateOf(swatch?.rows?.toString().orEmpty()) }
-    var needle by rememberSaveable { mutableStateOf(swatch?.needleSizeMm?.let(::formatDecimalInput).orEmpty()) }
-    var pattern by rememberSaveable { mutableStateOf((swatch?.pattern ?: StitchPattern.STOCKINETTE).name) }
-    var weight by rememberSaveable { mutableStateOf(swatch?.weightG?.let(::formatDecimalInput).orEmpty()) }
-    var notes by rememberSaveable { mutableStateOf(swatch?.notes.orEmpty()) }
-    var error by rememberSaveable { mutableStateOf(false) }
-    val separator = decimalSeparator()
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(if (swatch == null) R.string.swatch_new else R.string.swatch_edit)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                val previewStitches = stitches.toIntOrNull() ?: 0
-                val previewRows = rows.toIntOrNull() ?: 0
-                // Live preview, like the label on the skein, once there is something to draw
-                AnimatedVisibility(previewStitches > 0 && previewRows > 0, modifier = Modifier.fillMaxWidth()) {
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        GaugeSwatchDiagram(
-                            stitches = previewStitches,
-                            rows = previewRows,
-                            needleSize = parseDecimal(needle)?.takeIf { it > 0 }?.let { formatMillimeters(it, separator) },
-                        )
-                    }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = stitches,
-                        onValueChange = { stitches = it.filter { c -> c.isDigit() }; error = false },
-                        label = { Text(stringResource(R.string.swatch_stitches)) },
-                        singleLine = true,
-                        isError = error,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
-                    )
-                    OutlinedTextField(
-                        value = rows,
-                        onValueChange = { rows = it.filter { c -> c.isDigit() }; error = false },
-                        label = { Text(stringResource(R.string.swatch_rows)) },
-                        singleLine = true,
-                        isError = error,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                if (error) Text(stringResource(R.string.swatch_error), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                OutlinedTextField(
-                    value = needle,
-                    onValueChange = { needle = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
-                    label = { Text(stringResource(R.string.swatch_needles)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Text(stringResource(R.string.swatch_pattern), style = MaterialTheme.typography.labelLarge)
-                ChipChoices(
-                    options = StitchPattern.entries,
-                    selected = StitchPattern.valueOf(pattern),
-                    label = { stringResource(it.labelRes()) },
-                    onSelect = { it?.let { p -> pattern = p.name } },
-                    clearable = false,
-                )
-                OutlinedTextField(
-                    value = weight,
-                    onValueChange = { weight = it.filter { c -> c.isDigit() || c == '.' || c == ',' } },
-                    label = { Text(stringResource(R.string.swatch_weight)) },
-                    supportingText = { Text(stringResource(R.string.swatch_weight_hint)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
-                    label = { Text(stringResource(R.string.swatch_notes)) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    if (!onSave(stitches, rows, needle, StitchPattern.valueOf(pattern), weight, notes)) error = true
-                },
-            ) { Text(stringResource(R.string.save)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )

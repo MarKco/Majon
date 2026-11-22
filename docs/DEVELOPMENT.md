@@ -171,7 +171,8 @@ Needle                         tipo, materiale, mm, cm, quantità, marca
   (`adjustYarnStock`, clamp a 0 in SQL).
 - `MajonRepository` espone osservazione/CRUD per lane, campioni, ferri e
   `getStash()/importStash()` per il backup. `upsertYarn` sostituisce il blend in transazione.
-- UI (`ui/stash/`): `StashScreen` (schede Lane/Ferri, editor ferri a dialog),
+- UI (`ui/stash/`): `StashScreen` (schede Lane/Ferri), `NeedleEditScreen`, `SwatchEditScreen` (il quadrato 10×10 è il modulo: `GaugeSwatchInput`), `PartEditScreen` (`ui/partedit/`);
+  gli editor sono schermate, non dialog,
   `YarnDetailScreen` (scorta, campioni col `GaugeSwatchDiagram`), `YarnEditScreen`
   (editor a schermo intero, foto da Photo Picker copiata in `filesDir`).
   Gli input numerici restano testo nei ViewModel (`parseDecimal` accetta "2,5" e "2.5").

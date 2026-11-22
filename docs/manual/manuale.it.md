@@ -68,7 +68,8 @@ Un progetto si divide in parti: davanti, dietro, maniche, collo…
 ### Misure e parti suggerite (facoltativo)
 
 Se aggiungendo una parte hai già le **righe**, scrivile e basta: le misure non
-servono. Se invece parti dalle **misure**, il modulo ti propone le **parti
+servono. Se invece hai le misure, puoi **lasciare vuote le righe**: l'app usa
+quelle stimate. Se invece parti dalle **misure**, il modulo ti propone le **parti
 tipiche** del tipo di progetto (es. per un maglione Davanti, Dietro, Manica;
 per una fascia un pezzo unico) e i campi giusti: **larghezza** o **giro** nel
 senso dei punti, **lunghezza** o **altezza** nel senso delle righe, in cm.
@@ -238,8 +239,9 @@ scende mai da solo e non va sotto zero.
 Sul cartellino dei gomitoli c'è il quadrato 10×10 cm con i punti, le righe e i
 ferri usati. Lo ritrovi uguale nell'app: in una lana tocca **Aggiungi
 campione** e inserisci **punti** e **righe** in 10 cm, i **ferri** e il
-**punto** (maglia rasata, legaccio, coste…). Vedi il disegno comporsi mentre
-scrivi. Se pesi il campione puoi segnare anche il **peso** (grammi): servirà
+**punto** (maglia rasata, legaccio, coste…). Il quadrato è il modulo: scrivi i numeri
+direttamente dove stanno sul cartellino (righe a sinistra, punti sotto, ferri
+al centro). Se pesi il campione puoi segnare anche il **peso** (grammi): servirà
 a stimare quanta lana serve per un progetto.
 
 Una lana può avere più campioni: la resa cambia con i ferri e con il punto.

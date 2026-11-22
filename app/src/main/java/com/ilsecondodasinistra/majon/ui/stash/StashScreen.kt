@@ -72,19 +72,18 @@ import androidx.compose.ui.layout.ContentScale
 
 private enum class StashTab { YARNS, NEEDLES }
 
-private data class NeedleDialogState(val needle: Needle? = null)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StashScreen(
     onYarnClick: (Long) -> Unit,
     onAddYarn: () -> Unit,
+    /** Opens the needle editor: a needle id to edit it, null for new needles. */
+    onEditNeedle: (Long?) -> Unit,
     viewModel: StashViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var tabName by rememberSaveable { mutableStateOf(StashTab.YARNS.name) }
     val tab = StashTab.valueOf(tabName)
-    var needleDialog by remember { mutableStateOf<NeedleDialogState?>(null) }
     var needleToDelete by remember { mutableStateOf<Needle?>(null) }
     var yarnToDelete by remember { mutableStateOf<Yarn?>(null) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -101,7 +100,7 @@ fun StashScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 modifier = Modifier.padding(bottom = barHeight),
-                onClick = { if (tab == StashTab.YARNS) onAddYarn() else needleDialog = NeedleDialogState() },
+                onClick = { if (tab == StashTab.YARNS) onAddYarn() else onEditNeedle(null) },
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = { Text(stringResource(if (tab == StashTab.YARNS) R.string.add_yarn else R.string.add_needle)) },
             )
@@ -132,23 +131,12 @@ fun StashScreen(
                 } else if (current == StashTab.YARNS) {
                     YarnList(ready.yarns, onYarnClick, onDelete = { yarnToDelete = it })
                 } else {
-                    NeedleList(ready.needles, onEdit = { needleDialog = NeedleDialogState(it) }, onDelete = { needleToDelete = it })
+                    NeedleList(ready.needles, onEdit = { onEditNeedle(it.id) }, onDelete = { needleToDelete = it })
                 }
             }
         }
     }
 
-    needleDialog?.let { dialog ->
-        NeedleEditorDialog(
-            needle = dialog.needle,
-            onDismiss = { needleDialog = null },
-            onSave = { type, material, size, length, quantity, brand, notes ->
-                val ok = viewModel.saveNeedle(dialog.needle?.id, type, material, size, length, quantity, brand, notes)
-                if (ok) needleDialog = null
-                ok
-            },
-        )
-    }
     needleToDelete?.let { needle ->
         ConfirmDialog(
             title = stringResource(R.string.delete_needle_title),
@@ -331,93 +319,4 @@ private fun NeedleCard(needle: Needle, onClick: () -> Unit, onDelete: () -> Unit
             }
         }
     }
-}
-
-@Composable
-private fun NeedleEditorDialog(
-    needle: Needle?,
-    onDismiss: () -> Unit,
-    onSave: (NeedleType, NeedleMaterial?, String, String, String, String, String) -> Boolean,
-) {
-    var type by rememberSaveable { mutableStateOf((needle?.type ?: NeedleType.CIRCULAR).name) }
-    var material by rememberSaveable { mutableStateOf(needle?.material?.name) }
-    var size by rememberSaveable { mutableStateOf(needle?.sizeMm?.let(::formatDecimalInput).orEmpty()) }
-    var length by rememberSaveable { mutableStateOf(needle?.lengthCm?.toString().orEmpty()) }
-    var quantity by rememberSaveable { mutableStateOf((needle?.quantity ?: 1).toString()) }
-    var brand by rememberSaveable { mutableStateOf(needle?.brand.orEmpty()) }
-    var notes by rememberSaveable { mutableStateOf(needle?.notes.orEmpty()) }
-    var error by rememberSaveable { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(if (needle == null) R.string.needle_new else R.string.needle_edit)) },
-        text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(stringResource(R.string.needle_type), style = MaterialTheme.typography.labelLarge)
-                ChipChoices(
-                    options = NeedleType.entries,
-                    selected = NeedleType.valueOf(type),
-                    label = { stringResource(it.labelRes()) },
-                    onSelect = { it?.let { t -> type = t.name } },
-                    clearable = false,
-                )
-                OutlinedTextField(
-                    value = size,
-                    onValueChange = { size = it.filter { c -> c.isDigit() || c == '.' || c == ',' }; error = false },
-                    label = { Text(stringResource(R.string.needle_size_mm)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = length,
-                    onValueChange = { length = it.filter { c -> c.isDigit() }; error = false },
-                    label = { Text(stringResource(R.string.needle_length)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Text(stringResource(R.string.needle_material), style = MaterialTheme.typography.labelLarge)
-                ChipChoices(
-                    options = NeedleMaterial.entries,
-                    selected = material?.let { NeedleMaterial.valueOf(it) },
-                    label = { stringResource(it.labelRes()) },
-                    onSelect = { material = it?.name },
-                )
-                OutlinedTextField(
-                    value = quantity,
-                    onValueChange = { quantity = it.filter { c -> c.isDigit() }; error = false },
-                    label = { Text(stringResource(R.string.needle_quantity)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = brand,
-                    onValueChange = { brand = it },
-                    label = { Text(stringResource(R.string.needle_brand)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
-                    label = { Text(stringResource(R.string.needle_notes)) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                if (error) {
-                    Text(stringResource(R.string.needle_error), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val ok = onSave(NeedleType.valueOf(type), material?.let { NeedleMaterial.valueOf(it) }, size, length, quantity, brand, notes)
-                    if (!ok) error = true
-                },
-            ) { Text(stringResource(R.string.save)) }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
-    )
 }

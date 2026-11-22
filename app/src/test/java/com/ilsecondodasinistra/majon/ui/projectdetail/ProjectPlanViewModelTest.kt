@@ -107,57 +107,6 @@ class ProjectPlanViewModelTest {
 
     // --- measures on parts ---
 
-    @Test
-    fun `a part is added with its measures`() = runTest {
-        val vm = viewModel()
-        assertTrue(
-            vm.addPart(
-                "Corpo", 510, null,
-                PartMeasures(MeasureKey.WIDTH, "20", MeasureKey.LENGTH, "150,5", swatchId = swatchId),
-            ),
-        )
-        val part = repository.observeProject(projectId).first()!!.parts.single()
-        assertEquals(MeasureKey.WIDTH, part.stitchMeasure)
-        assertEquals(20.0, part.stitchCm!!, 0.0)
-        assertEquals(MeasureKey.LENGTH, part.rowMeasure)
-        assertEquals(150.5, part.rowCm!!, 0.0)
-        assertEquals(swatchId, part.swatchId)
-    }
-
-    @Test
-    fun `empty or invalid measures are stored as none`() = runTest {
-        val vm = viewModel()
-        assertTrue(vm.addPart("Corpo", 10, null, PartMeasures(MeasureKey.WIDTH, "", MeasureKey.LENGTH, "abc")))
-        val part = repository.observeProject(projectId).first()!!.parts.single()
-        assertNull(part.stitchCm)
-        assertNull(part.rowCm)
-    }
-
-    @Test
-    fun `updating a part without measures leaves them alone`() = runTest {
-        val id = repository.upsertPart(
-            Part(projectId = projectId, name = "Corpo", totalRows = 10, stitchMeasure = MeasureKey.WIDTH, stitchCm = 20.0),
-        )
-        assertTrue(viewModel().updatePart(id, "Corpo", 12))
-        assertEquals(20.0, repository.observePart(id).first()!!.stitchCm!!, 0.0)
-    }
-
-    @Test
-    fun `updating a part changes and clears measures`() = runTest {
-        val id = repository.upsertPart(
-            Part(projectId = projectId, name = "Corpo", totalRows = 10, stitchMeasure = MeasureKey.WIDTH, stitchCm = 20.0),
-        )
-        val vm = viewModel()
-        assertTrue(vm.updatePart(id, "Corpo", 10, measures = PartMeasures(MeasureKey.CIRCUMFERENCE, "55", MeasureKey.HEIGHT, "20")))
-        var part = repository.observePart(id).first()!!
-        assertEquals(MeasureKey.CIRCUMFERENCE, part.stitchMeasure)
-        assertEquals(55.0, part.stitchCm!!, 0.0)
-        assertTrue(vm.updatePart(id, "Corpo", 10, measures = PartMeasures(MeasureKey.CIRCUMFERENCE, "", MeasureKey.HEIGHT, "")))
-        part = repository.observePart(id).first()!!
-        assertNull(part.stitchCm)
-        assertNull(part.rowCm)
-    }
-
     // --- copying ---
 
     @Test

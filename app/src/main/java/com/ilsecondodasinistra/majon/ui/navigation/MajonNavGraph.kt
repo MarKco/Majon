@@ -37,7 +37,10 @@ import com.ilsecondodasinistra.majon.R
 import com.ilsecondodasinistra.majon.ui.components.LocalBottomBarHeight
 import com.ilsecondodasinistra.majon.ui.components.LocalHazeState
 import com.ilsecondodasinistra.majon.ui.components.glass
+import com.ilsecondodasinistra.majon.ui.partedit.PartEditScreen
+import com.ilsecondodasinistra.majon.ui.stash.NeedleEditScreen
 import com.ilsecondodasinistra.majon.ui.stash.StashScreen
+import com.ilsecondodasinistra.majon.ui.stash.SwatchEditScreen
 import com.ilsecondodasinistra.majon.ui.stash.YarnDetailScreen
 import com.ilsecondodasinistra.majon.ui.stash.YarnEditScreen
 import dev.chrisbanes.haze.hazeSource
@@ -63,6 +66,9 @@ object Routes {
     const val STASH = "stash"
     const val YARN_DETAIL = "yarn/{yarnId}"
     const val YARN_EDIT = "yarn_edit?yarnId={yarnId}"
+    const val PART_EDIT = "part_edit/{projectId}?partId={partId}"
+    const val NEEDLE_EDIT = "needle_edit?needleId={needleId}"
+    const val SWATCH_EDIT = "swatch_edit/{yarnId}?swatchId={swatchId}"
 
     fun editProject(projectId: Long? = null) =
         if (projectId == null) "edit_project?projectId=0" else "edit_project?projectId=$projectId"
@@ -71,6 +77,9 @@ object Routes {
     fun counter(partId: Long) = "counter/$partId"
     fun notes(partId: Long) = "notes/$partId"
     fun yarnDetail(yarnId: Long) = "yarn/$yarnId"
+    fun partEdit(projectId: Long, partId: Long? = null) = "part_edit/$projectId?partId=${partId ?: 0}"
+    fun needleEdit(needleId: Long? = null) = "needle_edit?needleId=${needleId ?: 0}"
+    fun swatchEdit(yarnId: Long, swatchId: Long? = null) = "swatch_edit/$yarnId?swatchId=${swatchId ?: 0}"
     fun yarnEdit(yarnId: Long? = null) =
         if (yarnId == null) "yarn_edit?yarnId=0" else "yarn_edit?yarnId=$yarnId"
 }
@@ -189,6 +198,7 @@ private fun MajonNavHost(navController: NavHostController, modifier: Modifier) {
             StashScreen(
                 onYarnClick = { navController.navigate(Routes.yarnDetail(it)) },
                 onAddYarn = { navController.navigate(Routes.yarnEdit()) },
+                onEditNeedle = { navController.navigate(Routes.needleEdit(it)) },
             )
         }
 
@@ -199,7 +209,35 @@ private fun MajonNavHost(navController: NavHostController, modifier: Modifier) {
             YarnDetailScreen(
                 onBack = { navController.popBackStack() },
                 onEdit = { navController.navigate(Routes.yarnEdit(it)) },
+                onEditSwatch = { yarnId, swatchId -> navController.navigate(Routes.swatchEdit(yarnId, swatchId)) },
             )
+        }
+
+        composable(
+            Routes.NEEDLE_EDIT,
+            arguments = listOf(navArgument("needleId") { type = NavType.LongType; defaultValue = 0L }),
+        ) {
+            NeedleEditScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(
+            Routes.SWATCH_EDIT,
+            arguments = listOf(
+                navArgument("yarnId") { type = NavType.LongType },
+                navArgument("swatchId") { type = NavType.LongType; defaultValue = 0L },
+            ),
+        ) {
+            SwatchEditScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(
+            Routes.PART_EDIT,
+            arguments = listOf(
+                navArgument("projectId") { type = NavType.LongType },
+                navArgument("partId") { type = NavType.LongType; defaultValue = 0L },
+            ),
+        ) {
+            PartEditScreen(onBack = { navController.popBackStack() })
         }
 
         composable(
@@ -235,9 +273,11 @@ private fun MajonNavHost(navController: NavHostController, modifier: Modifier) {
         composable(
             Routes.PROJECT_DETAIL,
             arguments = listOf(navArgument("projectId") { type = NavType.LongType }),
-        ) {
+        ) { backStackEntry ->
+            val detailProjectId = backStackEntry.arguments?.getLong("projectId") ?: return@composable
             ProjectDetailScreen(
                 onBack = { navController.popBackStack() },
+                onEditPart = { navController.navigate(Routes.partEdit(detailProjectId, it)) },
                 onPartClick = { navController.navigate(Routes.counter(it)) },
                 onPartNotes = { navController.navigate(Routes.notes(it)) },
                 onEditProject = { navController.navigate(Routes.editProject(it)) },

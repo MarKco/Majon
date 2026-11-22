@@ -92,6 +92,8 @@ fun ProjectDetailScreen(
     onPartClick: (Long) -> Unit,
     onPartNotes: (Long) -> Unit,
     onEditProject: (Long) -> Unit,
+    /** Opens the part editor: a part id to edit it, null for a new part. */
+    onEditPart: (Long?) -> Unit,
     onDuplicated: (Long) -> Unit = {},
     viewModel: ProjectDetailViewModel = hiltViewModel(),
 ) {
@@ -99,7 +101,6 @@ fun ProjectDetailScreen(
     val openCopy by rememberUpdatedState(onDuplicated)
     LaunchedEffect(viewModel) { viewModel.duplicated.collect { openCopy(it) } }
     var useDialogFor by remember { mutableStateOf<YarnPlan?>(null) }
-    var partDialog by remember { mutableStateOf<PartDialogState?>(null) }
     var partToDelete by remember { mutableStateOf<Part?>(null) }
     var deleteProjectDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -156,7 +157,7 @@ fun ProjectDetailScreen(
         },
         floatingActionButton = {
             ExtendedFloatingActionButton(
-                onClick = { partDialog = PartDialogState() },
+                onClick = { onEditPart(null) },
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = { Text(stringResource(R.string.add_part)) },
             )
@@ -198,7 +199,7 @@ fun ProjectDetailScreen(
                         },
                         accentColor = project.color.toColor(),
                         onClick = { onPartClick(part.id) },
-                        onEdit = { partDialog = PartDialogState(part) },
+                        onEdit = { onEditPart(part.id) },
                         onNotes = { onPartNotes(part.id) },
                         onDelete = { partToDelete = part },
                         modifier = Modifier.animateItem(),
@@ -206,26 +207,6 @@ fun ProjectDetailScreen(
                 }
             }
         }
-    }
-
-    partDialog?.let { dialog ->
-        PartEditorDialog(
-            state = dialog,
-            projectIcon = project.icon,
-            swatches = state.swatches,
-            yarnNames = state.plans.associate { it.yarn.id to it.yarn.name },
-            defaultSwatch = state.defaultSwatch,
-            onDismiss = { partDialog = null },
-            onSave = { name, rows, extras, measures ->
-                val ok = if (dialog.part == null) {
-                    viewModel.addPart(name, rows, extras, measures)
-                } else {
-                    viewModel.updatePart(dialog.part.id, name, rows, extras, measures)
-                }
-                if (ok) partDialog = null
-                ok
-            },
-        )
     }
 
     useDialogFor?.let { plan ->
@@ -455,266 +436,6 @@ private fun YarnPlanCard(plans: List<YarnPlan>, needles: List<Needle>, onUse: (Y
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
-        }
-    }
-}
-
-private data class PartDialogState(val part: Part? = null)
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun PartEditorDialog(
-    state: PartDialogState,
-    projectIcon: ProjectIcon,
-    swatches: List<Swatch>,
-    yarnNames: Map<Long, String>,
-    defaultSwatch: Swatch?,
-    onDismiss: () -> Unit,
-    onSave: (String, Int, RowExtras, PartMeasures) -> Boolean,
-) {
-    val presets = remember(projectIcon) { projectIcon.presetParts() }
-    val firstPreset = presets.firstOrNull()
-    var name by rememberSaveable { mutableStateOf(state.part?.name.orEmpty()) }
-    var rowsText by rememberSaveable { mutableStateOf(state.part?.totalRows?.toString().orEmpty()) }
-    var prepRow by rememberSaveable { mutableStateOf(state.part?.hasPrepRow ?: false) }
-    var prepNote by rememberSaveable { mutableStateOf(state.part?.prepNote.orEmpty()) }
-    var finalRow by rememberSaveable { mutableStateOf(state.part?.hasFinalRow ?: false) }
-    var finalNote by rememberSaveable { mutableStateOf(state.part?.finalNote.orEmpty()) }
-    var stitchKey by rememberSaveable { mutableStateOf((state.part?.stitchMeasure ?: firstPreset?.stitchMeasure ?: MeasureKey.WIDTH).name) }
-    var stitchCm by rememberSaveable { mutableStateOf(state.part?.stitchCm?.let(::formatDecimalInput).orEmpty()) }
-    var rowKey by rememberSaveable { mutableStateOf((state.part?.rowMeasure ?: firstPreset?.rowMeasure ?: MeasureKey.LENGTH).name) }
-    var rowCm by rememberSaveable { mutableStateOf(state.part?.rowCm?.let(::formatDecimalInput).orEmpty()) }
-    var swatchId by rememberSaveable { mutableStateOf(state.part?.swatchId) }
-    var showError by rememberSaveable { mutableStateOf(false) }
-    val rows = rowsText.toIntOrNull() ?: 0
-    val reduceWarning = state.part != null && rows in 1 until state.part.rowsDone
-
-    val swatch = swatches.firstOrNull { it.id == swatchId } ?: defaultSwatch
-    val estimate = remember(stitchCm, rowCm, swatch) {
-        com.ilsecondodasinistra.majon.domain.model.Part(
-            projectId = 0L, name = "", totalRows = 1,
-            stitchCm = parseDecimal(stitchCm), rowCm = parseDecimal(rowCm),
-        ).estimate(swatch)
-    }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(stringResource(if (state.part == null) R.string.add_part else R.string.edit_part))
-        },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                if (state.part == null && presets.isNotEmpty()) {
-                    Text(stringResource(R.string.part_suggested), style = MaterialTheme.typography.labelLarge)
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        presets.forEach { preset ->
-                            val label = stringResource(preset.name.labelRes())
-                            FilterChip(
-                                selected = name == label,
-                                onClick = {
-                                    name = label
-                                    stitchKey = preset.stitchMeasure.name
-                                    rowKey = preset.rowMeasure.name
-                                    showError = false
-                                },
-                                label = { Text(label) },
-                            )
-                        }
-                    }
-                }
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = {
-                        name = it
-                        showError = false
-                    },
-                    label = { Text(stringResource(R.string.part_name)) },
-                    singleLine = true,
-                )
-                OutlinedTextField(
-                    value = rowsText,
-                    onValueChange = {
-                        rowsText = it.filter { c -> c.isDigit() }
-                        showError = false
-                    },
-                    label = { Text(stringResource(R.string.total_rows)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    isError = showError,
-                    supportingText = if (showError) {
-                        { Text(stringResource(R.string.rows_invalid)) }
-                    } else {
-                        null
-                    },
-                )
-
-                Text(stringResource(R.string.part_measures_title), style = MaterialTheme.typography.labelLarge)
-                MeasureField(
-                    keys = listOf(MeasureKey.WIDTH, MeasureKey.CIRCUMFERENCE),
-                    selected = MeasureKey.valueOf(stitchKey),
-                    value = stitchCm,
-                    onKey = { stitchKey = it.name },
-                    onValue = { stitchCm = it },
-                )
-                MeasureField(
-                    keys = listOf(MeasureKey.LENGTH, MeasureKey.HEIGHT),
-                    selected = MeasureKey.valueOf(rowKey),
-                    value = rowCm,
-                    onKey = { rowKey = it.name },
-                    onValue = { rowCm = it },
-                )
-                if (swatches.size > 1) {
-                    Text(stringResource(R.string.part_swatch), style = MaterialTheme.typography.labelMedium)
-                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        FilterChip(
-                            selected = swatchId == null,
-                            onClick = { swatchId = null },
-                            label = { Text(stringResource(R.string.part_swatch_default)) },
-                        )
-                        swatches.forEach { sw ->
-                            FilterChip(
-                                selected = swatchId == sw.id,
-                                onClick = { swatchId = sw.id },
-                                label = { Text(listOfNotNull(yarnNames[sw.yarnId], "${sw.stitches}×${sw.rows}").joinToString(" · ")) },
-                            )
-                        }
-                    }
-                }
-                val measured = parseDecimal(stitchCm) != null || parseDecimal(rowCm) != null
-                when {
-                    estimate.stitches != null && estimate.rows != null -> Text(
-                        stringResource(R.string.part_estimate, estimate.stitches, estimate.rows),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    estimate.stitches != null -> Text(
-                        stringResource(R.string.part_estimate_stitches, estimate.stitches),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    estimate.rows != null -> Text(
-                        stringResource(R.string.part_estimate_rows, estimate.rows),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                    measured && swatch == null -> Text(
-                        stringResource(R.string.part_estimate_needs_swatch),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-                if (estimate.rows != null && estimate.rows != rows) {
-                    androidx.compose.material3.TextButton(onClick = { rowsText = estimate.rows.toString(); showError = false }) {
-                        Text(stringResource(R.string.part_use_rows, estimate.rows))
-                    }
-                }
-
-                ExtraRowOption(
-                    label = stringResource(R.string.prep_row_toggle),
-                    checked = prepRow,
-                    onCheckedChange = { prepRow = it },
-                    noteLabel = stringResource(R.string.prep_row_note),
-                    note = prepNote,
-                    onNoteChange = { prepNote = it },
-                )
-                ExtraRowOption(
-                    label = stringResource(R.string.final_row_toggle),
-                    checked = finalRow,
-                    onCheckedChange = { finalRow = it },
-                    noteLabel = stringResource(R.string.final_row_note),
-                    note = finalNote,
-                    onNoteChange = { finalNote = it },
-                )
-                if (reduceWarning) {
-                    Text(
-                        stringResource(R.string.part_reduce_warning, state.part!!.rowsDone),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val ok = onSave(
-                        name,
-                        rows,
-                        RowExtras(prepRow, prepNote, finalRow, finalNote),
-                        PartMeasures(MeasureKey.valueOf(stitchKey), stitchCm, MeasureKey.valueOf(rowKey), rowCm, swatchId),
-                    )
-                    if (!ok) showError = true
-                },
-            ) {
-                Text(stringResource(R.string.save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
-        },
-    )
-}
-
-/** One measure of a part: the choice of what is measured (a width or a circumference...) and the cm. */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun MeasureField(
-    keys: List<MeasureKey>,
-    selected: MeasureKey,
-    value: String,
-    onKey: (MeasureKey) -> Unit,
-    onValue: (String) -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            keys.forEach { key ->
-                FilterChip(
-                    selected = key == selected,
-                    onClick = { onKey(key) },
-                    label = { Text(stringResource(key.labelRes()).substringBefore(" (")) },
-                )
-            }
-        }
-        OutlinedTextField(
-            value = value,
-            onValueChange = { onValue(it.filter { c -> c.isDigit() || c == '.' || c == ',' }) },
-            label = { Text(stringResource(selected.labelRes())) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
-}
-
-/** A switch for an optional extra row (preparation / final) with its note shown while it is on. */
-@Composable
-private fun ExtraRowOption(
-    label: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    noteLabel: String,
-    note: String,
-    onNoteChange: (String) -> Unit,
-) {
-    Column {
-        Row(
-            // The whole row toggles, not only the small switch
-            modifier = Modifier.fillMaxWidth().toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-            Switch(checked = checked, onCheckedChange = null)
-        }
-        AnimatedVisibility(visible = checked) {
-            OutlinedTextField(
-                value = note,
-                onValueChange = onNoteChange,
-                label = { Text(noteLabel) },
-                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-            )
         }
     }
 }
