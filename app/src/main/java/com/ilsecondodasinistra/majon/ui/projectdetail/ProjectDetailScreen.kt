@@ -445,13 +445,13 @@ private fun YarnPlanCard(plans: List<YarnPlan>, needles: List<Needle>, onUse: (Y
                 }
             }
             if (needles.isNotEmpty()) {
+                // map is inline, so the type's string resource can be read inside it
+                val needleTexts = needles.map { n ->
+                    listOfNotNull(n.sizeMm?.let { formatMillimeters(it, separator) + " mm" }, stringResource(n.type.stashLabelRes()))
+                        .joinToString(" ")
+                }
                 Text(
-                    "🪡 " + needles.joinToString(" · ") { n ->
-                        listOfNotNull(
-                            n.sizeMm?.let { formatMillimeters(it, separator) + " mm" },
-                            null,
-                        ).joinToString(" ").ifEmpty { "-" }
-                    },
+                    "🪡 " + needleTexts.joinToString(" · "),
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
