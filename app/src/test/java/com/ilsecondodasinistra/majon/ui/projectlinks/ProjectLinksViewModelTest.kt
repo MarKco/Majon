@@ -1,6 +1,7 @@
-package com.ilsecondodasinistra.majon.ui.editproject
+package com.ilsecondodasinistra.majon.ui.projectlinks
 
 import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
 import com.ilsecondodasinistra.majon.domain.model.Needle
 import com.ilsecondodasinistra.majon.domain.model.NeedleType
 import com.ilsecondodasinistra.majon.domain.model.Part
@@ -20,16 +21,22 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
-/** Choosing the yarns and needles of a project from the stash. */
-class EditProjectLinksTest {
+/** Choosing the yarns and needles of a project from the stash, on their own screen. */
+class ProjectLinksViewModelTest {
 
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
     private val repository = FakeMajonRepository()
 
-    private fun viewModel(projectId: Long = 0L) =
-        EditProjectViewModel(repository, SavedStateHandle(mapOf("projectId" to projectId)))
+    private var projectId = 0L
+
+    @org.junit.Before
+    fun setUp() = runTest {
+        projectId = repository.upsertProject(Project(name = "Sciarpa"))
+    }
+
+    private fun viewModel() = ProjectLinksViewModel(repository, SavedStateHandle(mapOf("projectId" to projectId)))
 
     private suspend fun yarn(name: String) = repository.upsertYarn(Yarn(name = name))
     private suspend fun needle(size: Double) = repository.upsertNeedle(Needle(type = NeedleType.CIRCULAR, sizeMm = size))
@@ -114,44 +121,34 @@ class EditProjectLinksTest {
         assertEquals(listOf(n2), vm.links.value.needleIds)
     }
 
+
     @Test
-    fun `saving a new project stores its links`() = runTest {
+    fun `saving stores the links of the project`() = runTest {
         val a = yarn("A")
         val n = needle(3.0)
         val vm = viewModel()
-        vm.updateName("Sciarpa")
-        vm.toggleYarn(a)
-        vm.toggleNeedle(n)
-        vm.save()
-        val id = repository.observeProjects().first().single().project.id
-        val links = repository.observeProjectLinks(id).first()
+        vm.saved.test {
+            vm.toggleYarn(a)
+            vm.toggleNeedle(n)
+            vm.save()
+            awaitItem()
+        }
+        val links = repository.observeProjectLinks(projectId).first()
         assertEquals(listOf(a), links.yarns.map { it.yarnId })
         assertEquals(listOf(n), links.needleIds)
     }
 
     @Test
-    fun `editing loads the links and saving keeps changes`() = runTest {
+    fun `the links already there are loaded and changes are kept on save`() = runTest {
         val a = yarn("A")
         val b = yarn("B")
-        val id = repository.upsertProject(Project(name = "Sciarpa"))
-        repository.setProjectLinks(id, ProjectLinks(yarns = listOf(ProjectYarnLink(a, isPrimary = true, plannedSkeins = 2.0))))
-
-        val vm = viewModel(id)
+        repository.setProjectLinks(projectId, ProjectLinks(yarns = listOf(ProjectYarnLink(a, isPrimary = true, plannedSkeins = 2.0))))
+        val vm = viewModel()
         assertEquals(listOf(a), vm.links.value.yarns.map { it.yarnId })
         assertEquals(2.0, vm.links.value.yarns.single().plannedSkeins!!, 0.0)
         vm.toggleYarn(b)
         vm.save()
-        assertEquals(listOf(a, b), repository.observeProjectLinks(id).first().yarns.map { it.yarnId })
-    }
-
-    @Test
-    fun `an invalid project saves no links`() = runTest {
-        val a = yarn("A")
-        val vm = viewModel()
-        vm.toggleYarn(a)
-        vm.save() // no name
-        assertTrue(repository.observeProjects().first().isEmpty())
-        assertTrue(vm.form.value.nameError)
+        assertEquals(listOf(a, b), repository.observeProjectLinks(projectId).first().yarns.map { it.yarnId })
     }
 
     @Test
@@ -160,10 +157,8 @@ class EditProjectLinksTest {
         val other = repository.upsertProject(Project(name = "Cappello"))
         repository.upsertPart(Part(projectId = other, name = "P", totalRows = 10, completedRows = 2))
         repository.setProjectLinks(other, ProjectLinks(needleIds = listOf(n)))
-        val mine = repository.upsertProject(Project(name = "Sciarpa"))
-        repository.setProjectLinks(mine, ProjectLinks(needleIds = listOf(n)))
-
-        val vm = viewModel(mine)
+        repository.setProjectLinks(projectId, ProjectLinks(needleIds = listOf(n)))
+        val vm = viewModel()
         assertEquals(listOf("Cappello"), vm.needleUsage.value[n])
         assertFalse(vm.needleUsage.value[n].orEmpty().contains("Sciarpa"))
     }

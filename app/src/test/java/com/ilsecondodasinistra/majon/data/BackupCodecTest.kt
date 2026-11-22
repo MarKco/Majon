@@ -358,6 +358,12 @@ class BackupCodecTest {
     }
 
     @Test
+    fun `a part with rows still to define keeps zero rows`() {
+        val json = """{"app":"majon","version":2,"exportedAt":1,"projects":[{"name":"X","parts":[{"name":"P","totalRows":0}]}]}"""
+        assertEquals(0, codec.decode(json).getOrThrow().single().parts.single().part.totalRows)
+    }
+
+    @Test
     fun `empty project list round-trips`() {
         val json = codec.encode(emptyList(), exportedAt = 1L)
         assertTrue(codec.decode(json).getOrThrow().isEmpty())
@@ -367,15 +373,15 @@ class BackupCodecTest {
     fun `decode sanitizes invalid numbers and drops blank notes`() {
         val json = """
             {"app":"majon","exportedAt":1,"projects":[{"name":" X ","parts":[
-              {"name":"P","totalRows":0,"completedRows":9,"notes":[
+              {"name":"P","totalRows":-3,"completedRows":9,"notes":[
                 {"rowStart":0,"rowEnd":-3,"text":"ok"},
                 {"rowStart":1,"rowEnd":2,"text":"  "}]}]}]}
         """.trimIndent()
         val project = codec.decode(json).getOrThrow().single()
         assertEquals("X", project.project.name)
         val part = project.parts.single()
-        assertEquals(1, part.part.totalRows)
-        assertEquals(1, part.part.completedRows)
+        assertEquals(0, part.part.totalRows)
+        assertEquals(0, part.part.completedRows)
         val note = part.notes.single()
         assertEquals(1, note.rowStart)
         assertEquals(1, note.rowEnd)

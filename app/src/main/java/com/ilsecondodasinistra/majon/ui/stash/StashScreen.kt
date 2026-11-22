@@ -119,6 +119,12 @@ fun StashScreen(
                     text = { Text(stringResource(R.string.stash_tab_needles)) },
                 )
             }
+            Text(
+                stringResource(if (tab == StashTab.YARNS) R.string.stash_help_yarns else R.string.stash_help_needles),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            )
             val ready = state as? StashUiState.Ready
             AnimatedContent(
                 targetState = tab,

@@ -88,6 +88,15 @@ class PartStepsTest {
     }
 
     @Test
+    fun `a part whose rows are still to define has no progress and is not complete`() {
+        val p = part(total = 0)
+        assertEquals(0f, p.progress, 0f)
+        assertFalse(p.isComplete)
+        assertFalse(p.isLastStep)
+        assertEquals(0f, projectProgress(listOf(p)), 0f)
+    }
+
+    @Test
     fun `progress counts the extra steps`() {
         assertEquals(0.5f, part(total = 4, prep = true, final = true, completed = 3).progress, 0.0001f)
     }

@@ -112,6 +112,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilsecondodasinistra.majon.R
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
+import com.ilsecondodasinistra.majon.domain.model.formatDecimalInput
+import com.ilsecondodasinistra.majon.domain.model.formatSkeins
+import com.ilsecondodasinistra.majon.domain.model.parseDecimal
 import com.ilsecondodasinistra.majon.domain.model.RowStep
 import kotlinx.coroutines.delay
 import com.ilsecondodasinistra.majon.ui.components.AnimatedProgressBar
@@ -134,6 +137,7 @@ fun CounterScreen(
     val activity = LocalActivity.current
 
     val nextPartPrompt by viewModel.nextPartPrompt.collectAsStateWithLifecycle()
+    val finishPrompt by viewModel.finishPrompt.collectAsStateWithLifecycle()
     val openNextPart by rememberUpdatedState(onNextPart)
     LaunchedEffect(viewModel) { viewModel.navigateToPart.collect { openNextPart(it) } }
 
@@ -467,6 +471,14 @@ fun CounterScreen(
                 viewModel.confirmNextPart()
             },
             onDismiss = viewModel::dismissNextPart,
+        )
+    }
+
+    finishPrompt?.let { yarns ->
+        FinishDialog(
+            yarns = yarns,
+            onConfirm = viewModel::confirmFinish,
+            onSkip = viewModel::dismissFinish,
         )
     }
 
@@ -895,5 +907,55 @@ private fun GoToRowDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
+    )
+}
+
+/** At the end of a project: how many skeins of each linked yarn were used, filled in with the estimate. */
+@Composable
+private fun FinishDialog(
+    yarns: List<FinishYarn>,
+    onConfirm: (Map<Long, Double>) -> Unit,
+    onSkip: () -> Unit,
+) {
+    val amounts = remember(yarns) {
+        androidx.compose.runtime.mutableStateMapOf<Long, String>().apply {
+            yarns.forEach { put(it.yarnId, it.suggestedSkeins?.let { n -> formatDecimalInput(n) }.orEmpty()) }
+        }
+    }
+    val separator = java.text.DecimalFormatSymbols.getInstance(LocalLocale.current.platformLocale).decimalSeparator
+    AlertDialog(
+        onDismissRequest = onSkip,
+        title = { Text(stringResource(R.string.finish_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(stringResource(R.string.finish_message), style = MaterialTheme.typography.bodyMedium)
+                yarns.forEach { yarn ->
+                    OutlinedTextField(
+                        value = amounts[yarn.yarnId].orEmpty(),
+                        onValueChange = { v -> amounts[yarn.yarnId] = v.filter { c -> c.isDigit() || c == '.' || c == ',' } },
+                        label = {
+                            Text(
+                                stringResource(
+                                    R.string.finish_skeins_label,
+                                    yarn.name,
+                                    formatSkeins(yarn.stockSkeins, separator),
+                                ),
+                            )
+                        },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onConfirm(amounts.mapValues { (_, text) -> parseDecimal(text) ?: 0.0 })
+                },
+            ) { Text(stringResource(R.string.finish_confirm)) }
+        },
+        dismissButton = { TextButton(onClick = onSkip) { Text(stringResource(R.string.finish_skip)) } },
     )
 }

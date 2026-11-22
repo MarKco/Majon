@@ -214,7 +214,9 @@ Part: + stitchMeasure/stitchCm, rowMeasure/rowCm, swatchId?                 (col
   id → posizioni usando lo stash passato; `importBackup` importa prima lo stash e poi
   rimappa le posizioni sugli id appena creati, scartando i collegamenti orfani.
   `FullProject.links` contiene id reali se letto dal DB e posizioni se letto da un file.
-- UI: sezione `ProjectStashSection` nell'editor progetto; scheda `YarnPlanCard` e riga di
+- UI: `ProjectLinksScreen` (`ui/projectlinks/`, con `ProjectLinksViewModel`) per scegliere lane e ferri, invitata dalla scheda «Con cosa lo lavori?» nel dettaglio;
+  una parte con `totalRows = 0` significa «righe da definire» (parti suggerite create in un tap: `addSuggestedParts`); a fine progetto `CounterViewModel.finishPrompt` chiede quanta lana è stata usata (`confirmFinish`/`dismissFinish`), mai in automatico;
+  la Home mostra tipo e lana principale (`observePrimaryYarnNames`); scheda `YarnPlanCard` e riga di
   stima su ogni parte nel dettaglio; editor parte con parti suggerite, misure, stima e
   «Usa N righe come totale»; «Nuovo progetto simile» in Home e nel dettaglio (la copia si
   apre in modifica).

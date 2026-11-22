@@ -11,13 +11,17 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 sealed interface HomeUiState {
     data object Loading : HomeUiState
-    data class Ready(val projects: List<ProjectWithParts>) : HomeUiState
+    data class Ready(
+        val projects: List<ProjectWithParts>,
+        /** Project id -> its main yarn ("Bamboo Mustard"), for the projects that have one. */
+        val mainYarns: Map<Long, String> = emptyMap(),
+    ) : HomeUiState
 }
 
 @HiltViewModel
@@ -25,8 +29,9 @@ class HomeViewModel @Inject constructor(
     private val repository: MajonRepository,
 ) : ViewModel() {
 
-    val uiState: StateFlow<HomeUiState> = repository.observeProjects()
-        .map<List<ProjectWithParts>, HomeUiState> { HomeUiState.Ready(it) }
+    val uiState: StateFlow<HomeUiState> = combine(repository.observeProjects(), repository.observePrimaryYarnNames()) { projects, yarns ->
+        HomeUiState.Ready(projects, yarns) as HomeUiState
+    }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState.Loading)
 
     private val _duplicated = MutableSharedFlow<Long>(extraBufferCapacity = 1)

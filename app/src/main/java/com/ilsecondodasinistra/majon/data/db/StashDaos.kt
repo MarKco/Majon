@@ -93,6 +93,13 @@ interface ProjectLinkDao {
     @Query("SELECT * FROM project_needles WHERE projectId = :projectId ORDER BY needleId ASC")
     suspend fun getNeedleLinks(projectId: Long): List<ProjectNeedleEntity>
 
+    /** The name (and colour name) of each project's main yarn. */
+    @Query(
+        "SELECT py.projectId AS projectId, y.name AS name, y.colorName AS colorName " +
+            "FROM project_yarns py JOIN yarns y ON y.id = py.yarnId WHERE py.isPrimary = 1",
+    )
+    fun observePrimaryYarns(): Flow<List<PrimaryYarnRow>>
+
     @Insert
     suspend fun insertYarnLinks(links: List<ProjectYarnEntity>)
 
@@ -105,3 +112,6 @@ interface ProjectLinkDao {
     @Query("DELETE FROM project_needles WHERE projectId = :projectId")
     suspend fun deleteNeedleLinks(projectId: Long)
 }
+
+/** A project's main yarn, as listed on the project cards. */
+data class PrimaryYarnRow(val projectId: Long, val name: String, val colorName: String?)

@@ -63,6 +63,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ilsecondodasinistra.majon.R
 import com.ilsecondodasinistra.majon.domain.model.YarnMaterial
 import com.ilsecondodasinistra.majon.domain.model.YarnWeight
+import com.ilsecondodasinistra.majon.ui.components.FormSection
 import com.ilsecondodasinistra.majon.ui.components.rememberLocalImage
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -120,6 +121,7 @@ fun YarnEditScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            FormSection(stringResource(R.string.yarn_section_yarn)) {
             OutlinedTextField(
                 value = form.name,
                 onValueChange = { v -> viewModel.update { it.copy(name = v) } },
@@ -148,13 +150,18 @@ fun YarnEditScreen(
                 label = { stringResource(it.labelRes()) },
                 onSelect = { w -> viewModel.update { it.copy(weight = w) } },
             )
+            }
 
+            FormSection(stringResource(R.string.yarn_composition)) {
             MaterialsEditor(
                 rows = form.materials,
                 error = form.materialsError,
                 onChange = viewModel::setMaterials,
             )
+            }
 
+            FormSection(stringResource(R.string.yarn_section_skein)) {
+                Text(stringResource(R.string.yarn_skein_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 NumberField(form.skeinWeightG, R.string.yarn_skein_weight, decimal = false, modifier = Modifier.weight(1f)) { v -> viewModel.update { it.copy(skeinWeightG = v) } }
                 NumberField(form.skeinLengthM, R.string.yarn_skein_length, decimal = false, modifier = Modifier.weight(1f)) { v -> viewModel.update { it.copy(skeinLengthM = v) } }
@@ -162,14 +169,16 @@ fun YarnEditScreen(
 
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 NumberField(form.stockSkeins, R.string.yarn_stock, decimal = true, hint = R.string.yarn_stock_hint, modifier = Modifier.weight(1f)) { v -> viewModel.update { it.copy(stockSkeins = v) } }
-                FilledTonalIconButton(onClick = { viewModel.changeStock(-0.25) }) {
-                    Icon(Icons.Default.Remove, contentDescription = stringResource(R.string.stock_minus))
+                androidx.compose.material3.FilledTonalButton(onClick = { viewModel.changeStock(-0.25) }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp)) {
+                    Text(stringResource(R.string.stock_minus_label))
                 }
-                FilledTonalIconButton(onClick = { viewModel.changeStock(+0.25) }) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.stock_plus))
+                androidx.compose.material3.FilledTonalButton(onClick = { viewModel.changeStock(+0.25) }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp)) {
+                    Text(stringResource(R.string.stock_plus_label))
                 }
             }
+            }
 
+            FormSection(stringResource(R.string.yarn_section_buy)) {
             NumberField(form.pricePerSkein, R.string.yarn_price, decimal = true) { v -> viewModel.update { it.copy(pricePerSkein = v) } }
             TextField2(form.shop, R.string.yarn_shop) { v -> viewModel.update { it.copy(shop = v) } }
             TextField2(form.care, R.string.yarn_care) { v -> viewModel.update { it.copy(care = v) } }
@@ -183,6 +192,7 @@ fun YarnEditScreen(
                     viewModel.setPhoto(null)
                 },
             )
+            }
 
             Button(onClick = { viewModel.save() }, modifier = Modifier.fillMaxWidth().height(56.dp)) {
                 Text(stringResource(R.string.save))
@@ -237,7 +247,6 @@ private fun ColorChoice(argb: Int?, selected: Boolean, onClick: () -> Unit) {
 @Composable
 private fun MaterialsEditor(rows: List<MaterialRow>, error: Boolean, onChange: (List<MaterialRow>) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(R.string.yarn_materials), style = MaterialTheme.typography.labelLarge)
         rows.forEachIndexed { index, row ->
             var menu by remember { mutableStateOf(false) }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

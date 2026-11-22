@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
@@ -135,10 +137,20 @@ fun PartEditScreen(
             }
 
             FormSection(stringResource(R.string.part_measures_title)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    MeasureSketch()
+                    Text(
+                        stringResource(R.string.part_measures_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
                 MeasureField(
                     keys = listOf(MeasureKey.WIDTH, MeasureKey.CIRCUMFERENCE),
                     selected = form.stitchMeasure,
                     value = form.stitchCm,
+                    gives = stringResource(R.string.measure_gives_stitches),
                     onKey = { k -> viewModel.update { it.copy(stitchMeasure = k) } },
                     onValue = { v -> viewModel.update { it.copy(stitchCm = v) } },
                 )
@@ -146,6 +158,7 @@ fun PartEditScreen(
                     keys = listOf(MeasureKey.LENGTH, MeasureKey.HEIGHT),
                     selected = form.rowMeasure,
                     value = form.rowCm,
+                    gives = stringResource(R.string.measure_gives_rows),
                     onKey = { k -> viewModel.update { it.copy(rowMeasure = k) } },
                     onValue = { v -> viewModel.update { it.copy(rowCm = v) } },
                 )
@@ -224,6 +237,7 @@ private fun MeasureField(
     keys: List<MeasureKey>,
     selected: MeasureKey,
     value: String,
+    gives: String,
     onKey: (MeasureKey) -> Unit,
     onValue: (String) -> Unit,
 ) {
@@ -241,10 +255,50 @@ private fun MeasureField(
             value = value,
             onValueChange = { onValue(it.filter { c -> c.isDigit() || c == '.' || c == ',' }) },
             label = { Text(stringResource(selected.labelRes())) },
+            supportingText = { Text(gives) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             modifier = Modifier.fillMaxWidth(),
         )
+    }
+}
+
+/** A small sketch of a piece with an arrow across (the stitches) and one down (the rows). */
+@Composable
+private fun MeasureSketch() {
+    val color = MaterialTheme.colorScheme.onSurfaceVariant
+    val accent = MaterialTheme.colorScheme.primary
+    Box(Modifier.size(104.dp), contentAlignment = Alignment.Center) {
+        androidx.compose.foundation.Canvas(Modifier.size(104.dp)) {
+            val left = 26.dp.toPx()
+            val top = 24.dp.toPx()
+            val w = size.width - left - 6.dp.toPx()
+            val h = size.height - top - 6.dp.toPx()
+            drawRoundRect(
+                color = color.copy(alpha = 0.25f),
+                topLeft = androidx.compose.ui.geometry.Offset(left, top),
+                size = androidx.compose.ui.geometry.Size(w, h),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(8.dp.toPx()),
+            )
+            val stroke = 2.dp.toPx()
+            val head = 5.dp.toPx()
+            // across: the stitches
+            val ay = top - 10.dp.toPx()
+            drawLine(accent, androidx.compose.ui.geometry.Offset(left, ay), androidx.compose.ui.geometry.Offset(left + w, ay), stroke)
+            drawLine(accent, androidx.compose.ui.geometry.Offset(left, ay), androidx.compose.ui.geometry.Offset(left + head, ay - head), stroke)
+            drawLine(accent, androidx.compose.ui.geometry.Offset(left, ay), androidx.compose.ui.geometry.Offset(left + head, ay + head), stroke)
+            drawLine(accent, androidx.compose.ui.geometry.Offset(left + w, ay), androidx.compose.ui.geometry.Offset(left + w - head, ay - head), stroke)
+            drawLine(accent, androidx.compose.ui.geometry.Offset(left + w, ay), androidx.compose.ui.geometry.Offset(left + w - head, ay + head), stroke)
+            // down: the rows
+            val ax = left - 10.dp.toPx()
+            drawLine(accent, androidx.compose.ui.geometry.Offset(ax, top), androidx.compose.ui.geometry.Offset(ax, top + h), stroke)
+            drawLine(accent, androidx.compose.ui.geometry.Offset(ax, top), androidx.compose.ui.geometry.Offset(ax - head, top + head), stroke)
+            drawLine(accent, androidx.compose.ui.geometry.Offset(ax, top), androidx.compose.ui.geometry.Offset(ax + head, top + head), stroke)
+            drawLine(accent, androidx.compose.ui.geometry.Offset(ax, top + h), androidx.compose.ui.geometry.Offset(ax - head, top + h - head), stroke)
+            drawLine(accent, androidx.compose.ui.geometry.Offset(ax, top + h), androidx.compose.ui.geometry.Offset(ax + head, top + h - head), stroke)
+        }
+        Text(stringResource(R.string.swatch_stitches_caption), style = MaterialTheme.typography.labelSmall, color = accent, modifier = Modifier.align(Alignment.TopCenter).padding(start = 22.dp))
+        Text(stringResource(R.string.swatch_rows_caption), style = MaterialTheme.typography.labelSmall, color = accent, modifier = Modifier.align(Alignment.Center).padding(start = 22.dp, top = 22.dp))
     }
 }
 

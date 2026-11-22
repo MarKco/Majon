@@ -254,11 +254,11 @@ private fun StockCard(yarn: Yarn, onMinus: () -> Unit, onPlus: () -> Unit, onUse
                 Text(sub, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                FilledTonalIconButton(onClick = onMinus, enabled = yarn.stockSkeins > 0) {
-                    Icon(Icons.Default.Remove, contentDescription = stringResource(R.string.stock_minus))
+                androidx.compose.material3.FilledTonalButton(onClick = onMinus, enabled = yarn.stockSkeins > 0, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp)) {
+                    Text(stringResource(R.string.stock_minus_label))
                 }
-                FilledTonalIconButton(onClick = onPlus) {
-                    Icon(Icons.Default.Add, contentDescription = stringResource(R.string.stock_plus))
+                androidx.compose.material3.FilledTonalButton(onClick = onPlus, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 14.dp)) {
+                    Text(stringResource(R.string.stock_plus_label))
                 }
                 Spacer(Modifier.weight(1f))
                 Button(onClick = onUse, enabled = yarn.stockSkeins > 0) { Text(stringResource(R.string.yarn_use)) }

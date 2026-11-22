@@ -35,8 +35,9 @@ tratto colorato ondeggia leggermente, come un filo.
    distingui a colpo d'occhio più progetti uguali (tre sciarpe? tre colori
    diversi). L'icona decide la forma del capo che si colora nel contatore e le
    **parti suggerite** (vedi sotto).
-4. Facoltativo: scegli dallo **stash** le **lane** e i **ferri** che userai
-   (vedi il capitolo sullo stash). La lana **principale** (la stellina) è
+4. Facoltativo: nel progetto, la scheda **Con cosa lo lavori?** (poi **Cambia
+   lane e ferri**) apre la schermata dove scegli dallo **stash** le **lane** e i
+   **ferri** che userai (vedi il capitolo sullo stash). La lana **principale** (la stellina) è
    quella su cui l'app fa i calcoli; per ogni lana puoi scegliere il
    **campione** da usare e, se lo conosci, i **gomitoli richiesti dal
    modello**. I ferri già usati in un altro lavoro non finito sono segnati
@@ -66,6 +67,10 @@ Un progetto si divide in parti: davanti, dietro, maniche, collo…
 2. Scegli un nome (es. "Davanti") e le **righe totali** previste (es. 120).
 
 ### Misure e parti suggerite (facoltativo)
+
+Un progetto vuoto offre **Aggiungi le parti tipiche** (es. Davanti, Dietro,
+Manica): le crea tutte insieme, con «Righe da definire»; toccandole le apri e
+metti righe o misure.
 
 Se aggiungendo una parte hai già le **righe**, scrivile e basta: le misure non
 servono. Se invece hai le misure, puoi **lasciare vuote le righe**: l'app usa
@@ -245,6 +250,12 @@ al centro). Se pesi il campione puoi segnare anche il **peso** (grammi): servir�
 a stimare quanta lana serve per un progetto.
 
 Una lana può avere più campioni: la resa cambia con i ferri e con il punto.
+
+### A fine progetto
+
+Quando finisci l'ultima parte di un progetto con lane collegate, l'app chiede
+**quanta lana hai usato** (già compilato con la stima, modificabile) e aggiorna
+lo stash; con **Salta** non cambia nulla.
 
 ### «Ce la faccio con questa lana?»
 

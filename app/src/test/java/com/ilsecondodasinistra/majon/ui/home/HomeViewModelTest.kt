@@ -68,4 +68,20 @@ class HomeViewModelTest {
             assertEquals(2, repository.observeProjects().first().size)
         }
     }
+
+    @Test
+    fun `the state carries the main yarn of each project`() = runTest {
+        val repository = FakeMajonRepository()
+        val projectId = repository.upsertProject(Project(name = "Sciarpa"))
+        val yarn = repository.upsertYarn(com.ilsecondodasinistra.majon.domain.model.Yarn(name = "Bamboo", colorName = "Mustard"))
+        repository.setProjectLinks(
+            projectId,
+            com.ilsecondodasinistra.majon.domain.model.ProjectLinks(yarns = listOf(com.ilsecondodasinistra.majon.domain.model.ProjectYarnLink(yarn, isPrimary = true))),
+        )
+        HomeViewModel(repository).uiState.test {
+            val state = awaitItemOfType<HomeUiState.Ready>()
+            assertEquals("Bamboo Mustard", state.mainYarns[projectId])
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
 }

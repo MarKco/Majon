@@ -184,6 +184,20 @@ class ProjectLinksRepositoryTest {
         assertEquals(listOf("Vuoto"), repository.observeNeedleUsage().first()[n])
     }
 
+    // --- main yarn names (for the project list) ---
+
+    @Test
+    fun `each project with a main yarn is listed with its name and colour`() = runTest {
+        val p1 = project("Con lana")
+        val p2 = project("Senza lana")
+        val bamboo = repository.upsertYarn(Yarn(name = "Bamboo", colorName = "Mustard"))
+        val other = repository.upsertYarn(Yarn(name = "Seta"))
+        repository.setProjectLinks(p1, ProjectLinks(yarns = listOf(ProjectYarnLink(other), ProjectYarnLink(bamboo, isPrimary = true))))
+        val names = repository.observePrimaryYarnNames().first()
+        assertEquals("Bamboo Mustard", names[p1])
+        assertNull(names[p2])
+    }
+
     // --- duplicate ---
 
     @Test

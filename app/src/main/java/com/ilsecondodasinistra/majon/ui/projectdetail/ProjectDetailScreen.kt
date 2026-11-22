@@ -94,6 +94,8 @@ fun ProjectDetailScreen(
     onEditProject: (Long) -> Unit,
     /** Opens the part editor: a part id to edit it, null for a new part. */
     onEditPart: (Long?) -> Unit,
+    /** Opens the screen that links yarn and needles from the stash to this project. */
+    onEditLinks: () -> Unit,
     onDuplicated: (Long) -> Unit = {},
     viewModel: ProjectDetailViewModel = hiltViewModel(),
 ) {
@@ -174,16 +176,40 @@ fun ProjectDetailScreen(
                 )
             }
             if (state.plans.isNotEmpty() || state.needles.isNotEmpty()) {
-                item { YarnPlanCard(state.plans, state.needles, onUse = { useDialogFor = it }) }
+                item { YarnPlanCard(state.plans, state.needles, onUse = { useDialogFor = it }, onChange = onEditLinks) }
+            } else {
+                item { LinksInviteCard(onEditLinks) }
             }
             if (parts.isEmpty()) {
                 item {
-                    Box(Modifier.fillMaxWidth().padding(vertical = 48.dp), contentAlignment = Alignment.Center) {
+                    Column(
+                        Modifier.fillMaxWidth().padding(vertical = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
                         EmptyState(
                             emoji = "🪡",
                             title = stringResource(R.string.parts_empty_title),
                             subtitle = stringResource(R.string.parts_empty_subtitle),
                         )
+                        val presets = project.icon.presetParts()
+                        // Both lists are read here (in the composition) because stringResource is not allowed in a callback
+                        val labels = presets.map { stringResource(it.name.labelRes()) }
+                        if (presets.isNotEmpty()) {
+                            Spacer(Modifier.height(16.dp))
+                            androidx.compose.material3.FilledTonalButton(
+                                onClick = { viewModel.addSuggestedParts(presets.zip(labels)) },
+                            ) {
+                                Text(stringResource(R.string.parts_suggest_button, labels.joinToString(", ")), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                            }
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                stringResource(R.string.parts_suggest_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.padding(horizontal = 24.dp),
+                            )
+                        }
                     }
                 }
             } else {
@@ -198,7 +224,7 @@ fun ProjectDetailScreen(
                             null
                         },
                         accentColor = project.color.toColor(),
-                        onClick = { onPartClick(part.id) },
+                        onClick = { if (part.totalRows == 0) onEditPart(part.id) else onPartClick(part.id) },
                         onEdit = { onEditPart(part.id) },
                         onNotes = { onPartNotes(part.id) },
                         onDelete = { partToDelete = part },
@@ -328,9 +354,13 @@ private fun PartCard(
                 AnimatedProgressBar(progress = part.progress, color = accentColor, height = 8.dp)
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    stringResource(R.string.rows_progress, part.rowsDone, part.totalRows),
+                    if (part.totalRows == 0) {
+                        stringResource(R.string.part_rows_to_define)
+                    } else {
+                        stringResource(R.string.rows_progress, part.rowsDone, part.totalRows)
+                    },
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (part.totalRows == 0) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (estimate != null) {
                     Text(estimate, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline)
@@ -369,7 +399,7 @@ private fun PartCard(
 }
 
 @Composable
-private fun YarnPlanCard(plans: List<YarnPlan>, needles: List<Needle>, onUse: (YarnPlan) -> Unit) {
+private fun YarnPlanCard(plans: List<YarnPlan>, needles: List<Needle>, onUse: (YarnPlan) -> Unit, onChange: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.large,
@@ -436,6 +466,23 @@ private fun YarnPlanCard(plans: List<YarnPlan>, needles: List<Needle>, onUse: (Y
                     style = MaterialTheme.typography.bodyMedium,
                 )
             }
+            androidx.compose.material3.TextButton(onClick = onChange) { Text(stringResource(R.string.project_links_edit)) }
+        }
+    }
+}
+
+/** Shown while nothing is linked: says what linking gives, and opens the screen that does it. */
+@Composable
+private fun LinksInviteCard(onLink: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.project_links_invite_title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
+            Text(stringResource(R.string.project_links_invite_text), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSecondaryContainer)
+            androidx.compose.material3.FilledTonalButton(onClick = onLink) { Text(stringResource(R.string.project_links_invite_button)) }
         }
     }
 }

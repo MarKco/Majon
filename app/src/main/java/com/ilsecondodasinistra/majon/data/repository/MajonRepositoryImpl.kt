@@ -179,6 +179,11 @@ class MajonRepositoryImpl @Inject constructor(
         }
     }
 
+    override fun observePrimaryYarnNames(): Flow<Map<Long, String>> =
+        projectLinkDao.observePrimaryYarns().map { rows ->
+            rows.associate { it.projectId to listOfNotNull(it.name, it.colorName).joinToString(" ") }
+        }
+
     override fun observeNeedleUsage(): Flow<Map<Long, List<String>>> =
         combine(projectDao.observeAllWithParts(), projectLinkDao.observeAllNeedleLinks()) { projects, links ->
             val unfinished = projects

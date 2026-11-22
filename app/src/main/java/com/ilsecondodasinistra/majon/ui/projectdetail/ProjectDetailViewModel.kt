@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ilsecondodasinistra.majon.domain.model.Needle
+import com.ilsecondodasinistra.majon.domain.model.Part
+import com.ilsecondodasinistra.majon.domain.model.PresetPart
 import com.ilsecondodasinistra.majon.domain.model.ProjectWithParts
 import com.ilsecondodasinistra.majon.domain.model.Swatch
 import com.ilsecondodasinistra.majon.domain.model.YarnPlan
@@ -91,6 +93,27 @@ class ProjectDetailViewModel @Inject constructor(
     /** Takes [skeins] off the stock of one of the project's yarns. */
     fun useSkeins(yarnId: Long, skeins: Double) {
         viewModelScope.launch { repository.adjustYarnStock(yarnId, -skeins) }
+    }
+
+    /**
+     * Creates the suggested parts of the project's type in one go, rows still to define (zero), with the
+     * measures typical of each. A part whose name is already there is skipped.
+     */
+    fun addSuggestedParts(suggested: List<Pair<PresetPart, String>>) {
+        viewModelScope.launch {
+            val existing = repository.observeProject(projectId).first()?.parts.orEmpty().map { it.name.trim().lowercase() }.toSet()
+            suggested.filter { (_, name) -> name.trim().lowercase() !in existing }.forEach { (preset, name) ->
+                repository.upsertPart(
+                    Part(
+                        projectId = projectId,
+                        name = name.trim(),
+                        totalRows = 0,
+                        stitchMeasure = preset.stitchMeasure,
+                        rowMeasure = preset.rowMeasure,
+                    ),
+                )
+            }
+        }
     }
 
     fun deletePart(partId: Long) {

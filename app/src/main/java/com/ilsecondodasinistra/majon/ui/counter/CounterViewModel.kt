@@ -8,6 +8,7 @@ import com.ilsecondodasinistra.majon.domain.model.Part
 import com.ilsecondodasinistra.majon.domain.model.ProjectIcon
 import com.ilsecondodasinistra.majon.domain.model.RowStep
 import com.ilsecondodasinistra.majon.domain.model.nextPart
+import com.ilsecondodasinistra.majon.domain.model.planYarns
 import com.ilsecondodasinistra.majon.domain.model.RowNote
 import com.ilsecondodasinistra.majon.domain.model.notesForRow
 import com.ilsecondodasinistra.majon.domain.repository.MajonRepository
@@ -58,6 +59,15 @@ sealed interface CounterUiState {
 
 /** Shown as a dialog when '+' is pressed on the last step of a part that has a part after it. */
 data class NextPartPrompt(val partId: Long, val partName: String, val finishedPartName: String)
+
+/** A yarn of the finished project, to ask how much of it was used. */
+data class FinishYarn(
+    val yarnId: Long,
+    val name: String,
+    /** The estimate for the project (rounded up to a quarter skein), when it can be worked out. */
+    val suggestedSkeins: Double?,
+    val stockSkeins: Double,
+)
 
 /** What the app says (and shows) back after a voice command. */
 sealed interface VoiceReply {
@@ -144,6 +154,44 @@ class CounterViewModel @Inject constructor(
      * nothing changes yet: [nextPartPrompt] asks first, so a stray tap never jumps away.
      * Returns the part to move to when it is asking, null when the count simply advanced.
      */
+    private val _finishPrompt = MutableStateFlow<List<FinishYarn>?>(null)
+
+    /** Set when the last part of the project has just been finished and it has yarn linked to it. */
+    val finishPrompt: StateFlow<List<FinishYarn>?> = _finishPrompt
+
+    /** Takes the amounts (skeins per yarn id) the knitter says were used off the stock; zero or less takes nothing. */
+    fun confirmFinish(amounts: Map<Long, Double>) {
+        _finishPrompt.value = null
+        viewModelScope.launch {
+            amounts.forEach { (yarnId, skeins) -> if (skeins > 0.0) repository.adjustYarnStock(yarnId, -skeins) }
+        }
+    }
+
+    fun dismissFinish() {
+        _finishPrompt.value = null
+    }
+
+    /** After the last part is finished, offers to update the stash for the yarns of the project. */
+    private suspend fun askAboutYarnUsed(part: Part) {
+        val project = repository.observeProject(part.projectId).first() ?: return
+        if (project.parts.any { !it.isComplete }) return
+        val links = repository.observeProjectLinks(part.projectId).first()
+        if (links.yarns.isEmpty()) return
+        val yarns = repository.observeYarns().first().associateBy { it.id }
+        val swatches = links.yarns.associate { l -> l.yarnId to repository.observeSwatches(l.yarnId).first() }
+        val asked = planYarns(project.parts, links, yarns, swatches)
+            .filter { it.yarn.stockSkeins > 0.0 }
+            .map {
+                FinishYarn(
+                    yarnId = it.yarn.id,
+                    name = listOfNotNull(it.yarn.name, it.yarn.colorName).joinToString(" "),
+                    suggestedSkeins = it.neededSkeins?.let { n -> kotlin.math.ceil(n * 4 - 1e-9) / 4 },
+                    stockSkeins = it.yarn.stockSkeins,
+                )
+            }
+        if (asked.isNotEmpty()) _finishPrompt.value = asked
+    }
+
     private suspend fun advance(part: Part): Part? {
         if (part.isLastStep) {
             val next = partAfter(part)
@@ -153,6 +201,7 @@ class CounterViewModel @Inject constructor(
             }
         }
         repository.adjustCompletedRows(partId, +1)
+        if (part.isLastStep) askAboutYarnUsed(part)
         return null
     }
 

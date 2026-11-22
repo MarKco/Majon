@@ -139,8 +139,6 @@ fun EditProjectScreen(
                 }
             }
 
-            ProjectStashSection(viewModel)
-
             if (form.hasLegacyText) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(stringResource(R.string.project_legacy_title), style = MaterialTheme.typography.titleMedium)

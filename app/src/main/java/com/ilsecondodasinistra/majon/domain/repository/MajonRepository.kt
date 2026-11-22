@@ -66,6 +66,9 @@ interface MajonRepository {
     /** Replaces the project's yarns and needles (normalized: one primary yarn, no duplicates). */
     suspend fun setProjectLinks(projectId: Long, links: ProjectLinks)
 
+    /** For each project with a main yarn, its name followed by the colour name ("Bamboo Mustard"). */
+    fun observePrimaryYarnNames(): Flow<Map<Long, String>>
+
     /** For each needle in use, the names of the unfinished projects it is linked to. */
     fun observeNeedleUsage(): Flow<Map<Long, List<String>>>
 

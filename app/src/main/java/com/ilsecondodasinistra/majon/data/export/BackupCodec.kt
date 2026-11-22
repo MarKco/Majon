@@ -225,7 +225,8 @@ class BackupCodec @Inject constructor() {
                     needleSize = bp.needleSize,
                 ),
                 parts = bp.parts.map { part ->
-                    val totalRows = part.totalRows.coerceAtLeast(1)
+                    // 0 = the rows are still to define (a suggested part not yet measured)
+                    val totalRows = part.totalRows.coerceAtLeast(0)
                     val extraRows = (if (part.hasPrepRow) 1 else 0) + (if (part.hasFinalRow) 1 else 0)
                     FullPart(
                         part = Part(

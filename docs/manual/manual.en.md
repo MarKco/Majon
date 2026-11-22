@@ -37,8 +37,9 @@ like a thread.
    similar things at once (three scarves? three colors). The icon decides the
    shape of the garment that fills with color in the counter and the
    **suggested parts** (see below).
-4. Optional: choose from your **stash** the **yarns** and **needles** you will
-   use (see the stash chapter). The **main** yarn (the star) is the one the app
+4. Optional: in the project, the **What are you knitting it with?** card (then
+   **Change yarn and needles**) opens the screen where you choose from your
+   **stash** the **yarns** and **needles** you will use (see the stash chapter). The **main** yarn (the star) is the one the app
    calculates with; for each yarn you can pick the **swatch** to use and, if
    you know it, the **skeins the pattern asks for**. Needles already used by
    another unfinished project are marked “In use in: …”, so you don't promise
@@ -68,6 +69,10 @@ A project splits into parts: front, back, sleeves, collar…
 2. Enter a name (e.g. "Front") and the expected **total rows** (e.g. 120).
 
 ### Measures and suggested parts (optional)
+
+An empty project offers **Add the usual parts** (e.g. Front, Back, Sleeve): it
+creates them all at once, marked “Rows to define”; tap one to enter rows or
+measures.
 
 If you already have the **rows** when adding a part, just type them: measures
 are not needed. If you have the measures instead, you can **leave the rows
@@ -244,6 +249,12 @@ much yarn a project needs.
 
 A yarn can have several swatches: the gauge changes with the needles and the
 stitch pattern.
+
+### When a project is done
+
+When you finish the last part of a project with yarn linked to it, the app asks
+**how much yarn you used** (filled in with the estimate, editable) and updates
+your stash; **Skip** changes nothing.
 
 ### “Do I have enough of this yarn?”
 

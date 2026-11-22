@@ -6,6 +6,8 @@ import com.ilsecondodasinistra.majon.domain.model.MeasureKey
 import com.ilsecondodasinistra.majon.domain.model.Needle
 import com.ilsecondodasinistra.majon.domain.model.NeedleType
 import com.ilsecondodasinistra.majon.domain.model.Part
+import com.ilsecondodasinistra.majon.domain.model.PresetPart
+import com.ilsecondodasinistra.majon.domain.model.PresetPartName
 import com.ilsecondodasinistra.majon.domain.model.Project
 import com.ilsecondodasinistra.majon.domain.model.ProjectIcon
 import com.ilsecondodasinistra.majon.domain.model.ProjectLinks
@@ -106,6 +108,37 @@ class ProjectPlanViewModelTest {
     }
 
     // --- measures on parts ---
+
+    // --- suggested parts ---
+
+    @Test
+    fun `the suggested parts are created in one go with their rows still to define`() = runTest {
+        val vm = viewModel()
+        vm.addSuggestedParts(
+            listOf(
+                PresetPart(PresetPartName.FRONT, MeasureKey.WIDTH, MeasureKey.LENGTH) to "Davanti",
+                PresetPart(PresetPartName.SLEEVE, MeasureKey.CIRCUMFERENCE, MeasureKey.LENGTH) to "Manica",
+            ),
+        )
+        val parts = repository.observeProject(projectId).first()!!.parts
+        assertEquals(listOf("Davanti", "Manica"), parts.map { it.name })
+        assertEquals(listOf(0, 0), parts.map { it.totalRows })
+        assertEquals(MeasureKey.CIRCUMFERENCE, parts[1].stitchMeasure)
+        assertEquals(MeasureKey.LENGTH, parts[1].rowMeasure)
+        assertTrue(parts.all { it.completedRows == 0 && !it.isComplete })
+    }
+
+    @Test
+    fun `suggested parts that already exist are not created twice`() = runTest {
+        repository.upsertPart(Part(projectId = projectId, name = "Davanti", totalRows = 120))
+        viewModel().addSuggestedParts(
+            listOf(
+                PresetPart(PresetPartName.FRONT, MeasureKey.WIDTH, MeasureKey.LENGTH) to "davanti",
+                PresetPart(PresetPartName.BACK, MeasureKey.WIDTH, MeasureKey.LENGTH) to "Dietro",
+            ),
+        )
+        assertEquals(listOf("Davanti", "Dietro"), repository.observeProject(projectId).first()!!.parts.map { it.name })
+    }
 
     // --- copying ---
 

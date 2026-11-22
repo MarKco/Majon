@@ -205,6 +205,14 @@ class FakeMajonRepository : MajonRepository {
         this.links.value = this.links.value + (projectId to links.normalized())
     }
 
+    override fun observePrimaryYarnNames(): Flow<Map<Long, String>> =
+        kotlinx.coroutines.flow.combine(links, yarns) { linkMap, yarnList ->
+            linkMap.mapNotNull { (projectId, l) ->
+                val primary = l.yarns.firstOrNull { it.isPrimary }?.let { p -> yarnList.firstOrNull { it.id == p.yarnId } }
+                primary?.let { projectId to listOfNotNull(it.name, it.colorName).joinToString(" ") }
+            }.toMap()
+        }
+
     override fun observeNeedleUsage(): Flow<Map<Long, List<String>>> =
         kotlinx.coroutines.flow.combine(projects, parts, links) { projectList, partList, linkMap ->
             val unfinished = projectList.filter { p ->

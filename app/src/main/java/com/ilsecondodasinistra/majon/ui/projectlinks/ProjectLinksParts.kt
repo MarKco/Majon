@@ -1,4 +1,4 @@
-package com.ilsecondodasinistra.majon.ui.editproject
+package com.ilsecondodasinistra.majon.ui.projectlinks
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,8 +10,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarOutline
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.ilsecondodasinistra.majon.ui.components.FormSection
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -46,64 +52,103 @@ import com.ilsecondodasinistra.majon.ui.stash.ColorDot
 import com.ilsecondodasinistra.majon.ui.stash.decimalSeparator
 import com.ilsecondodasinistra.majon.ui.stash.labelRes
 
-/** Choosing, from the stash, the yarns and needles a project is made with. */
-@OptIn(ExperimentalLayoutApi::class)
+/** Which yarns and needles of the stash a project is made with: the base of the "do I have enough?" check. */
+@OptIn(ExperimentalLayoutApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-fun ProjectStashSection(viewModel: EditProjectViewModel) {
+fun ProjectLinksScreen(
+    onBack: () -> Unit,
+    viewModel: ProjectLinksViewModel = androidx.hilt.navigation.compose.hiltViewModel(),
+) {
     val yarns by viewModel.yarns.collectAsStateWithLifecycle()
     val needles by viewModel.needles.collectAsStateWithLifecycle()
     val links by viewModel.links.collectAsStateWithLifecycle()
     val swatches by viewModel.swatchesByYarn.collectAsStateWithLifecycle()
     val usage by viewModel.needleUsage.collectAsStateWithLifecycle()
+    androidx.compose.runtime.LaunchedEffect(viewModel) { viewModel.saved.collect { onBack() } }
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(stringResource(R.string.project_yarns_title), style = MaterialTheme.typography.titleMedium)
-        if (yarns.isEmpty()) {
+    androidx.compose.material3.Scaffold(
+        topBar = {
+            androidx.compose.material3.TopAppBar(
+                title = { Text(stringResource(R.string.project_stash_title)) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
+                    }
+                },
+            )
+        },
+    ) { padding ->
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
             Text(
-                stringResource(R.string.project_stash_empty_yarns),
+                stringResource(R.string.project_links_intro),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        } else {
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                yarns.forEach { yarn ->
-                    FilterChip(
-                        selected = links.yarns.any { it.yarnId == yarn.id },
-                        onClick = { viewModel.toggleYarn(yarn.id) },
-                        label = { Text(listOfNotNull(yarn.name, yarn.colorName).joinToString(" · ")) },
-                        leadingIcon = { ColorDot(yarn.colorArgb, size = 20.dp) },
+
+            FormSection(stringResource(R.string.project_yarns_title)) {
+                if (yarns.isEmpty()) {
+                    Text(
+                        stringResource(R.string.project_stash_empty_yarns),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                } else {
+                    Text(stringResource(R.string.project_yarns_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        yarns.forEach { yarn ->
+                            FilterChip(
+                                selected = links.yarns.any { it.yarnId == yarn.id },
+                                onClick = { viewModel.toggleYarn(yarn.id) },
+                                label = { Text(listOfNotNull(yarn.name, yarn.colorName).joinToString(" · ")) },
+                                leadingIcon = { ColorDot(yarn.colorArgb, size = 20.dp) },
+                            )
+                        }
+                    }
+                    links.yarns.forEach { link ->
+                        val yarn = yarns.firstOrNull { it.id == link.yarnId } ?: return@forEach
+                        YarnLinkCard(
+                            yarn = yarn,
+                            link = link,
+                            swatches = swatches[yarn.id].orEmpty(),
+                            onMakeMain = { viewModel.setPrimaryYarn(yarn.id) },
+                            onSwatch = { viewModel.setYarnSwatch(yarn.id, it) },
+                            onPlanned = { viewModel.setPlannedSkeins(yarn.id, it) },
+                        )
+                    }
                 }
             }
-            links.yarns.forEach { link ->
-                val yarn = yarns.firstOrNull { it.id == link.yarnId } ?: return@forEach
-                YarnLinkCard(
-                    yarn = yarn,
-                    link = link,
-                    swatches = swatches[yarn.id].orEmpty(),
-                    onMakeMain = { viewModel.setPrimaryYarn(yarn.id) },
-                    onSwatch = { viewModel.setYarnSwatch(yarn.id, it) },
-                    onPlanned = { viewModel.setPlannedSkeins(yarn.id, it) },
-                )
-            }
-        }
 
-        Text(stringResource(R.string.project_needles_title), style = MaterialTheme.typography.titleMedium)
-        if (needles.isEmpty()) {
-            Text(
-                stringResource(R.string.project_stash_empty_needles),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        } else {
-            needles.forEach { needle ->
-                NeedleRow(
-                    needle = needle,
-                    checked = needle.id in links.needleIds,
-                    inUseBy = usage[needle.id].orEmpty(),
-                    onToggle = { viewModel.toggleNeedle(needle.id) },
-                )
+            FormSection(stringResource(R.string.project_needles_title)) {
+                if (needles.isEmpty()) {
+                    Text(
+                        stringResource(R.string.project_stash_empty_needles),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    needles.forEach { needle ->
+                        NeedleRow(
+                            needle = needle,
+                            checked = needle.id in links.needleIds,
+                            inUseBy = usage[needle.id].orEmpty(),
+                            onToggle = { viewModel.toggleNeedle(needle.id) },
+                        )
+                    }
+                }
             }
+
+            androidx.compose.material3.Button(
+                onClick = viewModel::save,
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+            ) { Text(stringResource(R.string.save)) }
+            Spacer(Modifier.height(24.dp))
         }
     }
 }

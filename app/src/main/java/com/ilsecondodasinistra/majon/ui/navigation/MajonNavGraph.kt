@@ -38,6 +38,7 @@ import com.ilsecondodasinistra.majon.ui.components.LocalBottomBarHeight
 import com.ilsecondodasinistra.majon.ui.components.LocalHazeState
 import com.ilsecondodasinistra.majon.ui.components.glass
 import com.ilsecondodasinistra.majon.ui.partedit.PartEditScreen
+import com.ilsecondodasinistra.majon.ui.projectlinks.ProjectLinksScreen
 import com.ilsecondodasinistra.majon.ui.stash.NeedleEditScreen
 import com.ilsecondodasinistra.majon.ui.stash.StashScreen
 import com.ilsecondodasinistra.majon.ui.stash.SwatchEditScreen
@@ -66,6 +67,7 @@ object Routes {
     const val STASH = "stash"
     const val YARN_DETAIL = "yarn/{yarnId}"
     const val YARN_EDIT = "yarn_edit?yarnId={yarnId}"
+    const val PROJECT_LINKS = "project_links/{projectId}"
     const val PART_EDIT = "part_edit/{projectId}?partId={partId}"
     const val NEEDLE_EDIT = "needle_edit?needleId={needleId}"
     const val SWATCH_EDIT = "swatch_edit/{yarnId}?swatchId={swatchId}"
@@ -77,6 +79,7 @@ object Routes {
     fun counter(partId: Long) = "counter/$partId"
     fun notes(partId: Long) = "notes/$partId"
     fun yarnDetail(yarnId: Long) = "yarn/$yarnId"
+    fun projectLinks(projectId: Long) = "project_links/$projectId"
     fun partEdit(projectId: Long, partId: Long? = null) = "part_edit/$projectId?partId=${partId ?: 0}"
     fun needleEdit(needleId: Long? = null) = "needle_edit?needleId=${needleId ?: 0}"
     fun swatchEdit(yarnId: Long, swatchId: Long? = null) = "swatch_edit/$yarnId?swatchId=${swatchId ?: 0}"
@@ -231,6 +234,13 @@ private fun MajonNavHost(navController: NavHostController, modifier: Modifier) {
         }
 
         composable(
+            Routes.PROJECT_LINKS,
+            arguments = listOf(navArgument("projectId") { type = NavType.LongType }),
+        ) {
+            ProjectLinksScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(
             Routes.PART_EDIT,
             arguments = listOf(
                 navArgument("projectId") { type = NavType.LongType },
@@ -278,6 +288,7 @@ private fun MajonNavHost(navController: NavHostController, modifier: Modifier) {
             ProjectDetailScreen(
                 onBack = { navController.popBackStack() },
                 onEditPart = { navController.navigate(Routes.partEdit(detailProjectId, it)) },
+                onEditLinks = { navController.navigate(Routes.projectLinks(detailProjectId)) },
                 onPartClick = { navController.navigate(Routes.counter(it)) },
                 onPartNotes = { navController.navigate(Routes.notes(it)) },
                 onEditProject = { navController.navigate(Routes.editProject(it)) },

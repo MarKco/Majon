@@ -52,6 +52,7 @@ import com.ilsecondodasinistra.majon.ui.components.LocalBottomBarHeight
 import com.ilsecondodasinistra.majon.ui.components.AnimatedProgressBar
 import com.ilsecondodasinistra.majon.ui.components.ConfirmDialog
 import com.ilsecondodasinistra.majon.ui.components.EmptyState
+import com.ilsecondodasinistra.majon.ui.components.typeLabelRes
 import com.ilsecondodasinistra.majon.ui.components.ProjectIconBadge
 import com.ilsecondodasinistra.majon.ui.theme.toColor
 import kotlin.math.roundToInt
@@ -124,6 +125,7 @@ fun HomeScreen(
                             val copyName = stringResource(R.string.duplicate_copy_name, item.project.name)
                             ProjectCard(
                                 item = item,
+                                mainYarn = state.mainYarns[item.project.id],
                                 onClick = { onProjectClick(item.project.id) },
                                 onEdit = { onEditProject(item.project.id) },
                                 onDuplicate = { viewModel.duplicateProject(item.project.id, copyName) },
@@ -155,6 +157,7 @@ fun HomeScreen(
 @Composable
 private fun ProjectCard(
     item: ProjectWithParts,
+    mainYarn: String?,
     onClick: () -> Unit,
     onEdit: () -> Unit,
     onDuplicate: () -> Unit,
@@ -179,6 +182,13 @@ private fun ProjectCard(
                     item.project.name,
                     style = MaterialTheme.typography.titleLarge,
                     maxLines = 2,
+                )
+                // What it is and what it is made with: tells similar projects apart at a glance
+                Text(
+                    listOfNotNull(stringResource(item.project.icon.typeLabelRes()), mainYarn).joinToString(" · "),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
                 )
                 Spacer(Modifier.height(8.dp))
                 AnimatedProgressBar(
