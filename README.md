@@ -23,7 +23,7 @@ commands on.
 |---|---|
 | Stack | Kotlin 2.4, Compose + Material 3 (1.5 alpha, for Expressive), Room, Hilt, DataStore |
 | Build | Gradle 9.8, AGP 9.4, minSdk 24, targetSdk 37 |
-| Tests | 102 unit tests (TDD), Robolectric + Turbine |
+| Tests | 103 unit tests (TDD), Robolectric + Turbine |
 
 ## Build
 

@@ -13,7 +13,7 @@ partenza (`starting-docs/`).
 | Linguaggio | Kotlin 2.4.20 |
 | UI | Jetpack Compose + Material 3 |
 | Build | Gradle 9.8.0, AGP 9.4.1 (Kotlin built-in) |
-| Test | 102 unit test, 0 falliti |
+| Test | 103 unit test, 0 falliti |
 
 ## Stack
 
@@ -142,7 +142,7 @@ Test scritti prima dell'implementazione, per layer:
 | `ui/*ViewModelTest` | tutti i 6 ViewModel con `FakeMajonRepository` + Turbine |
 
 ```bash
-./gradlew :app:testDebugUnitTest   # 71 test
+./gradlew :app:testDebugUnitTest   # unit test (103)
 ./gradlew :app:lintDebug           # 0 errori
 ./gradlew :app:assembleDebug       # APK
 ```
