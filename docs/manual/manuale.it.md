@@ -79,6 +79,11 @@ tipiche** del tipo di progetto (es. per un maglione Davanti, Dietro, Manica;
 per una fascia un pezzo unico) e i campi giusti: **larghezza** o **giro** nel
 senso dei punti, **lunghezza** o **altezza** nel senso delle righe, in cm.
 
+Sopra i campi vedi lo **schizzo della parte** (il davanti con lo scollo, la
+manica che si restringe, un cappello, una calza…) con le due frecce: quella
+orizzontale è la misura che dà i punti, quella verticale la misura che dà le
+righe.
+
 Con una lana collegata al progetto (e il suo campione) l'app stima **quanti
 punti avviare e quante righe fare** («Circa 52 punti da avviare e 510 righe»);
 il pulsante **Usa 510 righe come totale** le copia nel campo delle righe. La

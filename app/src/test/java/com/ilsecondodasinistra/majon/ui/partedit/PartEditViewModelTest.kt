@@ -254,6 +254,12 @@ class PartEditViewModelTest {
     }
 
     @Test
+    fun `a part with rows still to define opens with an empty rows field`() = runTest {
+        val id = repository.upsertPart(Part(projectId = projectId, name = "Davanti", totalRows = 0))
+        assertEquals("", viewModel(id).form.value.rows)
+    }
+
+    @Test
     fun `saving an edit keeps the id and the progress`() = runTest {
         val id = existing(completed = 30)
         val vm = viewModel(id)

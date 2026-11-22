@@ -61,3 +61,40 @@ fun ProjectIcon.presetParts(): List<PresetPart> {
         ProjectIcon.YARN -> listOf(part(PresetPartName.MAIN, width, height))
     }
 }
+
+/** What a part looks like, to sketch it where its measures are asked. Rows run up the page, stitches across. */
+enum class PartShape {
+    FRONT, BACK, LEFT_FRONT, RIGHT_FRONT, SLEEVE,
+    RECTANGLE, LONG_RECTANGLE, SQUARE, TRIANGLE, DOME, BAND, TUBE, FOOT, MITTEN, BAG, STRAP, SOLE, UPPER,
+}
+
+/**
+ * The shape of the part called [name] in a project of this [icon]; with no known name, that of the type's
+ * first suggested part.
+ */
+fun partShape(icon: ProjectIcon, name: PresetPartName?): PartShape {
+    val part = name ?: icon.presetParts().firstOrNull()?.name ?: PresetPartName.MAIN
+    return when (part) {
+        PresetPartName.FRONT -> PartShape.FRONT
+        PresetPartName.BACK -> PartShape.BACK
+        PresetPartName.LEFT_FRONT -> PartShape.LEFT_FRONT
+        PresetPartName.RIGHT_FRONT -> PartShape.RIGHT_FRONT
+        PresetPartName.SLEEVE -> PartShape.SLEEVE
+        PresetPartName.LEG -> PartShape.TUBE
+        PresetPartName.FOOT -> PartShape.FOOT
+        PresetPartName.CUFF -> PartShape.BAND
+        PresetPartName.HAND -> PartShape.MITTEN
+        PresetPartName.BODY -> PartShape.BAG
+        PresetPartName.STRAP -> PartShape.STRAP
+        PresetPartName.SOLE -> PartShape.SOLE
+        PresetPartName.UPPER -> PartShape.UPPER
+        PresetPartName.MAIN -> when (icon) {
+            ProjectIcon.SCARF -> PartShape.LONG_RECTANGLE
+            ProjectIcon.SHAWL -> PartShape.TRIANGLE
+            ProjectIcon.HAT -> PartShape.DOME
+            ProjectIcon.HEADBAND, ProjectIcon.COWL -> PartShape.BAND
+            ProjectIcon.DISHCLOTH -> PartShape.SQUARE
+            else -> PartShape.RECTANGLE
+        }
+    }
+}

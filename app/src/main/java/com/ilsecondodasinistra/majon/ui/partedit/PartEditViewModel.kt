@@ -193,7 +193,8 @@ private fun String.orNull() = trim().ifEmpty { null }
 
 private fun Part.toForm() = PartForm(
     name = name,
-    rows = totalRows.toString(),
+    // Zero means "to define": the field starts empty, not showing a 0 to delete
+    rows = if (totalRows > 0) totalRows.toString() else "",
     prepRow = hasPrepRow,
     prepNote = prepNote.orEmpty(),
     finalRow = hasFinalRow,

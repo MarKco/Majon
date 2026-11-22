@@ -81,6 +81,11 @@ empty**: the app uses the estimated ones. If you start from **measures** instead
 headband: a single piece) and the right fields: **width** or **circumference**
 along the stitches, **length** or **height** along the rows, in cm.
 
+Above the fields you see a **sketch of the part** (the front with its neckline,
+the tapering sleeve, a hat, a sock…) with two arrows: the horizontal one is the
+measure that gives the stitches, the vertical one the measure that gives the
+rows.
+
 With a yarn linked to the project (and its swatch) the app estimates **how many
 stitches to cast on and how many rows to knit** (“About 52 stitches to cast on
 and 510 rows”); **Use 510 as the total rows** copies it into the rows field. The

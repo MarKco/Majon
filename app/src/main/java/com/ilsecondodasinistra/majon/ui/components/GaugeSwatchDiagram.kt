@@ -95,7 +95,7 @@ fun GaugeSwatchDiagram(
 }
 
 /** Lays a text out sideways: swaps width and height so the rotated text takes the room it needs. */
-private fun Modifier.vertical(): Modifier = layout { measurable, constraints ->
+internal fun Modifier.vertical(): Modifier = layout { measurable, constraints ->
     val placeable = measurable.measure(constraints.copy(maxWidth = Int.MAX_VALUE))
     layout(placeable.height, placeable.width) {
         placeable.place(
