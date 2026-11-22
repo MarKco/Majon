@@ -127,7 +127,7 @@ Formato JSON (`BackupCodec`), marker `"app": "majon"`, `version: 1`:
 
 ## Icona launcher
 
-- Adaptive icon: gomitolo crema + ferri salvia su terracotta
+- Adaptive icon: gomitolo corallo avvolto a caso con un ferro salvia, su crema. Si rigenera da `docs/icon/make_icon.py` (`v2` = fili caotici, in uso; `v1` = archi regolari, che somigliava a un mappamondo; sorgenti SVG in `docs/icon/`)
   (`drawable/ic_launcher_background|foreground|monochrome.xml`)
 - Layer monochrome per le icone temizzate (API 33+)
 - Legacy webp (API 24-25) generati da SVG con ImageMagick, 5 densità.

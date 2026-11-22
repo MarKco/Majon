@@ -4,30 +4,30 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-
-    <!-- Yarn ball outline + strands, single color for themed icons -->
-    <path
-        android:pathData="M26,54 a28,28 0 1,0 56,0 a28,28 0 1,0 -56,0"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="5" />
-    <path
-        android:pathData="M28,47 Q54,63 80,47"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="4"
-        android:strokeLineCap="round" />
-    <path
-        android:pathData="M29.5,62 Q54,76 78.5,62"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="4"
-        android:strokeLineCap="round" />
-    <path
-        android:pathData="M39,33 Q65,50 69,79"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="4"
-        android:strokeLineCap="round" />
-    <path
-        android:pathData="M69,33 Q43,50 39,79"
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="4"
-        android:strokeLineCap="round" />
+    <path android:pathData="M78.73,44.93 Q78.58,48 78.07,50.92 Q77.57,53.84 77.05,56.83 Q76.54,59.82 74.46,62.04 Q72.38,64.25 70.61,66.68 Q68.84,69.11 66.2,70.57 Q63.57,72.02 60.68,72.7 Q57.79,73.38 54.9,74.17 Q52,74.95 49.11,74.15 Q46.22,73.34 43.29,72.74 Q40.37,72.14 38.06,70.26 Q35.75,68.38 33.67,66.33 Q31.59,64.28 29.73,61.95 Q27.87,59.62 26.48,56.88 Q25.1,54.14 25.46,51.07 Q25.83,48 26.06,45.07 Q26.29,42.13 26.9,39.17 Q27.5,36.2 28.87,33.42 Q30.23,30.64 32.67,28.73 Q35.11,26.82 37.76,25.37 Q40.41,23.92 43.1,22.36 Q45.79,20.8 48.9,21.39 Q52,21.99 55.08,21.51 Q58.15,21.04 60.83,22.58 Q63.5,24.12 65.92,25.81 Q68.34,27.51 70.4,29.6 Q72.45,31.69 74.18,34.09 Q75.92,36.48 77.4,39.17 Q78.88,41.86 78.73,44.93Z" android:strokeColor="#000000" android:strokeWidth="3.4" />
+    <path android:pathData="M57,74 C61,87 72,86 73,76" android:strokeColor="#000000" android:strokeWidth="3.4" android:strokeLineCap="round" />
+    <group>
+        <clip-path android:pathData="M78.73,44.93 Q78.58,48 78.07,50.92 Q77.57,53.84 77.05,56.83 Q76.54,59.82 74.46,62.04 Q72.38,64.25 70.61,66.68 Q68.84,69.11 66.2,70.57 Q63.57,72.02 60.68,72.7 Q57.79,73.38 54.9,74.17 Q52,74.95 49.11,74.15 Q46.22,73.34 43.29,72.74 Q40.37,72.14 38.06,70.26 Q35.75,68.38 33.67,66.33 Q31.59,64.28 29.73,61.95 Q27.87,59.62 26.48,56.88 Q25.1,54.14 25.46,51.07 Q25.83,48 26.06,45.07 Q26.29,42.13 26.9,39.17 Q27.5,36.2 28.87,33.42 Q30.23,30.64 32.67,28.73 Q35.11,26.82 37.76,25.37 Q40.41,23.92 43.1,22.36 Q45.79,20.8 48.9,21.39 Q52,21.99 55.08,21.51 Q58.15,21.04 60.83,22.58 Q63.5,24.12 65.92,25.81 Q68.34,27.51 70.4,29.6 Q72.45,31.69 74.18,34.09 Q75.92,36.48 77.4,39.17 Q78.88,41.86 78.73,44.93Z" />
+        <path android:pathData="M33.42,71.76 Q50.89,46.84 76.55,30.48" android:strokeColor="#000000" android:strokeWidth="2.2" android:strokeLineCap="round" />
+        <path android:pathData="M22.91,54.01 Q43.67,35.59 68.58,23.35" android:strokeColor="#000000" android:strokeWidth="2.2" android:strokeLineCap="round" />
+        <path android:pathData="M38.31,74.45 Q56.83,53.34 79.68,37.02" android:strokeColor="#000000" android:strokeWidth="2.2" android:strokeLineCap="round" />
+        <path android:pathData="M48.73,76.38 Q61.97,59.89 80.52,49.75" android:strokeColor="#000000" android:strokeWidth="2.2" android:strokeLineCap="round" />
+        <path android:pathData="M24.27,58.55 Q39.66,35.09 63.78,20.77" android:strokeColor="#000000" android:strokeWidth="2.2" android:strokeLineCap="round" />
+        <path android:pathData="M21.93,49.69 Q51.68,50.61 80.78,56.89" android:strokeColor="#000000" android:strokeWidth="2.2" android:strokeLineCap="round" />
+        <path android:pathData="M24.11,57.61 Q49.35,67.87 76.39,64.58" android:strokeColor="#000000" android:strokeWidth="2.2" android:strokeLineCap="round" />
+        <path android:pathData="M22.72,40.44 Q54,40.4 81.21,55.84" android:strokeColor="#000000" android:strokeWidth="2.2" android:strokeLineCap="round" />
+        <path android:pathData="M30.18,28.44 Q56.32,26.88 79.75,38.58" android:strokeColor="#000000" android:strokeWidth="2.2" android:strokeLineCap="round" />
+        <path android:pathData="M34.73,69.78 Q48.54,78.11 63.87,73.13" android:strokeColor="#000000" android:strokeWidth="2.2" android:strokeLineCap="round" />
+        <path android:pathData="M22.26,44.27 Q51.44,49.36 75.69,66.37" android:strokeColor="#000000" android:strokeWidth="2.2" android:strokeLineCap="round" />
+        <path android:pathData="M24.22,43.74 Q39.1,55.28 41.28,73.98" android:strokeColor="#000000" android:strokeWidth="2.2" android:strokeLineCap="round" />
+        <path android:pathData="M64.81,23.48 Q78.09,30.69 79.57,45.73" android:strokeColor="#000000" android:strokeWidth="2.2" android:strokeLineCap="round" />
+        <path android:pathData="M37.36,21.58 Q61.49,41.4 71.67,70.92" android:strokeColor="#000000" android:strokeWidth="2.2" android:strokeLineCap="round" />
+        <path android:pathData="M27.85,32.12 Q43.7,50.89 42.92,75.45" android:strokeColor="#000000" android:strokeWidth="2.2" android:strokeLineCap="round" />
+        <path android:pathData="M36.54,71.97 Q55.33,62.55 76.34,62.86" android:strokeColor="#000000" android:strokeWidth="2.2" android:strokeLineCap="round" />
+        <path android:pathData="M22.84,55.17 Q52.02,58.54 81.18,55.06" android:strokeColor="#000000" android:strokeWidth="2.2" android:strokeLineCap="round" />
+        <path android:pathData="M29.23,66.65 Q56.05,67.88 80.25,56.26" android:strokeColor="#000000" android:strokeWidth="2.2" android:strokeLineCap="round" />
+    </group>
+    <path android:pathData="M29.11,37.67 Q24.85,33.03 28.98,28.45" android:strokeColor="#000000" android:strokeWidth="2.6" android:strokeLineCap="round" />
+    <path android:pathData="M30,72 L74,28" android:strokeColor="#000000" android:strokeWidth="3.6" android:strokeLineCap="round" />
+    <path android:fillColor="#000000" android:pathData="M70,28 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
 </vector>
