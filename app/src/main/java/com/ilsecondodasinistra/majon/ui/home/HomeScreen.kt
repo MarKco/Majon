@@ -26,12 +26,11 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberUpdatedState
@@ -41,7 +40,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -70,20 +68,18 @@ fun HomeScreen(
     // A copy of a project opens in the editor, so it can be varied right away
     val openCopy by rememberUpdatedState(onEditProject)
     LaunchedEffect(viewModel) { viewModel.duplicated.collect { openCopy(it) } }
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     var projectToDelete by remember { mutableStateOf<ProjectWithParts?>(null) }
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            LargeTopAppBar(
+            // Compact, like the Stash tab: the title and the settings button share one row
+            TopAppBar(
                 title = { Text(stringResource(R.string.home_title)) },
                 actions = {
                     IconButton(onClick = onSettings) {
                         Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings))
                     }
                 },
-                scrollBehavior = scrollBehavior,
             )
         },
         floatingActionButton = {
