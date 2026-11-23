@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -58,6 +59,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
+    /** Opens the import screen (a whole project or just notes, from a file or pasted text). */
+    onImport: () -> Unit,
+    onNotesGuide: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -68,10 +72,9 @@ fun SettingsScreen(
 
     val exportDoneMsg = stringResource(R.string.export_done)
     val exportErrorMsg = stringResource(R.string.export_error)
-    val importErrorMsg = stringResource(R.string.import_error)
 
     val exportLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("application/json"),
+        ActivityResultContracts.CreateDocument("application/octet-stream"),
     ) { uri: Uri? ->
         uri ?: return@rememberLauncherForActivityResult
         scope.launch {
@@ -84,31 +87,6 @@ fun SettingsScreen(
                 snackbar.showSnackbar(exportDoneMsg)
             }.onFailure {
                 snackbar.showSnackbar(exportErrorMsg)
-            }
-        }
-    }
-
-    val importLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument(),
-    ) { uri: Uri? ->
-        uri ?: return@rememberLauncherForActivityResult
-        scope.launch {
-            val result = runCatching {
-                val content = context.contentResolver.openInputStream(uri)?.use { stream ->
-                    stream.readBytes().toString(Charsets.UTF_8)
-                } ?: error("Cannot open input stream")
-                viewModel.importData(content).getOrThrow()
-            }
-            result.onSuccess { summary ->
-                snackbar.showSnackbar(
-                    if (summary.yarns + summary.needles == 0) {
-                        resources.getString(R.string.import_done, summary.projects)
-                    } else {
-                        resources.getString(R.string.import_done_stash, summary.projects, summary.yarns, summary.needles)
-                    },
-                )
-            }.onFailure {
-                snackbar.showSnackbar(importErrorMsg)
             }
         }
     }
@@ -252,15 +230,19 @@ fun SettingsScreen(
                     headlineContent = { Text(stringResource(R.string.export_data)) },
                     supportingContent = { Text(stringResource(R.string.export_data_desc)) },
                     leadingContent = { Icon(Icons.Default.FileUpload, contentDescription = null) },
-                    modifier = Modifier.clickableItem { exportLauncher.launch("majon-backup.json") },
+                    modifier = Modifier.clickableItem { exportLauncher.launch("majon-backup.majon") },
                 )
                 ListItem(
                     headlineContent = { Text(stringResource(R.string.import_data)) },
                     supportingContent = { Text(stringResource(R.string.import_data_desc)) },
                     leadingContent = { Icon(Icons.Default.FileDownload, contentDescription = null) },
-                    modifier = Modifier.clickableItem {
-                        importLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
-                    },
+                    modifier = Modifier.clickableItem(onImport),
+                )
+                ListItem(
+                    headlineContent = { Text(stringResource(R.string.ai_guide_title)) },
+                    supportingContent = { Text(stringResource(R.string.ai_guide_desc)) },
+                    leadingContent = { Icon(Icons.Default.AutoAwesome, contentDescription = null) },
+                    modifier = Modifier.clickableItem(onNotesGuide),
                 )
             }
             Spacer(Modifier.height(24.dp))

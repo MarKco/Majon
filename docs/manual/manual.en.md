@@ -121,11 +121,13 @@ Tap a part to open the **counter**.
 <img src="images/en/05-counter.png" width="260" alt="The counter">
 <img src="images/en/06-go-to-row.png" width="260" alt="Go to row">
 
-- The big number is the row **you are working on now**. It has a *muted*
-  colour and the label “In progress”.
-- **+** (big button): row finished. The number lights up for a moment in its
-  full colour (“Done ✓”) and then becomes the next row, muted again. A small
-  confirmation vibration and a ripple from the button.
+- At the top, under “In progress”, is the row **you are working on now**
+  (“Row 5”). The big number is the **rows already done** (4): the rows on
+  the needles right now. It has a *muted* colour.
+- **+** (big button): row finished. The big number goes up and lights up for a
+  moment in its full colour (“Done ✓”), then the top moves on to the next row
+  and the number goes muted again. A small confirmation vibration and a ripple
+  from the button.
 - **−**: undo the last row (for accidental +).
 - The bar with three icons at the bottom holds:
   - 📌 **Notes**: manage the part's instructions;

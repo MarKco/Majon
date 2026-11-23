@@ -122,11 +122,13 @@ Tocca una parte per aprire il **contatore**.
 <img src="images/it/05-counter.png" width="260" alt="Il contatore">
 <img src="images/it/06-go-to-row.png" width="260" alt="Vai alla riga">
 
-- Il numero grande è la riga **che stai facendo ora**. Ha un colore
-  *tenue* e la scritta «In lavorazione».
-- **+** (pulsante grande): riga finita. Il numero si accende per un istante
-  del suo colore pieno («Fatta ✓») e poi diventa la riga successiva, di nuovo
-  tenue. Piccola vibrazione di conferma e un'onda che parte dal pulsante.
+- In alto, sotto «In lavorazione», c'è la riga **che stai facendo ora**
+  («Riga 5»). Il numero grande, invece, sono le **righe già fatte** (4): quelle
+  che ci sono sul ferro in questo momento. Ha un colore *tenue*.
+- **+** (pulsante grande): riga finita. Il numero grande sale e si accende per
+  un istante del suo colore pieno («Fatta ✓»), poi in alto passa alla riga
+  successiva e il numero torna tenue. Piccola vibrazione di conferma e un'onda
+  che parte dal pulsante.
 - **−**: annulla l'ultima riga (per i + di troppo).
 - La barra con le tre icone in basso contiene:
   - 📌 **Note**: gestisci le istruzioni della parte;

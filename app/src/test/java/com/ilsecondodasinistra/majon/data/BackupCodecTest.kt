@@ -225,8 +225,8 @@ class BackupCodecTest {
     }
 
     @Test
-    fun `export is version 2`() {
-        assertTrue(codec.encode(emptyList(), exportedAt = 1L).contains("\"version\": 2"))
+    fun `export is version 3`() {
+        assertTrue(codec.encode(emptyList(), exportedAt = 1L).contains("\"version\": 3"))
     }
 
     @Test

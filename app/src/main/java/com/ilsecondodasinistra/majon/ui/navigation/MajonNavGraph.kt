@@ -1,5 +1,10 @@
 package com.ilsecondodasinistra.majon.ui.navigation
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ilsecondodasinistra.majon.ui.importer.ImportInboxViewModel
+import com.ilsecondodasinistra.majon.ui.importer.NotesGuideScreen
+import com.ilsecondodasinistra.majon.ui.importer.ImportScreen
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -66,6 +71,8 @@ object Routes {
     const val COUNTER = "counter/{partId}"
     const val NOTES = "notes/{partId}"
     const val FINISH = "finish/{projectId}"
+    const val IMPORT = "import?projectId={projectId}"
+    const val NOTES_GUIDE = "notes_guide?projectId={projectId}"
     const val NOTE_EDIT = "note_edit/{partId}?noteId={noteId}"
     const val SETTINGS = "settings"
     const val STASH = "stash"
@@ -83,6 +90,8 @@ object Routes {
     fun counter(partId: Long) = "counter/$partId"
     fun notes(partId: Long) = "notes/$partId"
     fun finish(projectId: Long) = "finish/$projectId"
+    fun import(projectId: Long? = null) = "import?projectId=${projectId ?: 0}"
+    fun notesGuide(projectId: Long? = null) = "notes_guide?projectId=${projectId ?: 0}"
     fun noteEdit(partId: Long, noteId: Long? = null) = "note_edit/$partId?noteId=${noteId ?: 0}"
     fun yarnDetail(yarnId: Long) = "yarn/$yarnId"
     fun projectLinks(projectId: Long) = "project_links/$projectId"
@@ -107,6 +116,15 @@ fun MajonNavGraph(navController: NavHostController) {
     val entry by navController.currentBackStackEntryAsState()
     val route = entry?.destination?.route
     val showBar = route in TAB_ROUTES
+
+    // A .majon or .majon-notes file opened from outside the app: take it to the import screen
+    val inboxViewModel: ImportInboxViewModel = androidx.hilt.navigation.compose.hiltViewModel()
+    val waiting by inboxViewModel.inbox.pending.collectAsStateWithLifecycle()
+    LaunchedEffect(waiting != null) {
+        if (waiting != null && navController.currentDestination?.route?.startsWith("import") != true) {
+            navController.navigate(Routes.import()) { launchSingleTop = true }
+        }
+    }
     val haze = rememberHazeState()
     val density = LocalDensity.current
     var barHeight by remember { mutableStateOf(0.dp) }
@@ -194,6 +212,7 @@ private fun MajonNavHost(navController: NavHostController, modifier: Modifier) {
                 onAddProject = { navController.navigate(Routes.editProject()) },
                 onEditProject = { navController.navigate(Routes.editProject(it)) },
                 onSettings = { navController.navigate(Routes.SETTINGS) },
+                onImport = { navController.navigate(Routes.import()) },
             )
         }
 
@@ -308,6 +327,8 @@ private fun MajonNavHost(navController: NavHostController, modifier: Modifier) {
                 onPartNotes = { navController.navigate(Routes.notes(it)) },
                 onEditProject = { navController.navigate(Routes.editProject(it)) },
                 onDuplicated = { navController.navigate(Routes.editProject(it)) },
+                onImportNotes = { navController.navigate(Routes.import(detailProjectId)) },
+                onNotesGuide = { navController.navigate(Routes.notesGuide(detailProjectId)) },
             )
         }
 
@@ -357,9 +378,35 @@ private fun MajonNavHost(navController: NavHostController, modifier: Modifier) {
             FinishScreen(onBack = { navController.popBackStack() })
         }
 
+        composable(
+            Routes.IMPORT,
+            arguments = listOf(navArgument("projectId") { type = NavType.LongType; defaultValue = 0L }),
+        ) { entry ->
+            ImportScreen(
+                onBack = { navController.popBackStack() },
+                onOpenProject = { id ->
+                    // Back from the project goes where the import started
+                    navController.navigate(Routes.projectDetail(id)) { popUpTo(Routes.HOME) }
+                },
+                onOpenGuide = { navController.navigate(Routes.notesGuide(entry.arguments?.getLong("projectId")?.takeIf { it != 0L })) },
+            )
+        }
+
+        composable(
+            Routes.NOTES_GUIDE,
+            arguments = listOf(navArgument("projectId") { type = NavType.LongType; defaultValue = 0L }),
+        ) { entry ->
+            NotesGuideScreen(
+                onBack = { navController.popBackStack() },
+                onImport = { navController.navigate(Routes.import(entry.arguments?.getLong("projectId")?.takeIf { it != 0L })) },
+            )
+        }
+
         composable(Routes.SETTINGS) {
             SettingsScreen(
                 onBack = { navController.popBackStack() },
+                onImport = { navController.navigate(Routes.import()) },
+                onNotesGuide = { navController.navigate(Routes.notesGuide()) },
             )
         }
     }

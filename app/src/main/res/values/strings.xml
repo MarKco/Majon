@@ -48,7 +48,7 @@
 
     <!-- Counter -->
     <string name="row_current">Riga %1$d</string>
-    <string name="row_of_total">di %1$d</string>
+    <string name="rows_done_of_total">righe fatte su %1$d</string>
     <string name="next_row_label">Prossima: riga %1$d</string>
     <string name="current_row_note">Nota per questa riga</string>
     <string name="current_prep_note">Nota per la riga di preparazione</string>
@@ -58,9 +58,6 @@
     <string name="row_state_done">Fatta ✓</string>
     <string name="row_prep_label">Riga 0 · preparazione</string>
     <string name="row_final_label">Riga di raccordo</string>
-    <string name="row_final_big">Finale</string>
-    <string name="row_before_first">prima della riga 1</string>
-    <string name="row_after_last">dopo la riga %1$d</string>
     <string name="next_part_title">%1$s finita!</string>
     <string name="next_part_message">Passare a «%1$s»?</string>
     <string name="next_part_go">Passa alla prossima</string>
@@ -95,7 +92,6 @@
     <string name="note_text">Testo della nota</string>
     <string name="from_row">Dalla riga</string>
     <string name="to_row">Alla riga</string>
-    <string name="frequency">Si applica a</string>
     <string name="freq_every">Tutte le righe</string>
     <string name="freq_odd">Righe dispari</string>
     <string name="freq_even">Righe pari</string>
@@ -106,6 +102,21 @@
     <string name="note_out_of_range">Oltre il totale di righe: la nota non verrà mostrata</string>
     <string name="note_rows_single">Riga %1$d</string>
     <string name="note_rows_range">Righe %1$d–%2$d</string>
+    <string name="note_rows_list">Righe %1$s</string>
+    <string name="note_rows_list_more">Righe %1$s … (%2$d)</string>
+    <string name="note_rows_every">Ogni %1$d righe, da %2$d a %3$d</string>
+    <string name="note_scope_title">Si applica a</string>
+    <string name="note_scope_range">Un intervallo</string>
+    <string name="note_scope_rows">Righe precise</string>
+    <string name="note_scope_every">Ogni N righe</string>
+    <string name="note_rows_field">Righe (es. 10, 20, 30-35)</string>
+    <string name="note_rows_hint">Separa i numeri con virgole o spazi; 30-35 vale per tutte le righe da 30 a 35.</string>
+    <string name="note_every_field">Ogni quante righe</string>
+    <string name="note_every_from_hint">Vuota = dalla riga 1</string>
+    <string name="note_every_to_hint">Vuota = fino all’ultima riga</string>
+    <string name="note_error_rows_empty">Scrivi almeno una riga</string>
+    <string name="note_error_rows_invalid">Non capisco alcune righe: usa numeri, virgole e intervalli come 30-35</string>
+    <string name="note_error_step">«Ogni quante righe» dev’essere almeno 2</string>
     <string name="delete_note_title">Eliminare la nota?</string>
 
     <!-- Settings -->
@@ -172,13 +183,10 @@
     <string name="wavy_progress_desc">La parte colorata ondeggia come un filo</string>
     <string name="data_section">I tuoi dati</string>
     <string name="export_data">Esporta dati</string>
-    <string name="export_data_desc">Salva tutti i progetti in un file JSON</string>
+    <string name="export_data_desc">Salva tutti i progetti, con lane e ferri, in un file .majon</string>
     <string name="import_data">Importa dati</string>
-    <string name="import_data_desc">Aggiungi progetti da un backup</string>
+    <string name="import_data_desc">Da un file .majon o .majon-notes, o dal testo incollato</string>
     <string name="export_done">Backup salvato</string>
-    <string name="import_done">%1$d progetti importati</string>
-    <string name="import_done_stash">%1$d progetti, %2$d lane e %3$d ferri importati</string>
-    <string name="import_error">File non valido: nessun progetto importato</string>
     <string name="export_error">Errore durante l’esportazione</string>
 
     <!-- Stash: yarns and needles -->
@@ -433,6 +441,91 @@
     <string name="finishing_step_sew_sides">Cucire i fianchi e i lati delle maniche</string>
     <string name="finishing_step_weave_ends">Nascondere i fili</string>
     <string name="finishing_step_wash_and_dry">Lavare e asciugare in piano</string>
+    <string name="import_title">Importa</string>
+    <string name="import_intro">Scegli un file .majon (un progetto intero) o .majon-notes (solo note), oppure incolla qui sotto il testo.</string>
+    <string name="import_choose_file">Scegli un file</string>
+    <string name="import_paste_button">Incolla</string>
+    <string name="import_text_hint">Incolla qui il testo del file…</string>
+    <string name="import_format_button">Formatta e controlla</string>
+    <string name="import_format_hint">Sistema il testo e ti dice, riga per riga, cosa non va prima di importare.</string>
+    <string name="import_nothing_yet">Nessun testo: incollalo o scegli un file.</string>
+    <string name="import_issues_title">Non posso importare questo testo</string>
+    <string name="import_issue_line">Riga %1$d</string>
+    <string name="import_issue_syntax">Il testo non è un JSON valido: manca una virgola, una parentesi o delle virgolette?</string>
+    <string name="import_issue_not_notes">Questo non è un file .majon-notes.</string>
+    <string name="import_issue_not_majon">Questo non è un file di Majon.</string>
+    <string name="import_issue_future">Il file è stato scritto da una versione più recente di Majon: aggiorna l’app.</string>
+    <string name="import_issue_no_notes">Il file non contiene nessuna nota.</string>
+    <string name="import_issue_part_no_name">Una parte non ha il nome.</string>
+    <string name="import_issue_text_blank">«%1$s», nota %2$d: manca il testo.</string>
+    <string name="import_issue_missing_row">«%1$s», nota %2$d: non dice a quale riga si applica.</string>
+    <string name="import_issue_row_below_one">«%1$s», nota %2$d: le righe partono da 1.</string>
+    <string name="import_issue_end_before_start">«%1$s», nota %2$d: la riga finale precede quella iniziale.</string>
+    <string name="import_issue_step">«%1$s», nota %2$d: «every» dev’essere almeno 2.</string>
+    <string name="import_issue_rows_empty">«%1$s», nota %2$d: «rows» è vuoto.</string>
+    <string name="import_issue_frequency">«%1$s», nota %2$d: la frequenza «%3$s» non esiste (usa EVERY_ROW, ODD_ROWS o EVEN_ROWS).</string>
+    <string name="import_copy_issues">Copia gli errori</string>
+    <string name="import_copy_issues_hint">Incollali nella chat dell’IA: te lo correggerà.</string>
+    <string name="import_issues_copied">Errori copiati</string>
+    <string name="import_project_title">Progetto da importare</string>
+    <string name="import_project_counts">%1$d parti · %2$d note</string>
+    <string name="import_stash_title">Nel tuo stash</string>
+    <string name="import_stash_yarns">Lane: %1$d già presenti, %2$d nuove</string>
+    <string name="import_stash_needles">Ferri: %1$d già presenti, %2$d nuovi</string>
+    <string name="import_stash_hint">Quelle che hai già vengono riusate. Le nuove si aggiungono senza scorta: sai cosa ti manca.</string>
+    <string name="import_as_project">Importa il progetto</string>
+    <string name="import_only_notes">Solo le note</string>
+    <string name="import_back_to_project">Importa tutto il progetto</string>
+    <string name="import_source_project">Da quale progetto del file?</string>
+    <string name="import_target_title">A quale progetto?</string>
+    <string name="import_target_none">Non hai ancora nessun progetto: creane uno, poi importa le note.</string>
+    <string name="import_parts_title">Dove vanno le note</string>
+    <string name="import_part_notes">%1$d note</string>
+    <string name="import_choice_create">Crea la parte</string>
+    <string name="import_choice_skip">Salta</string>
+    <string name="import_summary">%1$d note da aggiungere</string>
+    <string name="import_summary_duplicates">%1$d già presenti (non si ripetono)</string>
+    <string name="import_warnings_title">Attenzione</string>
+    <string name="import_warning_beyond">«%1$s», nota %2$d: arriva alla riga %3$s, oltre le righe della parte. La nota si importa, ma non si vedrà finché non allunghi la parte.</string>
+    <string name="import_warning_prep">«%1$s»: la parte non ha la riga di preparazione, la sua nota non si importa.</string>
+    <string name="import_warning_final">«%1$s»: la parte non ha la riga finale, la sua nota non si importa.</string>
+    <string name="import_error_open_end">«%1$s», nota %2$d: «ogni N righe» senza riga finale, in una parte senza righe. Indica la riga finale o dai le righe alla parte.</string>
+    <string name="import_notes_button">Aggiungi %1$d note</string>
+    <string name="import_done_title">Fatto</string>
+    <string name="import_done_notes">%1$d note aggiunte.</string>
+    <string name="import_done_project">%1$d progetti importati. Nello stash: %2$d lane e %3$d ferri nuovi.</string>
+    <string name="import_open_project">Apri il progetto</string>
+    <string name="import_again">Importa altro</string>
+    <string name="share_project">Condividi</string>
+    <string name="share_title">Condividi il progetto</string>
+    <string name="share_message">Un file .majon con il progetto, le parti, le note, le lane e i ferri. Scorta, prezzi e negozi non ci sono mai.</string>
+    <string name="share_as_model">Come modello (da zero)</string>
+    <string name="share_with_progress">Con il mio avanzamento</string>
+    <string name="share_chooser">Condividi il progetto</string>
+    <string name="share_error">Non riesco a preparare il file</string>
+    <string name="project_import_notes">Importa note</string>
+    <string name="project_notes_guide">Guida IA per le note</string>
+    <string name="guide_title">Note con un’IA</string>
+    <string name="guide_intro">Hai istruzioni tipo «alle righe 10, 20 e 30 fai questo»? Fatti scrivere le note da un assistente IA e importale in un colpo solo.</string>
+    <string name="guide_step1_title">1. Copia la guida</string>
+    <string name="guide_step1_body">Copia il testo qui sotto e incollalo in una chat con il tuo assistente IA (ChatGPT, Claude, Gemini…). Spiega il formato esatto da usare.</string>
+    <string name="guide_step2_title">2. Dagli le istruzioni</string>
+    <string name="guide_step2_body">Nella stessa chat incolla il testo delle istruzioni del modello, o una foto. Se ci sono più taglie, dì quale.</string>
+    <string name="guide_step3_title">3. Importa la risposta</string>
+    <string name="guide_step3_body">Copia il blocco di codice con cui risponde, poi vai su Importa e incollalo. Prima di aggiungere qualcosa Majon controlla il testo e ti mostra cosa ha trovato.</string>
+    <string name="guide_project_hint">Questa guida contiene già le parti di «%1$s» con le loro righe: l’IA userà i nomi giusti.</string>
+    <string name="guide_rows_label">%1$d righe</string>
+    <string name="guide_copy">Copia la guida</string>
+    <string name="guide_copied">Guida copiata</string>
+    <string name="guide_share">Condividi</string>
+    <string name="guide_go_import">Vai a Importa</string>
+    <string name="guide_text_label">Testo della guida</string>
+    <string name="ai_guide_title">Importa note con un’IA</string>
+    <string name="ai_guide_desc">Come farti scrivere le note da un assistente e importarle</string>
+    <string name="guide_parts_heading"># Le parti di questo progetto
+
+Usa esattamente questi nomi per "part" e non scrivere righe oltre il loro totale:</string>
+    <string name="import_file_error">Non riesco a leggere il file (è troppo grande o non è di testo)</string>
     <string name="yarn_section_yarn">La lana</string>
     <string name="yarn_section_skein">Gomitolo e scorta</string>
     <string name="yarn_section_buy">Acquisto, cura e note</string>

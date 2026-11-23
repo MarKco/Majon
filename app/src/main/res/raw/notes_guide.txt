@@ -1,0 +1,93 @@
+Devi preparare un file per Majon, un'app per contare le righe nei lavori a maglia. Ti darò le istruzioni di un modello (testo, foto o link). Il tuo compito è trasformare ogni istruzione legata a una o più righe in una "nota" nel formato JSON qui sotto, e rispondere con il file pronto da importare.
+
+# Cosa devi rispondere
+
+Rispondi SOLO con il JSON, dentro un unico blocco di codice. Niente spiegazioni prima o dopo. Se manca un'informazione che ti serve (per esempio la taglia, se il modello ne ha più di una), chiedimela PRIMA di dare il file.
+
+# Il formato
+
+{
+  "app": "majon-notes",
+  "version": 1,
+  "parts": [
+    {
+      "part": "Davanti",
+      "prepNote": "Avvia 164 maglie",
+      "finalNote": null,
+      "notes": [ ...le note di questa parte... ]
+    }
+  ]
+}
+
+- "app" deve essere esattamente "majon-notes" e "version" esattamente 1.
+- "parts" è una lista con una voce per ogni parte del lavoro (davanti, dietro, manica...). "part" è il nome della parte.
+- "prepNote" è la nota per la riga 0, quella di preparazione prima della prima riga (avvio delle maglie, bordo, ecc.), oppure null. "finalNote" è la nota per l'ultima riga di raccordo, oppure null.
+- "notes" è la lista delle note della parte, nell'ordine delle righe.
+
+# Una nota
+
+Una nota ha sempre "text" (cosa fare) e dice a quali righe vale in uno di QUATTRO modi. Le righe sono numerate da 1: la riga 1 è il primo ferro dopo l'avvio delle maglie.
+
+1. Una riga sola:
+   { "rowStart": 7, "text": "Aumenta 1 maglia a inizio ferro" }
+
+2. Un intervallo di righe (rowEnd è l'ultima riga compresa). Di default vale per tutte le righe; "frequency" può essere "EVERY_ROW" (tutte), "ODD_ROWS" (solo dispari) o "EVEN_ROWS" (solo pari):
+   { "rowStart": 41, "rowEnd": 180, "text": "Maglia rasata" }
+   { "rowStart": 41, "rowEnd": 180, "frequency": "EVEN_ROWS", "text": "Tutto a rovescio" }
+
+3. Righe precise, elencate con "rows" (anche non consecutive):
+   { "rows": [10, 20, 30], "text": "Diminuisci 2 maglie" }
+
+4. Una riga ogni N, con "every" (N almeno 2): parte da rowStart (se manca, dalla riga 1) e arriva a rowEnd (se manca, fino all'ultima riga della parte):
+   { "every": 6, "rowStart": 12, "rowEnd": 190, "text": "Aumenta 1 maglia per lato" }
+
+Tutti gli altri campi sono vietati o inutili: non inventarne.
+
+# Come leggere le istruzioni
+
+- Il testo di ogni nota è breve e operativo, nella lingua delle istruzioni, e contiene tutto quello che serve per eseguire quella riga (quante maglie, da che parte, quale punto). Non copiare paragrafi interi.
+- "Ai ferri dispari / pari" significa ODD_ROWS / EVEN_ROWS. "Ripeti ogni 6 ferri" significa "every": 6. "Ai ferri 10, 20 e 30" significa "rows": [10, 20, 30].
+- Se un'istruzione dice "lavora X fino a quando..." o "ripeti i ferri 3 e 4 per N volte", calcola tu i numeri di riga reali e scrivili.
+- Se due istruzioni valgono per la stessa riga, scrivi due note separate: l'app le mostra insieme.
+- Una nota per intervallo vale più di tante note per riga: "Ferri 41-180: maglia rasata" è UNA nota con rowStart 41 e rowEnd 180, non 140 note.
+- Se il modello ha più taglie (S, M, L, XL...), usa solo i numeri della taglia che ti indico. Se non te l'ho detta, chiedila.
+- Non inventare istruzioni che non ci sono e non cambiare i numeri. Se un'istruzione è ambigua, chiedimi prima di rispondere.
+- Non scrivere note oltre l'ultima riga di una parte (vedi l'elenco delle parti qui sotto, se c'è).
+
+{{PARTS}}
+
+# Un esempio
+
+Istruzioni:
+"DIETRO. Avvia 164 maglie. Ferri 1-40: coste 1/1. Ferri 41-180: maglia rasata (ferri dispari tutto a diritto, pari tutto a rovescio). Dal ferro 12, ogni 6 ferri, aumenta 1 maglia a ogni estremità. Ferri 20, 40 e 60: segna con un anello. Ferro 181: intreccia le prime 6 maglie."
+
+Risposta:
+```json
+{
+  "app": "majon-notes",
+  "version": 1,
+  "parts": [
+    {
+      "part": "Dietro",
+      "prepNote": "Avvia 164 maglie",
+      "finalNote": null,
+      "notes": [
+        { "rowStart": 1, "rowEnd": 40, "text": "Coste 1/1" },
+        { "rowStart": 41, "rowEnd": 180, "frequency": "ODD_ROWS", "text": "Maglia rasata: tutto a diritto" },
+        { "rowStart": 41, "rowEnd": 180, "frequency": "EVEN_ROWS", "text": "Maglia rasata: tutto a rovescio" },
+        { "every": 6, "rowStart": 12, "rowEnd": 180, "text": "Aumenta 1 maglia a ogni estremità" },
+        { "rows": [20, 40, 60], "text": "Segna con un anello" },
+        { "rowStart": 181, "text": "Intreccia le prime 6 maglie" }
+      ]
+    }
+  ]
+}
+```
+
+# Prima di rispondere, controlla
+
+- Il JSON è valido: virgolette doppie, nessuna virgola in più in fondo, nessun commento.
+- Ogni nota ha "text" e uno solo dei quattro modi di dire le righe.
+- Nessuna riga è 0 o negativa, e rowEnd non è minore di rowStart.
+- I nomi delle parti sono quelli del modello (o dell'elenco qui sopra).
+- Hai risposto solo con il blocco di codice.

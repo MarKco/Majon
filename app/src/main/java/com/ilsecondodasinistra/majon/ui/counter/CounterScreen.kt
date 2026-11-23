@@ -1,5 +1,8 @@
 package com.ilsecondodasinistra.majon.ui.counter
 
+import com.ilsecondodasinistra.majon.domain.model.rowsKnittedWhenDone
+import com.ilsecondodasinistra.majon.domain.model.rowsKnitted
+import com.ilsecondodasinistra.majon.domain.model.newNoteTexts
 import android.view.WindowManager
 import android.Manifest
 import android.content.pm.PackageManager
@@ -393,15 +396,16 @@ fun CounterScreen(
 
                         Spacer(Modifier.height(8.dp))
 
-                        // Next step preview
-                        state.nextStep?.let { next ->
+                        // Next step preview, only for a note that says something the current row's does not
+                        val nextTexts = newNoteTexts(currentTexts, state.nextNotes.map { it.text } + listOfNotNull(state.nextStepNote))
+                        state.nextStep?.takeIf { nextTexts.isNotEmpty() }?.let { next ->
                             NoteCard(
                                 title = when (next) {
                                     is RowStep.Row -> stringResource(R.string.next_row_label, next.number)
                                     RowStep.Final -> stringResource(R.string.next_final_label)
                                     RowStep.Prep -> ""
                                 },
-                                texts = state.nextNotes.map { it.text } + listOfNotNull(state.nextStepNote),
+                                texts = nextTexts,
                                 highlighted = false,
                             )
                         }
@@ -550,8 +554,9 @@ private fun RowStep.order(): Int = when (this) {
 private const val DONE_FLASH_MILLIS = 320L
 
 /**
- * The big row number. Muted colour = "I am knitting this row"; when the row is finished it flashes to the
- * full colour ("done"), then becomes the next row in the muted colour again.
+ * The row in progress ("In lavorazione · Riga 5") with, big, the rows already knitted (4). Muted colour = "I am
+ * knitting this row"; when the row is finished the count goes up and flashes in the full colour ("done"), then the
+ * row in progress becomes the next one and the colour goes muted again.
  * The stored count changes immediately; only what is drawn waits for the flash.
  */
 @Composable
@@ -586,61 +591,73 @@ private fun RowNumber(step: RowStep, totalRows: Int) {
         label = "rowNumberColor",
     )
 
-    // Springy pop each time the row changes
+    // The big number is the rows already on the needles; the row being worked is named above it.
+    // At the moment a row is done it counts already, in the strong colour of the flash.
+    val knitted = if (confirmed) shown.rowsKnittedWhenDone(totalRows) else shown.rowsKnitted(totalRows)
+
+    // Springy pop each time the count changes
     val pop = remember { Animatable(1f) }
-    LaunchedEffect(shown) {
+    LaunchedEffect(knitted) {
         pop.snapTo(0.85f)
         pop.animateTo(1f, spring(dampingRatio = Spring.DampingRatioHighBouncy, stiffness = Spring.StiffnessMedium))
     }
-    AnimatedContent(
-        targetState = shown,
-        transitionSpec = {
-            if (targetState.order() > initialState.order()) {
-                (slideInVertically { it / 2 } + fadeIn()) togetherWith
-                    (slideOutVertically { -it / 2 } + fadeOut())
-            } else {
-                (slideInVertically { -it / 2 } + fadeIn()) togetherWith
-                    (slideOutVertically { it / 2 } + fadeOut())
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        AnimatedContent(
+            targetState = shown,
+            transitionSpec = {
+                if (targetState.order() > initialState.order()) {
+                    (slideInVertically { it / 2 } + fadeIn()) togetherWith
+                        (slideOutVertically { -it / 2 } + fadeOut())
+                } else {
+                    (slideInVertically { -it / 2 } + fadeIn()) togetherWith
+                        (slideOutVertically { it / 2 } + fadeOut())
+                }
+            },
+            label = "rowInProgress",
+        ) { value ->
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    stringResource(if (confirmed) R.string.row_state_done else R.string.row_state_working),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = numberColor,
+                )
+                Text(
+                    when (value) {
+                        RowStep.Prep -> stringResource(R.string.row_prep_label)
+                        RowStep.Final -> stringResource(R.string.row_final_label)
+                        is RowStep.Row -> stringResource(R.string.row_current, value.number)
+                    },
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-        },
-        label = "rowNumber",
-    ) { value ->
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        }
+        AnimatedContent(
+            targetState = knitted,
+            transitionSpec = {
+                if (targetState > initialState) {
+                    (slideInVertically { it / 2 } + fadeIn()) togetherWith
+                        (slideOutVertically { -it / 2 } + fadeOut())
+                } else {
+                    (slideInVertically { -it / 2 } + fadeIn()) togetherWith
+                        (slideOutVertically { it / 2 } + fadeOut())
+                }
+            },
+            label = "rowsKnitted",
+        ) { count ->
             Text(
-                stringResource(if (confirmed) R.string.row_state_done else R.string.row_state_working),
-                style = MaterialTheme.typography.labelLarge,
-                color = numberColor,
-            )
-            Text(
-                when (value) {
-                    RowStep.Prep -> stringResource(R.string.row_prep_label)
-                    RowStep.Final -> stringResource(R.string.row_final_label)
-                    is RowStep.Row -> stringResource(R.string.row_current, value.number)
-                },
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                when (value) {
-                    RowStep.Prep -> "0"
-                    RowStep.Final -> stringResource(R.string.row_final_big)
-                    is RowStep.Row -> "${value.number}"
-                },
+                "$count",
                 style = MaterialTheme.typography.displayLarge,
-                fontSize = if (value == RowStep.Final) 72.sp else 110.sp,
+                fontSize = 110.sp,
                 color = numberColor,
                 modifier = Modifier.scale(pop.value),
             )
-            Text(
-                when (value) {
-                    RowStep.Prep -> stringResource(R.string.row_before_first)
-                    RowStep.Final -> stringResource(R.string.row_after_last, totalRows)
-                    is RowStep.Row -> stringResource(R.string.row_of_total, totalRows)
-                },
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
+        Text(
+            stringResource(R.string.rows_done_of_total, totalRows),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

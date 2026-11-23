@@ -1,0 +1,28 @@
+{
+  "app": "majon-notes",
+  "version": 1,
+  "parts": [
+    {
+      "part": "Dietro",
+      "prepNote": "Avvia 164 maglie su ferri di legno",
+      "finalNote": null,
+      "notes": [
+        { "rowStart": 1, "rowEnd": 40, "text": "Coste 1/1" },
+        { "rowStart": 41, "rowEnd": 180, "frequency": "ODD_ROWS", "text": "Maglia rasata: tutto a diritto" },
+        { "rowStart": 41, "rowEnd": 180, "frequency": "EVEN_ROWS", "text": "Maglia rasata: tutto a rovescio" },
+        { "every": 6, "rowStart": 12, "rowEnd": 180, "text": "Aumenta 1 maglia a ogni estremità" },
+        { "rows": [20, 40, 60], "text": "Segna con un anello" },
+        { "rowStart": 181, "text": "Intreccia le prime 6 maglie" },
+        { "rowStart": 192, "text": "Intreccia tutte le maglie" }
+      ]
+    },
+    {
+      "part": "Manica",
+      "prepNote": "Avvia 64 maglie",
+      "notes": [
+        { "rowStart": 1, "rowEnd": 44, "text": "Coste 1/1" },
+        { "every": 3, "rowStart": 45, "rowEnd": 150, "text": "Aumenta 1 maglia per lato" }
+      ]
+    }
+  ]
+}

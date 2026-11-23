@@ -48,7 +48,7 @@
 
     <!-- Counter -->
     <string name="row_current">Row %1$d</string>
-    <string name="row_of_total">of %1$d</string>
+    <string name="rows_done_of_total">rows done of %1$d</string>
     <string name="next_row_label">Next: row %1$d</string>
     <string name="current_row_note">Note for this row</string>
     <string name="current_prep_note">Note for the preparation row</string>
@@ -58,9 +58,6 @@
     <string name="row_state_done">Done ✓</string>
     <string name="row_prep_label">Row 0 · preparation</string>
     <string name="row_final_label">Joining row</string>
-    <string name="row_final_big">Final</string>
-    <string name="row_before_first">before row 1</string>
-    <string name="row_after_last">after row %1$d</string>
     <string name="next_part_title">%1$s finished!</string>
     <string name="next_part_message">Move on to “%1$s”?</string>
     <string name="next_part_go">Go to the next one</string>
@@ -95,7 +92,6 @@
     <string name="note_text">Note text</string>
     <string name="from_row">From row</string>
     <string name="to_row">To row</string>
-    <string name="frequency">Applies to</string>
     <string name="freq_every">Every row</string>
     <string name="freq_odd">Odd rows</string>
     <string name="freq_even">Even rows</string>
@@ -106,6 +102,21 @@
     <string name="note_out_of_range">Beyond the total rows: this note will not be shown</string>
     <string name="note_rows_single">Row %1$d</string>
     <string name="note_rows_range">Rows %1$d–%2$d</string>
+    <string name="note_rows_list">Rows %1$s</string>
+    <string name="note_rows_list_more">Rows %1$s … (%2$d)</string>
+    <string name="note_rows_every">Every %1$d rows, from %2$d to %3$d</string>
+    <string name="note_scope_title">Applies to</string>
+    <string name="note_scope_range">A range</string>
+    <string name="note_scope_rows">Exact rows</string>
+    <string name="note_scope_every">Every Nth row</string>
+    <string name="note_rows_field">Rows (e.g. 10, 20, 30-35)</string>
+    <string name="note_rows_hint">Separate the numbers with commas or spaces; 30-35 means every row from 30 to 35.</string>
+    <string name="note_every_field">Every how many rows</string>
+    <string name="note_every_from_hint">Empty = from row 1</string>
+    <string name="note_every_to_hint">Empty = up to the last row</string>
+    <string name="note_error_rows_empty">Write at least one row</string>
+    <string name="note_error_rows_invalid">Some rows are not clear: use numbers, commas and ranges like 30-35</string>
+    <string name="note_error_step">“Every how many rows” must be at least 2</string>
     <string name="delete_note_title">Delete note?</string>
 
     <!-- Settings -->
@@ -172,13 +183,10 @@
     <string name="wavy_progress_desc">The colored part waves like a thread</string>
     <string name="data_section">Your data</string>
     <string name="export_data">Export data</string>
-    <string name="export_data_desc">Save all projects to a JSON file</string>
+    <string name="export_data_desc">Save every project, with yarns and needles, in a .majon file</string>
     <string name="import_data">Import data</string>
-    <string name="import_data_desc">Add projects from a backup</string>
+    <string name="import_data_desc">From a .majon or .majon-notes file, or from pasted text</string>
     <string name="export_done">Backup saved</string>
-    <string name="import_done">%1$d projects imported</string>
-    <string name="import_done_stash">%1$d projects, %2$d yarns and %3$d needles imported</string>
-    <string name="import_error">Invalid file: no projects imported</string>
     <string name="export_error">Export failed</string>
 
     <!-- Stash: yarns and needles -->
@@ -433,6 +441,91 @@
     <string name="finishing_step_sew_sides">Sew the sides and the sleeve seams</string>
     <string name="finishing_step_weave_ends">Weave in the ends</string>
     <string name="finishing_step_wash_and_dry">Wash and dry flat</string>
+    <string name="import_title">Import</string>
+    <string name="import_intro">Choose a .majon file (a whole project) or a .majon-notes file (notes only), or paste the text below.</string>
+    <string name="import_choose_file">Choose a file</string>
+    <string name="import_paste_button">Paste</string>
+    <string name="import_text_hint">Paste the text of the file here…</string>
+    <string name="import_format_button">Format and check</string>
+    <string name="import_format_hint">Tidies the text and tells you, line by line, what is wrong before importing.</string>
+    <string name="import_nothing_yet">No text yet: paste it or choose a file.</string>
+    <string name="import_issues_title">This text cannot be imported</string>
+    <string name="import_issue_line">Line %1$d</string>
+    <string name="import_issue_syntax">The text is not valid JSON: is a comma, a bracket or a quote missing?</string>
+    <string name="import_issue_not_notes">This is not a .majon-notes file.</string>
+    <string name="import_issue_not_majon">This is not a Majon file.</string>
+    <string name="import_issue_future">The file was written by a newer version of Majon: update the app.</string>
+    <string name="import_issue_no_notes">The file has no notes.</string>
+    <string name="import_issue_part_no_name">A part has no name.</string>
+    <string name="import_issue_text_blank">“%1$s”, note %2$d: the text is missing.</string>
+    <string name="import_issue_missing_row">“%1$s”, note %2$d: it does not say which row it applies to.</string>
+    <string name="import_issue_row_below_one">“%1$s”, note %2$d: rows start at 1.</string>
+    <string name="import_issue_end_before_start">“%1$s”, note %2$d: the last row is before the first.</string>
+    <string name="import_issue_step">“%1$s”, note %2$d: “every” must be at least 2.</string>
+    <string name="import_issue_rows_empty">“%1$s”, note %2$d: “rows” is empty.</string>
+    <string name="import_issue_frequency">“%1$s”, note %2$d: the frequency “%3$s” does not exist (use EVERY_ROW, ODD_ROWS or EVEN_ROWS).</string>
+    <string name="import_copy_issues">Copy the errors</string>
+    <string name="import_copy_issues_hint">Paste them into the AI chat: it will fix the file.</string>
+    <string name="import_issues_copied">Errors copied</string>
+    <string name="import_project_title">Project to import</string>
+    <string name="import_project_counts">%1$d parts · %2$d notes</string>
+    <string name="import_stash_title">In your stash</string>
+    <string name="import_stash_yarns">Yarns: %1$d already there, %2$d new</string>
+    <string name="import_stash_needles">Needles: %1$d already there, %2$d new</string>
+    <string name="import_stash_hint">The ones you already have are reused. New ones are added with no stock: you see what you are missing.</string>
+    <string name="import_as_project">Import the project</string>
+    <string name="import_only_notes">Notes only</string>
+    <string name="import_back_to_project">Import the whole project</string>
+    <string name="import_source_project">From which project of the file?</string>
+    <string name="import_target_title">Which project?</string>
+    <string name="import_target_none">You have no project yet: create one, then import the notes.</string>
+    <string name="import_parts_title">Where the notes go</string>
+    <string name="import_part_notes">%1$d notes</string>
+    <string name="import_choice_create">Create the part</string>
+    <string name="import_choice_skip">Skip</string>
+    <string name="import_summary">%1$d notes to add</string>
+    <string name="import_summary_duplicates">%1$d already there (not repeated)</string>
+    <string name="import_warnings_title">Careful</string>
+    <string name="import_warning_beyond">“%1$s”, note %2$d: it reaches row %3$s, past the rows of the part. The note is imported but will not show until you make the part longer.</string>
+    <string name="import_warning_prep">“%1$s”: the part has no preparation row, its note is not imported.</string>
+    <string name="import_warning_final">“%1$s”: the part has no final row, its note is not imported.</string>
+    <string name="import_error_open_end">“%1$s”, note %2$d: “every N rows” with no last row, in a part with no rows. Give the last row or give the part its rows.</string>
+    <string name="import_notes_button">Add %1$d notes</string>
+    <string name="import_done_title">Done</string>
+    <string name="import_done_notes">%1$d notes added.</string>
+    <string name="import_done_project">%1$d projects imported. In the stash: %2$d new yarns and %3$d new needles.</string>
+    <string name="import_open_project">Open the project</string>
+    <string name="import_again">Import something else</string>
+    <string name="share_project">Share</string>
+    <string name="share_title">Share the project</string>
+    <string name="share_message">A .majon file with the project, its parts, notes, yarns and needles. Stock, prices and shops are never in it.</string>
+    <string name="share_as_model">As a model (from scratch)</string>
+    <string name="share_with_progress">With my progress</string>
+    <string name="share_chooser">Share the project</string>
+    <string name="share_error">Cannot prepare the file</string>
+    <string name="project_import_notes">Import notes</string>
+    <string name="project_notes_guide">AI guide for notes</string>
+    <string name="guide_title">Notes with an AI</string>
+    <string name="guide_intro">Do your instructions say things like “on rows 10, 20 and 30 do this”? Have an AI assistant write the notes and import them in one go.</string>
+    <string name="guide_step1_title">1. Copy the guide</string>
+    <string name="guide_step1_body">Copy the text below and paste it into a chat with your AI assistant (ChatGPT, Claude, Gemini…). It explains the exact format to use.</string>
+    <string name="guide_step2_title">2. Give it the instructions</string>
+    <string name="guide_step2_body">In the same chat paste the text of the pattern’s instructions, or a photo. If there are several sizes, say which one.</string>
+    <string name="guide_step3_title">3. Import the answer</string>
+    <string name="guide_step3_body">Copy the code block it answers with, then go to Import and paste it. Before adding anything Majon checks the text and shows what it found.</string>
+    <string name="guide_project_hint">This guide already has the parts of “%1$s” with their rows: the AI will use the right names.</string>
+    <string name="guide_rows_label">%1$d rows</string>
+    <string name="guide_copy">Copy the guide</string>
+    <string name="guide_copied">Guide copied</string>
+    <string name="guide_share">Share</string>
+    <string name="guide_go_import">Go to Import</string>
+    <string name="guide_text_label">Text of the guide</string>
+    <string name="ai_guide_title">Import notes with an AI</string>
+    <string name="ai_guide_desc">How to have an assistant write the notes and import them</string>
+    <string name="guide_parts_heading"># The parts of this project
+
+Use exactly these names for "part" and do not write rows past their total:</string>
+    <string name="import_file_error">Cannot read the file (it is too big or not text)</string>
     <string name="yarn_section_yarn">The yarn</string>
     <string name="yarn_section_skein">Skein and stock</string>
     <string name="yarn_section_buy">Purchase, care and notes</string>

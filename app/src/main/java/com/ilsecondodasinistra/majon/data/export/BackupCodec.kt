@@ -17,7 +17,6 @@ import com.ilsecondodasinistra.majon.domain.model.Swatch
 import com.ilsecondodasinistra.majon.domain.model.Yarn
 import com.ilsecondodasinistra.majon.domain.model.YarnMaterial
 import com.ilsecondodasinistra.majon.domain.model.YarnWeight
-import com.ilsecondodasinistra.majon.domain.model.NoteFrequency
 import com.ilsecondodasinistra.majon.domain.model.Part
 import com.ilsecondodasinistra.majon.domain.model.Project
 import com.ilsecondodasinistra.majon.domain.model.ProjectColor
@@ -30,7 +29,7 @@ import kotlinx.serialization.json.Json
 @Serializable
 private data class BackupFile(
     val app: String = "majon",
-    val version: Int = 2,
+    val version: Int = 3,
     val exportedAt: Long,
     val projects: List<BackupProject> = emptyList(),
     // Added in version 2; older files simply have none
@@ -85,15 +84,7 @@ private data class BackupPart(
     val currentCopy: Int = 1,
     val castOnStitches: Int? = null,
     val endStitchCm: Double? = null,
-    val notes: List<BackupNote> = emptyList(),
-)
-
-@Serializable
-private data class BackupNote(
-    val rowStart: Int,
-    val rowEnd: Int,
-    val frequency: String = NoteFrequency.EVERY_ROW.name,
-    val text: String,
+    val notes: List<WireNote> = emptyList(),
 )
 
 @Serializable
@@ -139,6 +130,8 @@ private data class BackupNeedle(
     val sizeMm: Double? = null,
     val lengthCm: Int? = null,
     val quantity: Int = 1,
+    /** False in a shared file: a needle the project calls for, not one the sender is giving away or owns for the reader. */
+    val owned: Boolean = true,
     val brand: String? = null,
     val notes: String? = null,
 )
@@ -152,6 +145,33 @@ class BackupCodec @Inject constructor() {
         ignoreUnknownKeys = true
         prettyPrint = true
         encodeDefaults = true
+    }
+
+    /**
+     * One project as a file to give to somebody else (`.majon`): only the yarns and needles it uses, without what is
+     * private to the owner (stock, price, shop, dye lot, notes) and with the needles marked as not owned by the
+     * reader. [includeProgress] false makes it a model: no rows done, no ticks.
+     */
+    fun encodeForSharing(project: FullProject, stash: StashSnapshot, includeProgress: Boolean, exportedAt: Long): String {
+        val yarnIds = project.links.yarns.map { it.yarnId }.toSet()
+        val needleIds = project.links.needleIds.toSet()
+        val shared = StashSnapshot(
+            yarns = stash.yarns.filter { it.yarn.id in yarnIds }.map { full ->
+                full.copy(
+                    yarn = full.yarn.copy(stockSkeins = 0.0, pricePerSkein = null, shop = null, dyeLot = null, notes = null),
+                )
+            },
+            needles = stash.needles.filter { it.id in needleIds }.map { it.copy(quantity = 0, notes = null) },
+        )
+        val toShare = if (includeProgress) {
+            project
+        } else {
+            project.copy(
+                parts = project.parts.map { fp -> fp.copy(part = fp.part.copy(completedRows = 0, currentCopy = 1)) },
+                finishing = project.finishing.map { it.copy(done = false) },
+            )
+        }
+        return encode(listOf(toShare), exportedAt, shared)
     }
 
     fun encode(
@@ -198,14 +218,7 @@ class BackupCodec @Inject constructor() {
                             currentCopy = fp.part.currentCopy,
                             castOnStitches = fp.part.castOnStitches,
                             endStitchCm = fp.part.endStitchCm,
-                            notes = fp.notes.map { n ->
-                                BackupNote(
-                                    rowStart = n.rowStart,
-                                    rowEnd = n.rowEnd,
-                                    frequency = n.frequency.name,
-                                    text = n.text,
-                                )
-                            },
+                            notes = fp.notes.map { it.toWire() },
                         )
                     },
                     finishing = full.finishing.sortedBy { it.position }.map { BackupTask(it.title, it.done) },
@@ -267,16 +280,9 @@ class BackupCodec @Inject constructor() {
                             castOnStitches = part.castOnStitches?.takeIf { it > 0 },
                             endStitchCm = part.endStitchCm?.takeIf { it > 0.0 },
                         ),
-                        notes = part.notes.filter { it.text.isNotBlank() }.map { n ->
-                            val rowStart = n.rowStart.coerceAtLeast(1)
-                            RowNote(
-                                partId = 0L,
-                                rowStart = rowStart,
-                                rowEnd = n.rowEnd.coerceAtLeast(rowStart),
-                                frequency = runCatching { NoteFrequency.valueOf(n.frequency) }
-                                    .getOrDefault(NoteFrequency.EVERY_ROW),
-                                text = n.text,
-                            )
+                        // Notes that make no sense are left out; a backup is read leniently
+                        notes = part.notes.mapNotNull { n ->
+                            (n.toDraft(lenient = true) as? WireNoteResult.Ok)?.draft?.toRowNote(partId = 0L, totalRows = totalRows)
                         },
                     )
                 },
@@ -364,7 +370,8 @@ private fun Needle.toBackup() = BackupNeedle(
     material = material?.name,
     sizeMm = sizeMm,
     lengthCm = lengthCm,
-    quantity = quantity,
+    quantity = quantity.coerceAtLeast(1),
+    owned = quantity > 0,
     brand = brand,
     notes = notes,
 )
@@ -374,7 +381,8 @@ private fun BackupNeedle.toDomain() = Needle(
     material = enumOrNull<NeedleMaterial>(material),
     sizeMm = sizeMm?.takeIf { it > 0 },
     lengthCm = lengthCm?.takeIf { it > 0 },
-    quantity = quantity.coerceAtLeast(1),
+    // A shared file's needles are not owned by the reader (yet); in a backup they always are
+    quantity = if (owned) quantity.coerceAtLeast(1) else 0,
     brand = brand,
     notes = notes,
 )

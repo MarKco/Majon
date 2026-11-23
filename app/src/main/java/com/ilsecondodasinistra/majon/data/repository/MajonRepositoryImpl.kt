@@ -15,6 +15,9 @@ import com.ilsecondodasinistra.majon.data.db.toDomain
 import com.ilsecondodasinistra.majon.data.db.toEntity
 import com.ilsecondodasinistra.majon.domain.model.FinishingTask
 import com.ilsecondodasinistra.majon.domain.model.FullPart
+import com.ilsecondodasinistra.majon.domain.model.sameNeedleAs
+import com.ilsecondodasinistra.majon.domain.model.sameSwatchAs
+import com.ilsecondodasinistra.majon.domain.model.sameYarnAs
 import com.ilsecondodasinistra.majon.domain.model.BackupImportCounts
 import com.ilsecondodasinistra.majon.domain.model.FullProject
 import com.ilsecondodasinistra.majon.domain.model.FullYarn
@@ -226,16 +229,42 @@ class MajonRepositoryImpl @Inject constructor(
     )
 
     override suspend fun importBackup(projects: List<FullProject>, stash: StashSnapshot): BackupImportCounts {
+        var created = Triple(0, 0, 0)
         db.withTransaction {
-            // Ids of the new records, in the order of the snapshot (links in the file are positions in it)
+            // Ids of the records the snapshot's yarns, swatches and needles stand for, in the order of the snapshot
+            // (links in the file are positions in it). What the stash already has is reused, not made again.
+            val have = getStash()
             val yarnIds = mutableListOf<Long>()
             val swatchIds = mutableListOf<Long>()
+            var newYarns = 0
+            var newNeedles = 0
             stash.yarns.forEach { full ->
-                val yarnId = upsertYarn(full.yarn.copy(id = 0L))
+                val known = have.yarns.firstOrNull { it.yarn.sameYarnAs(full.yarn) }
+                val yarnId = known?.yarn?.id ?: upsertYarn(full.yarn.copy(id = 0L)).also { newYarns++ }
                 yarnIds += yarnId
-                full.swatches.forEach { swatchIds += upsertSwatch(it.copy(id = 0L, yarnId = yarnId)) }
+                val owned = known?.swatches.orEmpty().toMutableList()
+                full.swatches.forEach { sw ->
+                    val same = owned.firstOrNull { it.sameSwatchAs(sw) }
+                    if (same != null) {
+                        swatchIds += same.id
+                    } else {
+                        val id = upsertSwatch(sw.copy(id = 0L, yarnId = yarnId))
+                        owned += sw.copy(id = id, yarnId = yarnId)
+                        swatchIds += id
+                    }
+                }
             }
-            val needleIds = stash.needles.map { upsertNeedle(it.copy(id = 0L)) }
+            val owned = have.needles.toMutableList()
+            val needleIds = stash.needles.map { needle ->
+                val same = owned.firstOrNull { it.sameNeedleAs(needle) }
+                if (same != null) {
+                    same.id
+                } else {
+                    newNeedles++
+                    upsertNeedle(needle.copy(id = 0L)).also { owned += needle.copy(id = it) }
+                }
+            }
+            created = Triple(0, newYarns, newNeedles)
 
             fun swatch(position: Long?) = position?.let { swatchIds.getOrNull(it.toInt()) }
 
@@ -259,7 +288,7 @@ class MajonRepositoryImpl @Inject constructor(
                 )
             }
         }
-        return BackupImportCounts(projects.size, stash.yarns.size, stash.needles.size)
+        return BackupImportCounts(projects.size, yarns = created.second, needles = created.third)
     }
 
     override suspend fun getFullProjects(): List<FullProject> =

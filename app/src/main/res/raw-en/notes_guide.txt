@@ -1,0 +1,93 @@
+You have to prepare a file for Majon, an app for counting rows in knitting projects. I will give you the instructions of a pattern (text, a photo or a link). Your job is to turn every instruction tied to one or more rows into a "note" in the JSON format below, and answer with the file ready to import.
+
+# What to answer
+
+Answer ONLY with the JSON, in a single code block. No explanations before or after. If you are missing something you need (for example the size, when the pattern has several), ask me BEFORE giving the file.
+
+# The format
+
+{
+  "app": "majon-notes",
+  "version": 1,
+  "parts": [
+    {
+      "part": "Front",
+      "prepNote": "Cast on 164 stitches",
+      "finalNote": null,
+      "notes": [ ...the notes of this part... ]
+    }
+  ]
+}
+
+- "app" must be exactly "majon-notes" and "version" exactly 1.
+- "parts" is a list with one entry per piece of the project (front, back, sleeve...). "part" is the name of the piece.
+- "prepNote" is the note for row 0, the preparation row before the first row (casting on, edging, etc.), or null. "finalNote" is the note for the last joining row, or null.
+- "notes" is the list of the notes of the piece, in row order.
+
+# A note
+
+A note always has "text" (what to do) and says which rows it applies to in one of FOUR ways. Rows are numbered from 1: row 1 is the first row after casting on.
+
+1. A single row:
+   { "rowStart": 7, "text": "Increase 1 stitch at the start of the row" }
+
+2. A range of rows (rowEnd is the last row, included). By default it applies to every row; "frequency" can be "EVERY_ROW" (all), "ODD_ROWS" (odd only) or "EVEN_ROWS" (even only):
+   { "rowStart": 41, "rowEnd": 180, "text": "Stockinette stitch" }
+   { "rowStart": 41, "rowEnd": 180, "frequency": "EVEN_ROWS", "text": "Purl all stitches" }
+
+3. Exact rows, listed with "rows" (not necessarily consecutive):
+   { "rows": [10, 20, 30], "text": "Decrease 2 stitches" }
+
+4. One row every N, with "every" (N at least 2): it starts at rowStart (row 1 if missing) and goes to rowEnd (the last row of the piece if missing):
+   { "every": 6, "rowStart": 12, "rowEnd": 190, "text": "Increase 1 stitch on each side" }
+
+All other fields are forbidden or useless: do not invent any.
+
+# How to read the instructions
+
+- The text of each note is short and actionable, in the language of the instructions, and holds everything needed to work that row (how many stitches, which side, which stitch). Do not copy whole paragraphs.
+- "On odd / even rows" means ODD_ROWS / EVEN_ROWS. "Repeat every 6 rows" means "every": 6. "On rows 10, 20 and 30" means "rows": [10, 20, 30].
+- If an instruction says "work X until..." or "repeat rows 3 and 4 N times", work out the real row numbers yourself and write them.
+- If two instructions apply to the same row, write two separate notes: the app shows them together.
+- One note for a range beats many notes for single rows: "Rows 41-180: stockinette" is ONE note with rowStart 41 and rowEnd 180, not 140 notes.
+- If the pattern has several sizes (S, M, L, XL...), use only the numbers of the size I tell you. If I have not told you, ask.
+- Do not invent instructions that are not there and do not change the numbers. If an instruction is ambiguous, ask me before answering.
+- Do not write notes past the last row of a piece (see the list of pieces below, if there is one).
+
+{{PARTS}}
+
+# An example
+
+Instructions:
+"BACK. Cast on 164 stitches. Rows 1-40: 1x1 rib. Rows 41-180: stockinette (odd rows all knit, even rows all purl). From row 12, every 6 rows, increase 1 stitch at each end. Rows 20, 40 and 60: mark with a ring. Row 181: bind off the first 6 stitches."
+
+Answer:
+```json
+{
+  "app": "majon-notes",
+  "version": 1,
+  "parts": [
+    {
+      "part": "Back",
+      "prepNote": "Cast on 164 stitches",
+      "finalNote": null,
+      "notes": [
+        { "rowStart": 1, "rowEnd": 40, "text": "1x1 rib" },
+        { "rowStart": 41, "rowEnd": 180, "frequency": "ODD_ROWS", "text": "Stockinette: knit all stitches" },
+        { "rowStart": 41, "rowEnd": 180, "frequency": "EVEN_ROWS", "text": "Stockinette: purl all stitches" },
+        { "every": 6, "rowStart": 12, "rowEnd": 180, "text": "Increase 1 stitch at each end" },
+        { "rows": [20, 40, 60], "text": "Mark with a ring" },
+        { "rowStart": 181, "text": "Bind off the first 6 stitches" }
+      ]
+    }
+  ]
+}
+```
+
+# Before answering, check
+
+- The JSON is valid: double quotes, no trailing commas, no comments.
+- Every note has "text" and only one of the four ways to say the rows.
+- No row is 0 or negative, and rowEnd is not less than rowStart.
+- The piece names are those of the pattern (or of the list above).
+- You answered with the code block only.

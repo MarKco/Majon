@@ -39,13 +39,13 @@ class SettingsViewModelTest {
     private val scope = CoroutineScope(Job() + UnconfinedTestDispatcher())
     private val repository = FakeMajonRepository()
 
-    private fun viewModel(): SettingsViewModel {
+    private fun viewModel(repo: FakeMajonRepository = repository): SettingsViewModel {
         val dataStore = PreferenceDataStoreFactory.create(scope = scope) {
             tmpFolder.newFile("settings.preferences_pb")
         }
         return SettingsViewModel(
             settingsRepository = SettingsRepository(dataStore),
-            majonRepository = repository,
+            majonRepository = repo,
             backupCodec = BackupCodec(),
         )
     }
@@ -89,7 +89,7 @@ class SettingsViewModelTest {
     }
 
     @Test
-    fun `export and import carry the stash too`() = runTest {
+    fun `export and import carry the stash, reusing what is already there`() = runTest {
         val yarnId = repository.upsertYarn(com.ilsecondodasinistra.majon.domain.model.Yarn(name = "Merino", stockSkeins = 3.0))
         repository.upsertSwatch(com.ilsecondodasinistra.majon.domain.model.Swatch(yarnId = yarnId, stitches = 22, rows = 30))
         repository.upsertNeedle(com.ilsecondodasinistra.majon.domain.model.Needle(type = com.ilsecondodasinistra.majon.domain.model.NeedleType.DPN, sizeMm = 2.5))
@@ -97,10 +97,26 @@ class SettingsViewModelTest {
         val vm = viewModel()
         val json = vm.exportData()
         val summary = vm.importData(json).getOrThrow()
+        // The same yarn and needle are already in the stash: nothing is made twice
+        assertEquals(0, summary.yarns)
+        assertEquals(0, summary.needles)
+        assertEquals(1, repository.observeYarns().first().size)
+        assertEquals(1, repository.observeNeedles().first().size)
+        assertEquals(1, repository.observeSwatches(yarnId).first().size)
+    }
+
+    @Test
+    fun `importing into an empty stash makes the yarns and needles of the file`() = runTest {
+        val yarnId = repository.upsertYarn(com.ilsecondodasinistra.majon.domain.model.Yarn(name = "Merino", stockSkeins = 3.0))
+        repository.upsertSwatch(com.ilsecondodasinistra.majon.domain.model.Swatch(yarnId = yarnId, stitches = 22, rows = 30))
+        repository.upsertNeedle(com.ilsecondodasinistra.majon.domain.model.Needle(type = com.ilsecondodasinistra.majon.domain.model.NeedleType.DPN, sizeMm = 2.5))
+        val json = viewModel().exportData()
+
+        val other = FakeMajonRepository()
+        val summary = viewModel(other).importData(json).getOrThrow()
         assertEquals(1, summary.yarns)
         assertEquals(1, summary.needles)
-        assertEquals(2, repository.observeYarns().first().size)
-        assertEquals(2, repository.observeNeedles().first().size)
+        assertEquals(3.0, other.observeYarns().first().single().stockSkeins, 0.0)
     }
 
     @Test

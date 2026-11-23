@@ -111,6 +111,10 @@ data class NoteEntity(
     val rowEnd: Int,
     val frequency: String,
     val text: String,
+    @ColumnInfo(defaultValue = "1")
+    val step: Int = 1,
+    /** The exact rows of a note on specific rows, comma-separated; null for the other kinds. */
+    val rowList: String? = null,
 )
 
 data class ProjectWithPartsEntity(
@@ -194,6 +198,8 @@ fun NoteEntity.toDomain() = RowNote(
     rowEnd = rowEnd,
     frequency = runCatching { NoteFrequency.valueOf(frequency) }.getOrDefault(NoteFrequency.EVERY_ROW),
     text = text,
+    step = step.coerceAtLeast(1),
+    rows = rowList?.split(',')?.mapNotNull { it.trim().toIntOrNull() }.orEmpty(),
 )
 
 fun RowNote.toEntity() = NoteEntity(
@@ -203,6 +209,8 @@ fun RowNote.toEntity() = NoteEntity(
     rowEnd = rowEnd,
     frequency = frequency.name,
     text = text,
+    step = step,
+    rowList = rows.takeIf { it.isNotEmpty() }?.joinToString(","),
 )
 
 fun FinishingTaskEntity.toDomain() = FinishingTask(id = id, projectId = projectId, title = title, done = done, position = position)

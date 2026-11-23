@@ -58,5 +58,13 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
     }
 }
 
+/** v5 -> v6: a note can apply to exact rows (a list) or to every Nth row (a step), not only to a range. */
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE notes ADD COLUMN step INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE notes ADD COLUMN rowList TEXT")
+    }
+}
+
 /** Every migration, in order. Register new ones here (see CLAUDE.md). */
-val MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+val MIGRATIONS: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)

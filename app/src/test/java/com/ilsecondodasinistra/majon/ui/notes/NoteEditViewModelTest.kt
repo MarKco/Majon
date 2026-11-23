@@ -130,4 +130,109 @@ class NoteEditViewModelTest {
         assertEquals("nuova", note.text)
         assertEquals(2, note.rowStart)
     }
+
+    // --- notes on exact rows and on every Nth row ---
+
+    @Test
+    fun `a new note starts as a range`() = runTest {
+        assertEquals(NoteScope.RANGE, viewModel().form.value.scope)
+    }
+
+    @Test
+    fun `a note on exact rows is saved with its rows sorted`() = runTest {
+        val vm = viewModel()
+        vm.update { it.copy(text = "diminuisci", scope = NoteScope.ROWS, rowsText = "30, 10 20-22") }
+        assertTrue(vm.save())
+        val note = notes().single()
+        assertEquals(NoteFrequency.SPECIFIC, note.frequency)
+        assertEquals(listOf(10, 20, 21, 22, 30), note.rows)
+        assertEquals(10, note.rowStart)
+        assertEquals(30, note.rowEnd)
+    }
+
+    @Test
+    fun `exact rows need at least one row, understood and within the part`() = runTest {
+        val vm = viewModel()
+        vm.update { it.copy(text = "x", scope = NoteScope.ROWS, rowsText = "") }
+        assertFalse(vm.save())
+        assertEquals(NoteValidationError.ROWS_EMPTY, vm.form.value.error)
+        vm.update { it.copy(rowsText = "10, dieci") }
+        assertFalse(vm.save())
+        assertEquals(NoteValidationError.ROWS_INVALID, vm.form.value.error)
+        vm.update { it.copy(rowsText = "10, 60") }
+        assertFalse(vm.save())
+        assertEquals(NoteValidationError.OUT_OF_RANGE, vm.form.value.error)
+        assertTrue(notes().isEmpty())
+    }
+
+    @Test
+    fun `a note every Nth row is saved with its step and range`() = runTest {
+        val vm = viewModel()
+        vm.update { it.copy(text = "diminuisci", scope = NoteScope.EVERY, rowStart = "12", rowEnd = "48", step = "6") }
+        assertTrue(vm.save())
+        val note = notes().single()
+        assertEquals(NoteFrequency.EVERY_NTH, note.frequency)
+        assertEquals(6, note.step)
+        assertEquals(12, note.rowStart)
+        assertEquals(48, note.rowEnd)
+    }
+
+    @Test
+    fun `every Nth with no start begins at row 1 and with no end goes to the last row`() = runTest {
+        val vm = viewModel()
+        vm.update { it.copy(text = "x", scope = NoteScope.EVERY, step = "10") }
+        assertTrue(vm.save())
+        val note = notes().single()
+        assertEquals(1, note.rowStart)
+        assertEquals(50, note.rowEnd)
+    }
+
+    @Test
+    fun `every Nth needs a step of at least two`() = runTest {
+        val vm = viewModel()
+        vm.update { it.copy(text = "x", scope = NoteScope.EVERY, step = "1") }
+        assertFalse(vm.save())
+        assertEquals(NoteValidationError.STEP_INVALID, vm.form.value.error)
+        vm.update { it.copy(step = "") }
+        assertFalse(vm.save())
+        assertEquals(NoteValidationError.STEP_INVALID, vm.form.value.error)
+    }
+
+    @Test
+    fun `the fields of the other kinds are ignored`() = runTest {
+        val vm = viewModel()
+        vm.update { it.copy(text = "x", scope = NoteScope.ROWS, rowsText = "7", rowStart = "999", rowEnd = "1", step = "0") }
+        assertTrue(vm.save())
+        assertEquals(listOf(7), notes().single().rows)
+    }
+
+    @Test
+    fun `editing loads a note on exact rows and one every Nth`() = runTest {
+        val a = repository.upsertNote(
+            RowNote(partId = partId, rowStart = 5, rowEnd = 9, frequency = NoteFrequency.SPECIFIC, rows = listOf(5, 7, 9), text = "a"),
+        )
+        val b = repository.upsertNote(
+            RowNote(partId = partId, rowStart = 10, rowEnd = 40, frequency = NoteFrequency.EVERY_NTH, step = 6, text = "b"),
+        )
+        val formA = viewModel(a).form.value
+        assertEquals(NoteScope.ROWS, formA.scope)
+        assertEquals("5, 7, 9", formA.rowsText)
+        val formB = viewModel(b).form.value
+        assertEquals(NoteScope.EVERY, formB.scope)
+        assertEquals("6", formB.step)
+        assertEquals("10", formB.rowStart)
+        assertEquals("40", formB.rowEnd)
+    }
+
+    @Test
+    fun `changing the kind of an edited note saves it as the new kind`() = runTest {
+        val id = repository.upsertNote(RowNote(partId = partId, rowStart = 3, rowEnd = 3, text = "x"))
+        val vm = viewModel(id)
+        vm.update { it.copy(scope = NoteScope.ROWS, rowsText = "3, 6") }
+        assertTrue(vm.save())
+        val note = notes().single()
+        assertEquals(id, note.id)
+        assertEquals(NoteFrequency.SPECIFIC, note.frequency)
+        assertEquals(listOf(3, 6), note.rows)
+    }
 }

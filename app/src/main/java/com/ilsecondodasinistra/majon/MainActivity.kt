@@ -1,5 +1,13 @@
 package com.ilsecondodasinistra.majon
 
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import javax.inject.Inject
+import com.ilsecondodasinistra.majon.ui.importer.ImportFiles
+import com.ilsecondodasinistra.majon.data.export.ImportInbox
+import androidx.lifecycle.lifecycleScope
+import android.content.Intent
 import android.os.Bundle
 import android.view.KeyEvent
 import androidx.activity.compose.setContent
@@ -36,9 +44,29 @@ class MainActivity : AppCompatActivity(), VolumeKeyHost {
         return super.dispatchKeyEvent(event)
     }
 
+    @Inject lateinit var importInbox: ImportInbox
+
+    /** A .majon or .majon-notes file opened from a file manager, a chat or an email waits for the import screen. */
+    private fun handleIncoming(intent: Intent?) {
+        val uri = intent?.data ?: return
+        if (intent.action != Intent.ACTION_VIEW) return
+        lifecycleScope.launch {
+            val text = withContext(Dispatchers.IO) { ImportFiles.readText(this@MainActivity, uri) }
+            if (text != null) importInbox.offer(text)
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIncoming(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        // Not again after a rotation: the file was already taken the first time
+        if (savedInstanceState == null) handleIncoming(intent)
         enableEdgeToEdge()
         setContent {
             val settingsViewModel: SettingsViewModel = hiltViewModel()

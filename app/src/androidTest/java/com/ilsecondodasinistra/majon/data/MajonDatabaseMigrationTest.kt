@@ -7,6 +7,7 @@ import com.ilsecondodasinistra.majon.data.db.MIGRATION_1_2
 import com.ilsecondodasinistra.majon.data.db.MIGRATION_2_3
 import com.ilsecondodasinistra.majon.data.db.MIGRATION_3_4
 import com.ilsecondodasinistra.majon.data.db.MIGRATION_4_5
+import com.ilsecondodasinistra.majon.data.db.MIGRATION_5_6
 import com.ilsecondodasinistra.majon.data.db.MajonDatabase
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -177,6 +178,33 @@ class MajonDatabaseMigrationTest {
         db.query("SELECT COUNT(*) FROM finishing_tasks").use { c ->
             c.moveToFirst()
             assertEquals(0, c.getInt(0))
+        }
+        db.close()
+    }
+
+    @Test
+    fun migrate5To6KeepsNotesAndAddsStepAndRowList() {
+        helper.createDatabase(TEST_DB, 5).apply {
+            execSQL(
+                "INSERT INTO projects (id, name, icon, color, yarnType, needleSize, createdAt, updatedAt) " +
+                    "VALUES (1, 'Maglione', 'SWEATER', 'SAGE', NULL, NULL, 10, 20)",
+            )
+            execSQL(
+                "INSERT INTO parts (id, projectId, name, totalRows, completedRows, createdAt) VALUES (1, 1, 'Davanti', 120, 42, 30)",
+            )
+            execSQL("INSERT INTO notes (id, partId, rowStart, rowEnd, frequency, text) VALUES (1, 1, 20, 30, 'ODD_ROWS', 'diminuisci')")
+            close()
+        }
+
+        val db = helper.runMigrationsAndValidate(TEST_DB, 6, true, MIGRATION_5_6)
+        db.query("SELECT rowStart, rowEnd, frequency, text, step, rowList FROM notes").use { c ->
+            assertEquals(true, c.moveToFirst())
+            assertEquals(20, c.getInt(0))
+            assertEquals(30, c.getInt(1))
+            assertEquals("ODD_ROWS", c.getString(2))
+            assertEquals("diminuisci", c.getString(3))
+            assertEquals(1, c.getInt(4))
+            assertEquals(true, c.isNull(5))
         }
         db.close()
     }

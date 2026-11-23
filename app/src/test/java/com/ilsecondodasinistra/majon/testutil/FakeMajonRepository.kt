@@ -10,6 +10,9 @@ import com.ilsecondodasinistra.majon.domain.model.Part
 import com.ilsecondodasinistra.majon.domain.model.Project
 import com.ilsecondodasinistra.majon.domain.model.ProjectLinks
 import com.ilsecondodasinistra.majon.domain.model.normalized
+import com.ilsecondodasinistra.majon.domain.model.sameNeedleAs
+import com.ilsecondodasinistra.majon.domain.model.sameSwatchAs
+import com.ilsecondodasinistra.majon.domain.model.sameYarnAs
 import com.ilsecondodasinistra.majon.domain.model.ProjectWithParts
 import com.ilsecondodasinistra.majon.domain.model.RowNote
 import com.ilsecondodasinistra.majon.domain.model.StashImportCounts
@@ -261,12 +264,20 @@ class FakeMajonRepository : MajonRepository {
     override suspend fun importBackup(projects: List<FullProject>, stash: StashSnapshot): BackupImportCounts {
         val yarnIds = mutableListOf<Long>()
         val swatchIds = mutableListOf<Long>()
+        var newYarns = 0
+        var newNeedles = 0
         stash.yarns.forEach { full ->
-            val yarnId = upsertYarn(full.yarn.copy(id = 0L))
+            val known = yarns.value.firstOrNull { it.sameYarnAs(full.yarn) }
+            val yarnId = known?.id ?: upsertYarn(full.yarn.copy(id = 0L)).also { newYarns++ }
             yarnIds += yarnId
-            full.swatches.forEach { swatchIds += upsertSwatch(it.copy(id = 0L, yarnId = yarnId)) }
+            full.swatches.forEach { sw ->
+                val same = swatches.value.firstOrNull { it.yarnId == yarnId && it.sameSwatchAs(sw) }
+                swatchIds += same?.id ?: upsertSwatch(sw.copy(id = 0L, yarnId = yarnId))
+            }
         }
-        val needleIds = stash.needles.map { upsertNeedle(it.copy(id = 0L)) }
+        val needleIds = stash.needles.map { needle ->
+            needles.value.firstOrNull { it.sameNeedleAs(needle) }?.id ?: upsertNeedle(needle.copy(id = 0L)).also { newNeedles++ }
+        }
         fun swatch(position: Long?) = position?.let { swatchIds.getOrNull(it.toInt()) }
         projects.forEach { full ->
             val projectId = upsertProject(full.project.copy(id = 0L))
@@ -285,7 +296,7 @@ class FakeMajonRepository : MajonRepository {
                 ),
             )
         }
-        return BackupImportCounts(projects.size, stash.yarns.size, stash.needles.size)
+        return BackupImportCounts(projects.size, newYarns, newNeedles)
     }
 
     override suspend fun getFullProjects(): List<FullProject> =

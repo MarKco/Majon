@@ -1,0 +1,68 @@
+{
+  "app": "majon",
+  "version": 3,
+  "exportedAt": 1795000000000,
+  "yarns": [
+    {
+      "name": "Bamboo",
+      "brand": "We Are Knitters",
+      "colorName": "Mustard",
+      "colorArgb": -2056192,
+      "materials": [ { "material": "BAMBOO", "percent": 100 } ],
+      "skeinWeightG": 100,
+      "skeinLengthM": 130,
+      "care": "Lavaggio a mano, acqua fredda, asciugare in piano",
+      "swatches": [
+        { "stitches": 31, "rows": 34, "needleSizeMm": 3.0, "pattern": "STOCKINETTE", "weightG": 4.0 }
+      ]
+    }
+  ],
+  "needles": [
+    { "type": "CIRCULAR", "sizeMm": 3.0, "lengthCm": 80, "quantity": 1, "owned": false }
+  ],
+  "projects": [
+    {
+      "name": "Mint sweater",
+      "icon": "SWEATER",
+      "color": "SAGE",
+      "yarns": [ { "yarn": 0, "primary": true, "swatch": 0, "plannedSkeins": 5.0 } ],
+      "needles": [ 0 ],
+      "parts": [
+        {
+          "name": "Dietro",
+          "totalRows": 192,
+          "completedRows": 0,
+          "castOnStitches": 164,
+          "stitchMeasure": "WIDTH", "stitchCm": 53.0,
+          "rowMeasure": "LENGTH", "rowCm": 56.0,
+          "swatch": 0,
+          "notes": [
+            { "rowStart": 1, "rowEnd": 40, "text": "Coste 1/1" },
+            { "rowStart": 41, "rowEnd": 180, "frequency": "ODD_ROWS", "text": "Tutto a diritto" },
+            { "rowStart": 41, "rowEnd": 180, "frequency": "EVEN_ROWS", "text": "Tutto a rovescio" },
+            { "rows": [20, 40, 60], "text": "Segna con un anello" }
+          ]
+        },
+        {
+          "name": "Manica",
+          "totalRows": 190,
+          "copies": 2,
+          "currentCopy": 1,
+          "completedRows": 0,
+          "castOnStitches": 64,
+          "stitchMeasure": "CIRCUMFERENCE", "stitchCm": 21.0, "endStitchCm": 47.0,
+          "rowMeasure": "LENGTH", "rowCm": 56.0,
+          "notes": [
+            { "rowStart": 1, "rowEnd": 44, "text": "Coste 1/1" },
+            { "every": 3, "rowStart": 45, "rowEnd": 150, "text": "Aumenta 1 maglia per lato" }
+          ]
+        }
+      ],
+      "finishing": [
+        { "title": "Cucire le spalle", "done": false },
+        { "title": "Riprendere le maglie attorno al collo", "done": false },
+        { "title": "Nascondere i fili", "done": false }
+      ]
+    }
+  ]
+}

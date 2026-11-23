@@ -1,5 +1,6 @@
 package com.ilsecondodasinistra.majon.ui.projectdetail
 
+import kotlinx.coroutines.launch
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.foundation.clickable
 import com.ilsecondodasinistra.majon.domain.model.finishingSteps
@@ -102,7 +103,11 @@ fun ProjectDetailScreen(
     /** Opens the screen that links yarn and needles from the stash to this project. */
     onEditLinks: () -> Unit,
     onDuplicated: (Long) -> Unit = {},
+    /** Opens the import screen already aimed at this project. */
+    onImportNotes: () -> Unit = {},
+    onNotesGuide: () -> Unit = {},
     viewModel: ProjectDetailViewModel = hiltViewModel(),
+    shareViewModel: ProjectShareViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val openCopy by rememberUpdatedState(onDuplicated)
@@ -111,6 +116,11 @@ fun ProjectDetailScreen(
     var partToDelete by remember { mutableStateOf<Part?>(null) }
     var deleteProjectDialog by rememberSaveable { mutableStateOf(false) }
     var suggestSideways by rememberSaveable { mutableStateOf(false) }
+    var shareDialog by rememberSaveable { mutableStateOf(false) }
+    val shareScope = androidx.compose.runtime.rememberCoroutineScope()
+    val shareContext = androidx.compose.ui.platform.LocalContext.current
+    val shareChooser = stringResource(R.string.share_chooser)
+    val shareError = stringResource(R.string.share_error)
     val finishingTasks by viewModel.finishingTasks.collectAsStateWithLifecycle()
     // null = no dialog; a task to edit it, or a task with id 0 for a new one
     var taskBeingEdited by remember { mutableStateOf<FinishingTask?>(null) }
@@ -145,6 +155,27 @@ fun ProjectDetailScreen(
                                 onClick = {
                                     menuOpen = false
                                     onEditProject(project.id)
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.share_project)) },
+                                onClick = {
+                                    menuOpen = false
+                                    shareDialog = true
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.project_import_notes)) },
+                                onClick = {
+                                    menuOpen = false
+                                    onImportNotes()
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.project_notes_guide)) },
+                                onClick = {
+                                    menuOpen = false
+                                    onNotesGuide()
                                 },
                             )
                             DropdownMenuItem(
@@ -260,6 +291,43 @@ fun ProjectDetailScreen(
                 )
             }
         }
+    }
+
+    if (shareDialog) {
+        // A choice between two ways, no field: a dialog is right
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { shareDialog = false },
+            title = { Text(stringResource(R.string.share_title)) },
+            text = { Text(stringResource(R.string.share_message)) },
+            confirmButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        shareDialog = false
+                        shareScope.launch {
+                            runCatching {
+                                com.ilsecondodasinistra.majon.ui.importer.ImportFiles.share(
+                                    shareContext, shareViewModel.build(includeProgress = true), shareChooser,
+                                )
+                            }.onFailure { android.widget.Toast.makeText(shareContext, shareError, android.widget.Toast.LENGTH_SHORT).show() }
+                        }
+                    },
+                ) { Text(stringResource(R.string.share_with_progress)) }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(
+                    onClick = {
+                        shareDialog = false
+                        shareScope.launch {
+                            runCatching {
+                                com.ilsecondodasinistra.majon.ui.importer.ImportFiles.share(
+                                    shareContext, shareViewModel.build(includeProgress = false), shareChooser,
+                                )
+                            }.onFailure { android.widget.Toast.makeText(shareContext, shareError, android.widget.Toast.LENGTH_SHORT).show() }
+                        }
+                    },
+                ) { Text(stringResource(R.string.share_as_model)) }
+            },
+        )
     }
 
     taskBeingEdited?.let { task ->

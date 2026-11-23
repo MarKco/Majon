@@ -183,3 +183,17 @@ fun argbToHsv(argb: Int): Triple<Float, Float, Float> {
     }
     return Triple(if (h < 0f) h + 360f else h, if (max == 0f) 0f else d / max, max)
 }
+
+private fun String?.key() = this?.trim()?.lowercase().orEmpty()
+
+/** Same name, brand and colour (ignoring case and spaces): what is mine (stock, price, shop, lot) does not count. */
+fun Yarn.sameYarnAs(other: Yarn): Boolean =
+    name.key() == other.name.key() && brand.key() == other.brand.key() && colorName.key() == other.colorName.key()
+
+/** Same count over 10 x 10 cm, same needle size and same stitch. */
+fun Swatch.sameSwatchAs(other: Swatch): Boolean =
+    stitches == other.stitches && rows == other.rows && needleSizeMm == other.needleSizeMm && pattern == other.pattern
+
+/** Same type, size and length. */
+fun Needle.sameNeedleAs(other: Needle): Boolean =
+    type == other.type && sizeMm == other.sizeMm && lengthCm == other.lengthCm

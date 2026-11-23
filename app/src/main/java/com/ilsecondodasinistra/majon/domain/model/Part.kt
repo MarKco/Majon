@@ -131,6 +131,23 @@ data class Part(
     }
 }
 
+/**
+ * The rows already knitted while this step is in progress (the row being worked is not counted): what the
+ * counter shows in big, i.e. the rows on the needles. The preparation row is row 0, not counted.
+ */
+fun RowStep.rowsKnitted(totalRows: Int): Int = when (this) {
+    RowStep.Prep -> 0
+    is RowStep.Row -> (number - 1).coerceIn(0, totalRows)
+    RowStep.Final -> totalRows
+}
+
+/** The same count at the moment this step has just been finished. */
+fun RowStep.rowsKnittedWhenDone(totalRows: Int): Int = when (this) {
+    RowStep.Prep -> 0
+    is RowStep.Row -> number.coerceIn(0, totalRows)
+    RowStep.Final -> totalRows
+}
+
 fun projectProgress(parts: List<Part>): Float {
     val total = parts.sumOf { it.allSteps }
     if (total <= 0) return 0f

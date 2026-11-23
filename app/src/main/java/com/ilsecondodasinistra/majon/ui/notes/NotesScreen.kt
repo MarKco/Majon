@@ -136,7 +136,32 @@ internal fun frequencyLabel(frequency: NoteFrequency): String = when (frequency)
     NoteFrequency.EVERY_ROW -> stringResource(R.string.freq_every)
     NoteFrequency.ODD_ROWS -> stringResource(R.string.freq_odd)
     NoteFrequency.EVEN_ROWS -> stringResource(R.string.freq_even)
+    NoteFrequency.EVERY_NTH, NoteFrequency.SPECIFIC -> ""
 }
+
+/** The rows a note is for, in words: «Riga 7», «Righe 10, 20, 30», «Ogni 6 righe, da 12 a 190», «Righe 5–20 · Righe pari». */
+@Composable
+internal fun noteRowsLabel(note: RowNote): String = when (note.frequency) {
+    NoteFrequency.SPECIFIC -> {
+        val shown = note.rows.take(MAX_ROWS_SHOWN).joinToString(", ")
+        if (note.rows.size > MAX_ROWS_SHOWN) {
+            stringResource(R.string.note_rows_list_more, shown, note.rows.size)
+        } else {
+            stringResource(R.string.note_rows_list, shown)
+        }
+    }
+    NoteFrequency.EVERY_NTH -> stringResource(R.string.note_rows_every, note.step, note.rowStart, note.rowEnd)
+    else -> {
+        val range = if (note.rowStart == note.rowEnd) {
+            stringResource(R.string.note_rows_single, note.rowStart)
+        } else {
+            stringResource(R.string.note_rows_range, note.rowStart, note.rowEnd)
+        }
+        if (note.frequency != NoteFrequency.EVERY_ROW) range + " · " + frequencyLabel(note.frequency) else range
+    }
+}
+
+private const val MAX_ROWS_SHOWN = 5
 
 @Composable
 private fun NoteItem(
@@ -157,18 +182,8 @@ private fun NoteItem(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                val rangeText = if (note.rowStart == note.rowEnd) {
-                    stringResource(R.string.note_rows_single, note.rowStart)
-                } else {
-                    stringResource(R.string.note_rows_range, note.rowStart, note.rowEnd)
-                }
-                val suffix = if (note.frequency != NoteFrequency.EVERY_ROW) {
-                    " · ${frequencyLabel(note.frequency)}"
-                } else {
-                    ""
-                }
                 Text(
-                    rangeText + suffix,
+                    noteRowsLabel(note),
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.primary,
                 )

@@ -288,3 +288,25 @@ CounterViewModel.onVoiceCommand(cmd) -> voiceReplies (SharedFlow<VoiceReply>)
 - Release build firmata + Play Store listing
 - Test strumentati Compose (`androidTest/`, dipendenze già configurate)
 - Foto per progetto, statistiche, widget home screen (post-V1 nelle spec)
+
+## Note per righe precise, import, condivisione (`.majon`, `.majon-notes`)
+
+- **Note**: `RowNote` vale per un intervallo (tutte, pari, dispari), per le righe di un elenco (`SPECIFIC`, campo `rows`)
+  o per una riga ogni N (`EVERY_NTH`, campo `step`). Schema v6 (`notes.step`, `notes.rowList`). L'editor
+  (`NoteEditScreen`) sceglie il tipo; `parseRowList` capisce «10, 20 30-35»; l'elenco le descrive in parole
+  (`noteRowsLabel`).
+- **Aggiornamenti**: `UpgradeFromEveryVersionTest` costruisce il database come lo lasciava ogni versione
+  precedente (dagli schemi esportati), ci mette progetto, parte e nota, lo apre con tutte le migrazioni e controlla
+  che i dati ci siano. Togliendo `MIGRATION_5_6` il test fallisce, quindi non è vuoto.
+- **Formati**: vedi `docs/majon-format-guide.md`. `.majon` = `BackupCodec` (stesso formato per il backup e per un
+  progetto condiviso, `encodeForSharing` toglie scorta/prezzi/negozio e segna i ferri come non posseduti);
+  `.majon-notes` = `NotesCodec`, letto in modo rigoroso (tutti gli errori insieme, con parte e numero di nota).
+- **Importazione** (`ui/importer`): `ImportViewModel` riconosce il tipo (`NotesCodec.detect`), per un progetto mostra
+  cosa porta allo stash (`importBackup` **riusa** lane, campioni e ferri già presenti: `sameYarnAs`, `sameSwatchAs`,
+  `sameNeedleAs`), per le note abbina le parti per nome (`suggestChoices`) e fa il piano (`planNotesImport`, puro:
+  duplicati, avvisi, errori) che `applyNotesImport` esegue senza mai togliere niente. «Formatta e controlla»
+  (`JsonFormatter`) riscrive il testo indentato e dà a ogni errore la sua riga.
+- **Da fuori l'app**: `MainActivity` legge i file `.majon` / `.majon-notes` aperti (tre filtri nel manifest, come per
+  Proportion) e li lascia in `ImportInbox`; il grafo di navigazione apre Importa. La condivisione scrive il file in
+  `cache/shared` e lo passa al foglio di condivisione con il `FileProvider`.
+- **Guida IA**: `NotesGuideScreen` (generica da Impostazioni, con le parti del progetto dal suo menu).
